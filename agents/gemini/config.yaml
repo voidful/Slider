@@ -1,0 +1,20 @@
+interface:
+  display_name: "ArXiv Talk Web"
+  short_description: "Turn an arXiv paper into an interactive research slideshow website."
+  icon: "presentation"
+  color: "#0f172a"
+
+platform: gemini
+version: "22"
+
+# Gemini CLI uses the root SKILL.md natively.
+# No separate instruction file is needed.
+instructions_source: "../../SKILL.md"
+
+# Gemini CLI accesses references/ directly from the skill directory.
+# No explicit knowledge file listing is required.
+
+# For Gemini Gems (web app), paste the contents of
+# agents/chatgpt/system_prompt.md into the Gem instructions text box.
+# The Gems UI does not support file uploads or directory references.
+gem_fallback: "agents/chatgpt/system_prompt.md"

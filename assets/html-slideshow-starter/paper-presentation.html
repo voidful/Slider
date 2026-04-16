@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="generator" content="slider/paper-presentation-v1"/>
+<title>Preserving Diversity in SFT. GEM conference talk</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<style>
+:root{--bg:#f5f5f4;--frame:#fff;--text:#1a1a2e;--muted:#4a4a6a;--border:#e2e8f0;--accent:#2563eb;--accent-bg:rgba(37,99,235,.07);--positive:#059669;--positive-bg:rgba(5,150,105,.07);--negative:#dc2626;--negative-bg:rgba(220,38,38,.07);--neutral:#6b7280;--panel:#fafafa;--slide-w:1200;--slide-h:675;--col-size:40%}
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--text);font-family:"Avenir Next","Segoe UI","SF Pro Text",system-ui,-apple-system,sans-serif;font-feature-settings:'cv01','cv02','ss01';font-optical-sizing:auto;padding:24px;overflow:hidden}
+
+/* ── Deck & Fullscreen ── */
+.deck{position:relative;width:calc(var(--slide-w)*1px);height:calc(var(--slide-h)*1px);background:var(--frame);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.10);transform-origin:center center}
+/* Fullscreen: wrapper fills screen, deck stays 1200×675 inside it */
+#deck-wrapper:fullscreen,#deck-wrapper:-webkit-full-screen{background:#000;display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+#deck-wrapper:fullscreen .deck,#deck-wrapper:-webkit-full-screen .deck{border:none;border-radius:0;box-shadow:none}
+.deck-wrapper.simulated-fs{position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:99999!important;background:#000!important;display:flex!important;align-items:center!important;justify-content:center!important}
+.deck-wrapper.simulated-fs .deck{border:none!important;border-radius:0!important;box-shadow:none!important}
+#deck-wrapper::backdrop{background:#000}
+/* Fullscreen body background */
+body.fs-active{background:#000!important;padding:0!important;margin:0!important}
+/* Fullscreen controls: auto-hide */
+#deck-wrapper:fullscreen .controls,#deck-wrapper:-webkit-full-screen .controls,.deck-wrapper.simulated-fs .controls{bottom:0;padding-bottom:20px;opacity:0;transition:opacity 300ms ease}
+#deck-wrapper:fullscreen .controls.controls-visible,#deck-wrapper:-webkit-full-screen .controls.controls-visible,.deck-wrapper.simulated-fs .controls.controls-visible{opacity:1}
+
+/* ── Progress ── */
+.progress{position:absolute;inset:0 auto auto 0;height:4px;background:var(--accent);transition:width 320ms ease;z-index:5}
+
+
+/* ── Shell ── */
+.body-shell{display:flex;width:100%;height:100%;min-height:0}
+.main-shell{min-width:0;min-height:0;flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Slide base ── */
+#slide-root{position:relative;z-index:1;display:flex;flex-direction:column;width:100%;height:100%;flex:1;min-height:0}
+.slide{width:100%;height:100%;padding:52px 56px 32px;display:flex;flex-direction:column;overflow:hidden;animation:fadeUp 400ms cubic-bezier(0.16,1,0.3,1);flex:1;min-height:0}
+.slide>*{min-width:0;min-height:0;flex-shrink:1;position:relative;z-index:2}
+.slide.density-compact{padding:44px 48px 52px}
+.slide.density-tight{padding:36px 40px 44px}
+.slide.density-compact .title{margin-top:8px;font-size:clamp(1.85rem,3vw,2.45rem);line-height:1.12}
+.slide.density-tight .title{margin-top:6px;font-size:clamp(1.7rem,2.7vw,2.2rem);line-height:1.08}
+.slide.density-compact .body,.slide.density-compact .body-text,.slide.density-compact .bullet{margin-top:12px;font-size:clamp(1rem,1.45vw,1.16rem);line-height:1.48}
+.slide.density-tight .body,.slide.density-tight .body-text,.slide.density-tight .bullet{margin-top:10px;font-size:clamp(.95rem,1.3vw,1.06rem);line-height:1.42}
+.slide.density-compact .bullets,.slide.density-compact .bullet-list{gap:10px;margin-top:12px}
+.slide.density-tight .bullets,.slide.density-tight .bullet-list{gap:8px;margin-top:10px}
+.slide.density-compact.split,.slide.density-compact.method-overview{gap:24px}
+.slide.density-tight.split,.slide.density-tight.method-overview{gap:18px}
+.slide.density-compact .evidence{margin-top:10px;font-size:13px}
+.slide.density-tight .evidence{margin-top:8px;font-size:12px}
+.slide.density-tight .label{font-size:14px}
+
+/* ── Typography ── */
+.label{font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.label-positive{color:var(--positive)}
+.label-negative{color:var(--negative)}
+.title{margin:10px 0 0;font-size:clamp(2rem,3.5vw,2.8rem);line-height:1.15;font-weight:700;letter-spacing:-.02em;text-wrap:balance;overflow-wrap:break-word;word-break:break-word;hyphens:auto}
+.body,.body-text{margin-top:14px;font-size:clamp(1.1rem,1.6vw,1.3rem);line-height:1.6;color:var(--muted);max-width:56ch;overflow-wrap:break-word}
+
+/* ═══ COMPOSABLE PRIMITIVES ═══ */
+
+/* Region primitives */
+.region-full{width:100%;flex:1;min-height:0}
+.region-left{flex:0 1 var(--col-size);min-width:0;overflow:hidden}
+.region-right{flex:1 1 calc(100% - var(--col-size));min-width:0;min-height:0;display:flex;align-items:stretch;justify-content:center;overflow:hidden}
+.region-right>*{flex:1 1 0;min-width:0;min-height:0;width:100%;max-width:100%;align-self:stretch}
+.region-center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1}
+.region-inset{max-width:800px;margin:0 auto;width:100%}
+
+/* Objective shell — full-height equation layout */
+.objective-shell{display:flex;flex-direction:column;align-items:center;text-align:center;flex:1;gap:16px;justify-content:flex-start;padding-top:24px;min-height:0;overflow:hidden}
+.objective-shell .equation-block{margin:auto 0;max-width:90%}
+.objective-shell .objective-body{max-width:56ch}
+.density-compact .objective-shell{gap:10px;padding-top:12px}
+.density-compact .objective-shell .title{font-size:clamp(1.2rem,2.4vw,1.6rem)}
+.density-compact .objective-shell .objective-body{font-size:0.95rem}
+.density-compact .objective-shell .equation-block{padding:12px;font-size:1.3rem}
+.density-tight .objective-shell{gap:6px;padding-top:8px}
+.density-tight .objective-shell .title{font-size:clamp(1rem,2vw,1.3rem)}
+.density-tight .objective-shell .objective-body{font-size:0.88rem}
+.density-tight .objective-shell .equation-block{padding:8px 12px;font-size:1.1rem}
+.density-tight .objective-shell .evidence-note{display:none}
+
+/* Composition helpers */
+.stack{display:flex;flex-direction:column;gap:16px}
+.stack>div,.stack>section{flex-shrink:1;min-height:0}
+.stack-fill{flex:1;min-height:0}
+.row{display:flex;flex-direction:row;gap:24px;align-items:center}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.grid-auto{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}
+.pin-bottom{margin-top:auto}
+.bleed{margin:-52px -56px -64px;padding:52px 56px 64px}
+
+/* Content primitives */
+.hero-text{font-size:clamp(2rem,3.5vw,3rem);font-weight:700;letter-spacing:-.03em;line-height:1.1;text-wrap:balance;overflow-wrap:break-word}
+.hero-number{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;letter-spacing:-.05em;line-height:1;color:var(--accent);text-shadow:0 4px 20px var(--accent-bg)}
+.hero-number.positive{color:var(--positive);text-shadow:0 4px 20px var(--positive-bg)}
+.hero-number.negative{color:var(--negative);text-shadow:0 4px 20px var(--negative-bg)}
+
+.evidence-frame{border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,0.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 4px 24px rgba(0,0,0,.04);overflow:hidden;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;max-height:100%;width:100%;max-width:100%}
+.evidence-media{flex:1 1 auto;min-height:80px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.evidence-frame img,.evidence-media img,.evidence-media svg{display:block;max-width:100%;max-height:100%;width:auto;height:auto;min-height:0;flex-shrink:1;object-fit:contain;background:transparent}
+.evidence-frame figcaption,.visual-caption{border-top:1px solid var(--border);padding:8px 12px;font-size:14px;color:var(--muted);background:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+
+.callout-box{background:var(--accent-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:12px;padding:20px 24px;font-size:clamp(1.1rem,1.6vw,1.3rem);line-height:1.6;color:var(--text);border-left:4px solid var(--accent);box-shadow:0 4px 20px rgba(0,0,0,.03)}
+.callout-box.positive{background:var(--positive-bg);border-left-color:var(--positive)}
+.callout-box.negative{background:var(--negative-bg);border-left-color:var(--negative)}
+
+.quote-block{font-size:clamp(1.2rem,2vw,1.5rem);font-weight:300;font-style:italic;line-height:1.5;color:var(--text);border-left:3px solid var(--accent);padding-left:20px;max-width:48ch}
+.quote-attr{margin-top:8px;font-size:14px;font-style:normal;font-weight:600;color:var(--muted)}
+
+.limitation-block{border-left:4px solid var(--negative);background:var(--negative-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:0 12px 12px 0;padding:24px}
+.limitation-block .bullet-dot{background:var(--negative)}
+
+.equation-block{text-align:center;margin:24px auto;padding:20px;font-size:1.6rem;font-family:'Times New Roman','Latin Modern Math',serif;background:var(--accent-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:12px;overflow:hidden;max-width:100%;box-shadow:0 4px 24px rgba(0,0,0,.03)}
+.equation-block.equation-compact{font-size:1.25rem;padding:14px 16px}
+.equation-block.equation-tight{font-size:1.05rem;padding:10px 12px}
+.equation-explain{text-align:center;color:var(--muted);font-size:1.15rem;margin-top:8px}
+
+.comparison-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.comparison-panel>div{border:1px solid var(--border);border-radius:12px;padding:16px;overflow:hidden}
+.comparison-label{font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.comparison-label-accent{color:var(--accent)}
+.comparison-label-neutral{color:var(--neutral)}
+
+.timeline-flow{display:flex;align-items:center;gap:8px;padding:16px 0}
+.timeline-step{background:var(--accent-bg);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:10px;padding:12px 16px;font-size:16px;font-weight:600;text-align:center;flex:1;min-width:0;overflow-wrap:break-word;border:1px solid rgba(37,99,235,.12);box-shadow:0 2px 8px rgba(0,0,0,.03)}
+.timeline-arrow{color:var(--accent);font-size:18px;flex-shrink:0}
+
+/* Emphasis modifiers */
+.emphasis-primary{opacity:1}
+.emphasis-secondary{opacity:.75;font-size:.9em}
+.emphasis-background{opacity:.5;font-size:.85em}
+.emphasis-dramatic .hero-number{font-size:clamp(3rem,8vw,5.5rem)}
+
+/* Atmosphere modifiers */
+.atmosphere-warm{background:radial-gradient(circle at top right, rgba(251,146,60,.12), transparent 50%), radial-gradient(circle at bottom left, rgba(251,191,36,.12), transparent 50%), var(--bg)}
+.atmosphere-cool{background:radial-gradient(circle at top right, rgba(99,102,241,.15), transparent 50%), radial-gradient(circle at bottom left, rgba(59,130,246,.15), transparent 50%), var(--bg)}
+.atmosphere-vibrant{background:radial-gradient(circle at 10% 20%, rgba(236,72,153,.1), transparent 40%), radial-gradient(circle at 90% 80%, rgba(59,130,246,.12), transparent 40%), radial-gradient(circle at 50% 50%, rgba(139,92,246,.08), transparent 60%), var(--bg)}
+.atmosphere-dramatic{background:radial-gradient(circle at top right, rgba(37,99,235,.2), transparent 50%), radial-gradient(circle at bottom left, rgba(139,92,246,.15), transparent 50%), #1a1a2e;color:#f0f0f5}
+.atmosphere-dramatic .label{color:rgba(255,255,255,.6)}
+.atmosphere-dramatic .body,.atmosphere-dramatic .body-text{color:rgba(255,255,255,.65)}
+.atmosphere-dramatic .title{color:#fff}
+.atmosphere-dramatic .evidence-frame{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.05)}
+.atmosphere-dramatic .callout-box{background:rgba(37,99,235,.15);border-left-color:var(--accent)}
+.atmosphere-minimal{background:var(--frame)}
+
+/* ═══ LEGACY LAYOUT COMPAT ═══ */
+.split{flex-direction:row;gap:32px;align-items:center}
+.split>.text-col{flex:0 1 40%;min-width:0;overflow:hidden}
+.split>.visual-col{flex:1 1 65%;min-width:0;min-height:0;display:flex;align-items:stretch;justify-content:center;overflow:hidden}
+.split>.visual-col>*{flex:1 1 0;min-width:0;min-height:0;width:100%;max-width:100%;align-self:stretch}
+.method-overview{gap:20px}
+.method-overview .visual-col{flex:1 1 70%}
+.method-overview .text-col{flex:0 1 30%}
+
+/* ── Bullets ── */
+.bullets,.bullet-list{display:grid;gap:12px;margin-top:16px}
+.bullet{display:grid;grid-template-columns:8px 1fr;gap:10px;align-items:start;color:var(--muted);font-size:clamp(1.1rem,1.6vw,1.3rem);line-height:1.5;overflow-wrap:break-word;word-break:break-word}
+.bullet-dot{width:8px;height:8px;margin-top:8px;border-radius:999px;background:var(--accent);flex-shrink:0}
+
+/* ── Visual frames (legacy) ── */
+.visual-frame{border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,0.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);overflow:hidden;display:flex;flex-direction:column;flex:1 1 0;min-height:0;max-height:100%;width:100%;max-width:100%}
+.visual-frame img{display:block;max-width:100%;max-height:100%;width:100%;height:100%;min-height:0;flex-shrink:1;object-fit:contain;background:transparent}
+.placeholder{min-height:240px;flex:1;border:2px dashed var(--border);background:rgba(255,255,255,0.4);border-radius:12px;display:grid;place-items:center;color:var(--neutral);text-align:center;padding:20px;font-size:15px;width:100%;max-width:100%}
+
+/* ── Metrics ── */
+.metrics,.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:24px}
+.metrics-with-visual{display:grid;gap:24px;margin-top:24px;grid-template-columns:1fr 1.2fr;align-items:center}
+.metric,.metric-card{border:1px solid var(--border);border-radius:12px;padding:18px;overflow:hidden;background:rgba(255,255,255,0.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.03)}
+.metric-label{font-size:16px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.metric-value{margin-top:8px;font-size:clamp(1.6rem,3vw,2.5rem);font-weight:800;letter-spacing:-.04em;color:var(--accent)}
+.metric-value.positive{color:var(--positive)}
+.metric-value.negative{color:var(--negative)}
+.metric-detail{margin-top:6px;font-size:15px;color:var(--muted);overflow-wrap:break-word}
+
+/* ── Result table ── */
+.result-table,.data-table table{width:100%;border-collapse:collapse;font-size:18px;margin-top:16px;table-layout:auto}
+.result-table th,.data-table th{background:var(--accent-bg);color:var(--text);font-weight:600;padding:12px 16px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap}
+.result-table td,.data-table td{padding:10px 16px;border-bottom:1px solid var(--border);overflow-wrap:break-word}
+.result-table td.num,.data-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+.result-table tr.highlight td{background:var(--accent-bg);font-weight:600}
+.result-table tr.highlight td.best,.result-table tr.best td{background:var(--positive-bg);color:var(--positive);font-weight:800}
+.table-caption{margin-top:8px;font-size:14px;color:var(--muted)}
+
+/* ── Evidence note ── */
+.evidence{display:none}
+body.edit-mode .evidence{display:block;margin-top:12px;font-size:14px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px;opacity:0.6;font-style:italic}
+
+/* ── Controls ── */
+.controls{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);z-index:20;font-size:13px;opacity:.18;transition:opacity 160ms ease}
+.deck:not(:fullscreen):not(.simulated-fs):hover .controls,.deck:not(:fullscreen):not(.simulated-fs):focus-within .controls{opacity:1}
+button{border:none;background:transparent;cursor:pointer;color:var(--text);padding:6px 8px;border-radius:999px;font-size:13px}
+button:hover{background:rgba(0,0,0,.05)}
+button.active{background:rgba(220,38,38,.12);color:#dc2626}
+.counter{min-width:56px;text-align:center;font-size:13px;font-weight:600;color:var(--muted)}
+
+/* ── Laser pointer ── */
+.laser-dot{position:fixed;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle,#ff1a1a 0%,#ff4444 40%,rgba(255,0,0,.4) 70%,transparent 100%);box-shadow:0 0 8px 3px rgba(255,0,0,.5),0 0 20px 6px rgba(255,0,0,.25);pointer-events:none;z-index:99998;transform:translate(-50%,-50%);display:none;will-change:left,top}
+.laser-dot.active{display:block}
+.deck.laser-mode,.deck.laser-mode *{cursor:none!important}
+
+/* ── Help ── */
+.help{position:absolute;right:20px;z-index:25;width:min(340px,calc(100% - 40px));border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.95);padding:16px;font-size:13px;line-height:1.6;color:var(--muted);box-shadow:0 12px 32px rgba(0,0,0,.08);backdrop-filter:blur(8px);display:none;max-height:50%;overflow-y:auto;top:20px}
+.help-title{font-weight:700;color:var(--text)}
+.help-list{margin-top:8px;padding-left:16px;font-size:13px}
+.help.show{display:block}
+
+/* ── Animations ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.slide{animation:none}.progress{transition:none}}
+
+/* ── Utility classes for render functions (no inline styles) ── */
+.hero-text-mt{margin-top:12px}
+.cover-subtitle{max-width:none;margin:12px auto 0}
+.cover-body{margin:12px auto 0}
+.center-text{text-align:center}
+.objective-body{margin:12px auto 0;text-align:center;max-width:none}
+.takeaway-body{margin:14px auto 0;max-width:none}
+.metric-grid-flush{margin:0}
+.visual-overflow-guard{min-height:0;overflow:hidden;display:flex;flex-direction:column;flex:1 1 0}
+.result-metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px;flex-shrink:0}
+.result-metrics-row .metric-card{padding:8px 12px}
+.result-metrics-row .metric-label{font-size:13px}
+.result-metrics-row .metric-value{margin-top:2px;font-size:clamp(1.2rem,2vw,1.6rem)}
+.result-metrics-row .metric-detail{margin-top:2px;font-size:12px;line-height:1.3}
+.result-visual-fill{flex:1 1 0;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.qualitative-text-col{flex:0 1 30%}
+.qualitative-visual-col{flex:1 1 70%}
+
+/* ═══ EDITOR MODE ═══ */
+.editor-toolbar{display:none;position:fixed;top:0;left:0;right:0;height:48px;background:#fff;border-bottom:1px solid var(--border);z-index:1000;padding:0 16px;align-items:center;gap:8px;font-family:system-ui,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+body.edit-mode .editor-toolbar{display:flex}
+body.edit-mode{padding:0;overflow:auto}
+body.edit-mode .deck{border-radius:8px;box-shadow:0 2px 16px rgba(0,0,0,.08);margin:0}
+.editor-toolbar .tb-group{display:flex;align-items:center;gap:4px}
+.editor-toolbar .tb-sep{width:1px;height:24px;background:var(--border);margin:0 6px}
+.tb-btn{border:1px solid var(--border);background:#fff;cursor:pointer;padding:6px 12px;border-radius:6px;font-size:13px;color:var(--text);font-weight:500;transition:border-color 120ms,background 120ms,color 120ms}
+.tb-btn:hover{background:#f5f5f5;border-color:#ccc}
+.tb-btn.tb-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tb-btn.tb-primary:hover{background:#1d4ed8}
+.tb-btn.tb-active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tb-btn.tb-danger{color:#dc2626;border-color:#fca5a5}
+.tb-btn.tb-danger:hover{background:#fef2f2}
+.tb-title{font-weight:700;font-size:14px;color:var(--text);margin-right:8px}
+.tb-spacer{flex:1}
+
+/* Sidebar */
+.editor-sidebar{display:none;position:fixed;top:48px;left:0;bottom:0;width:200px;background:#f9fafb;border-right:1px solid var(--border);overflow-y:auto;padding:12px 8px;z-index:999}
+body.edit-mode .editor-sidebar{display:block}
+.editor-main{margin-top:48px;margin-left:200px;display:none;min-height:calc(100vh - 48px);place-items:center;padding:24px}
+body.edit-mode .editor-main{display:grid}
+body.edit-mode .deck-wrapper{display:none}
+
+/* Thumbnails */
+.thumb-list{display:flex;flex-direction:column;gap:8px}
+.thumb-item{position:relative;cursor:pointer;border:2px solid transparent;border-radius:6px;padding:2px;transition:border-color 120ms}
+.thumb-item:hover{border-color:#93c5fd}
+.thumb-item.active{border-color:var(--accent)}
+.thumb-canvas{width:100%;aspect-ratio:16/9;background:#fff;border-radius:4px;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.thumb-idx{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px}
+.thumb-actions{position:absolute;top:4px;right:4px;display:none;gap:2px}
+.thumb-item:hover .thumb-actions{display:flex}
+.thumb-act{width:20px;height:20px;border:none;border-radius:4px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;cursor:pointer;display:grid;place-items:center;padding:0}
+.thumb-act:hover{background:rgba(0,0,0,.7)}
+.add-slide-btn{width:100%;padding:10px;border:2px dashed var(--border);border-radius:8px;background:transparent;cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;transition:border-color 120ms,background 120ms,color 120ms;margin-top:4px}
+.add-slide-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+
+/* Contenteditable highlights in edit mode */
+body.edit-mode [data-editable]{outline:2px dashed transparent;outline-offset:2px;cursor:text;transition:outline-color 200ms;border-radius:4px;min-height:1em}
+body.edit-mode [data-editable]:hover{outline-color:rgba(37,99,235,.3)}
+body.edit-mode [data-editable]:focus{outline-color:var(--accent);outline-style:solid;background:rgba(37,99,235,.03)}
+
+/* Slide action bar in edit mode */
+.slide-actions{display:none;position:absolute;top:8px;right:8px;gap:4px;z-index:30}
+body.edit-mode .slide-actions{display:flex}
+.slide-act-btn{border:1px solid var(--border);background:rgba(255,255,255,.9);backdrop-filter:blur(4px);cursor:pointer;padding:4px 8px;border-radius:4px;font-size:11px;color:var(--muted)}
+.slide-act-btn:hover{background:#fff;color:var(--text);border-color:#aaa}
+
+/* Add-slide modal */
+.layout-picker{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2000;place-items:center}
+.layout-picker.show{display:grid}
+.layout-picker-inner{background:#fff;border-radius:12px;padding:24px;width:min(600px,90vw);box-shadow:0 16px 48px rgba(0,0,0,.15)}
+.layout-picker h3{margin:0 0 16px;font-size:16px;font-weight:700}
+.layout-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.layout-option{border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;text-align:center;font-size:12px;font-weight:600;color:var(--muted);transition:border-color 120ms,background 120ms,color 120ms}
+.layout-option:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+
+/* Bullet editing */
+body.edit-mode .bullet{position:relative}
+body.edit-mode .bullet-add{display:none;position:absolute;right:-28px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:12px;color:var(--muted);padding:0;line-height:20px}
+body.edit-mode .bullet:hover .bullet-add{display:block}
+body.edit-mode .bullet-del{display:none;position:absolute;left:-28px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;border:1px solid #fca5a5;background:#fff;cursor:pointer;font-size:10px;color:#dc2626;padding:0;line-height:20px}
+body.edit-mode .bullet:hover .bullet-del{display:block}
+
+/* Hide present-mode controls in edit mode */
+body.edit-mode .controls{display:none}
+body.edit-mode .progress{display:none}
+
+/* ── Theme picker panel ── */
+.theme-panel{display:none;position:fixed;top:48px;right:16px;width:320px;max-height:calc(100vh - 64px);overflow-y:auto;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.12);z-index:2001;padding:16px;font-family:system-ui,sans-serif}
+.theme-panel.show{display:block}
+.theme-panel h4{margin:0 0 12px;font-size:14px;font-weight:700;color:var(--text)}
+.theme-panel-section{margin-bottom:16px}
+.theme-panel-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.palette-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.palette-card{border:2px solid var(--border);border-radius:8px;padding:8px;cursor:pointer;transition:border-color 120ms,box-shadow 120ms}
+.palette-card:hover{border-color:#93c5fd;transform:translateY(-1px)}
+.palette-card.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(37,99,235,.2)}
+.palette-name{font-size:11px;font-weight:600;margin-bottom:4px;color:#333}
+.palette-swatches{display:flex;gap:2px;height:16px;border-radius:4px;overflow:hidden}
+.palette-swatches span{flex:1}
+.custom-colors{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.color-field{display:flex;align-items:center;gap:6px}
+.color-field label{font-size:11px;font-weight:600;color:var(--muted);min-width:44px}
+.color-field input[type=color]{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;padding:1px;cursor:pointer;background:none}
+.color-field input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.color-field input[type=color]::-webkit-color-swatch{border:none;border-radius:4px}
+
+/* ── Slide gallery overlay ── */
+.gallery-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:9999;overflow-y:auto;padding:32px}
+.gallery-overlay.show{display:block}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;max-width:1400px;margin:0 auto}
+.gallery-card{cursor:pointer;border:3px solid transparent;border-radius:12px;overflow:hidden;transition:border-color 150ms ease,transform 150ms ease,box-shadow 150ms ease;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.gallery-card:hover{border-color:#60a5fa;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.gallery-card.current{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.3)}
+.gallery-card-inner{aspect-ratio:16/9;overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:16px}
+.gallery-card-idx{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px}
+.gallery-card-title{font-size:12px;font-weight:600;text-align:center;color:#1a1a2e;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.gallery-card-layout{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:4px}
+.gallery-close{position:fixed;top:16px;right:16px;z-index:10000;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:24px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:grid;place-items:center}
+.gallery-close:hover{background:rgba(255,255,255,.25)}
+</style>
+</head>
+<body>
+<div class="deck-wrapper" id="deck-wrapper">
+<div class="deck" id="deck">
+  <div class="progress" id="progress"></div>
+
+  <div class="body-shell">
+    <div class="main-shell">
+      <main id="slide-root"></main>
+    </div>
+  </div>
+
+  <div class="controls" id="controls-bar">
+    <button id="prev" aria-label="Previous slide">←</button>
+    <button id="home" aria-label="First slide">⌂</button>
+    <span class="counter" id="counter">1 / 1</span>
+    <button id="next" aria-label="Next slide">→</button>
+    <button id="laser-btn" aria-label="Laser pointer" title="Laser pointer (L)">🪄</button>
+    <button id="gallery-btn" aria-label="Slide overview" title="Slide overview (G)">⊞</button>
+    <button id="fullscreen" aria-label="Fullscreen">Full</button>
+  </div>
+  <div class="laser-dot" id="laser-dot"></div>
+  <!-- Gallery overlay (inside deck for fullscreen) -->
+  <div class="gallery-overlay" id="gallery-overlay">
+    <button class="gallery-close" id="gallery-close">×</button>
+    <div class="gallery-grid" id="gallery-grid"></div>
+  </div>
+</div>
+</div><!-- end deck-wrapper -->
+
+<!-- Editor UI (hidden in present mode) -->
+<div class="editor-toolbar" id="editor-toolbar">
+  <span class="tb-title">📝 Slide Editor</span>
+  <div class="tb-sep"></div>
+  <div class="tb-group">
+    <button class="tb-btn" id="tb-undo" title="Undo">↩</button>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-group">
+    <button class="tb-btn" id="tb-add-slide" title="Add slide">+ Slide</button>
+    <button class="tb-btn" id="tb-insert-img" title="Insert image">🖼 Image</button>
+    <button class="tb-btn tb-danger" id="tb-del-slide" title="Delete current slide">🗑</button>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-group">
+    <button class="tb-btn" id="tb-theme" title="Theme & colors">🎨 Theme</button>
+  </div>
+  <input type="file" id="img-file-input" accept="image/*" style="display:none">
+  <span class="tb-spacer"></span>
+  <div class="tb-group">
+    <button class="tb-btn tb-primary" id="tb-present" title="Present mode">▶ Present</button>
+    <button class="tb-btn" id="tb-export" title="Download HTML">⬇ Export</button>
+  </div>
+</div>
+
+<!-- Theme picker panel -->
+<div class="theme-panel" id="theme-panel">
+  <h4>🎨 Theme & Colors</h4>
+  <div class="theme-panel-section">
+    <div class="theme-panel-section-title">Preset Palettes</div>
+    <div class="palette-grid" id="palette-grid"></div>
+  </div>
+  <div class="theme-panel-section">
+    <div class="theme-panel-section-title">Custom Colors</div>
+    <div class="custom-colors" id="custom-colors"></div>
+  </div>
+</div>
+
+<div class="editor-sidebar" id="editor-sidebar">
+  <div class="thumb-list" id="thumb-list"></div>
+  <button class="add-slide-btn" id="sidebar-add-slide">+ Add Slide</button>
+</div>
+
+<div class="editor-main" id="editor-main">
+  <div class="deck" id="edit-deck">
+    <main id="edit-slide-root"></main>
+  </div>
+</div>
+
+<!-- Layout picker modal -->
+<div class="layout-picker" id="layout-picker">
+  <div class="layout-picker-inner">
+    <h3>Choose a layout</h3>
+    <div class="layout-grid" id="layout-grid"></div>
+  </div>
+</div>
+
+<script>
+const themePreset="zinc-editorial"; // @render-theme
+const venuePreset="iclr"; // @render-venue
+
+const themeTokens={
+  "zinc-editorial":{bg:"#f5f5f4",frame:"#fff",text:"#1a1a2e",muted:"#4a4a6a",border:"#e2e8f0",accent:"#2563eb",positive:"#059669",negative:"#dc2626",neutral:"#6b7280",panel:"#fafafa"},
+  "deep-navy-academic":{bg:"#f8fafc",frame:"#fff",text:"#0a2540",muted:"#4b5563",border:"#dbe3ea",accent:"#1d4ed8",positive:"#059669",negative:"#b91c1c",neutral:"#6b7280",panel:"#fff"},
+  "monochrome-impeccable":{bg:"#fafafa",frame:"#fff",text:"#0a0a0a",muted:"#525252",border:"#e5e5e5",accent:"#2563eb",positive:"#059669",negative:"#dc2626",neutral:"#737373",panel:"#fff"},
+};
+const venueLabels={neurips:"NeurIPS",iclr:"ICLR",acl:"ACL",cvpr:"CVPR"};
+
+/* ── Slide data transport ──
+   Two transport modes, tried in order:
+   1. Base64 (preferred): @render-slide-data-b64 marker contains base64-encoded JSON.
+      This eliminates ALL escaping issues — base64 only uses [A-Za-z0-9+/=].
+   2. String.raw (legacy): @render-slide-data marker contains raw JSON in String.raw`...`.
+      Fragile — LaTeX backslashes can crash JSON.parse or silently corrupt math.
+   If the renderer injects base64, the String.raw block is left empty. */
+
+const SLIDE_DATA_B64 = ""; // @render-slide-data-b64
+
+let slides = [];
+if (SLIDE_DATA_B64) {
+  /* Base64 transport — safe, no escaping issues. 
+     Decode UTF-8 base64 properly. */
+  try {
+    slides = JSON.parse(decodeURIComponent(escape(atob(SLIDE_DATA_B64))));
+  } catch (e) {
+    document.body.innerHTML = '<pre style="padding:40px;font-size:16px;color:#dc2626">❌ Failed to decode base64 slide data.\n\nThis likely means the base64 payload was corrupted during generation.\n\nError: ' + e.message + '</pre>';
+    throw e;
+  }
+}
+
+const deckEl=document.getElementById("deck");
+const wrapperEl=document.getElementById("deck-wrapper");
+const state={currentSlide:0,showHelp:false,laser:false};
+const root=document.getElementById("slide-root");
+const progressBar=document.getElementById("progress");
+const helpPanel=document.getElementById("help");
+const counter=document.getElementById("counter");
+const controlsBar=document.getElementById("controls-bar");
+const laserDot=document.getElementById("laser-dot");
+const laserBtn=document.getElementById("laser-btn");
+
+/* ── Helpers ── */
+function esc(t){const d=document.createElement("div");d.textContent=t;return d.innerHTML}
+function hexToRgba(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgba(${r},${g},${b},${a})`}
+function formatElapsed(s){return`${String(Math.floor(s/60)).padStart(2,"0")}:${String(Math.floor(s%60)).padStart(2,"0")}`}
+
+/* ── Theme ── */
+function applyTheme(){
+  const t=themeTokens[themePreset]||themeTokens["zinc-editorial"];const r=document.documentElement.style;
+  r.setProperty("--bg",t.bg);r.setProperty("--frame",t.frame);r.setProperty("--text",t.text);r.setProperty("--muted",t.muted);r.setProperty("--border",t.border);r.setProperty("--accent",t.accent);
+  r.setProperty("--positive",t.positive||"#059669");r.setProperty("--negative",t.negative||"#dc2626");r.setProperty("--neutral",t.neutral||"#6b7280");r.setProperty("--panel",t.panel);
+  r.setProperty("--accent-bg",hexToRgba(t.accent,.07));r.setProperty("--positive-bg",hexToRgba(t.positive||"#059669",.07));r.setProperty("--negative-bg",hexToRgba(t.negative||"#dc2626",.07));
+}
+
+/* ── Navigation ── */
+function goTo(i){state.currentSlide=Math.max(0,Math.min(i,slides.length-1));render()}
+
+/* ── Rendering: Legacy helpers ── */
+function renderBullets(bullets){if(!bullets||!bullets.length)return"";return`<div class="bullets">${bullets.map(b=>`<div class="bullet"><span class="bullet-dot"></span><span>${esc(typeof b==="string"?b:b.text||"")}</span></div>`).join("")}</div>`}
+function renderVisual(slide){
+  if(slide.visual&&slide.visual.src){const alt=esc(slide.visual.alt||slide.figureLabel||slide.title);const cap=esc(slide.visual.caption||slide.figureLabel||"Paper visual");const conf=slide.visual.confidence?` · ${esc(slide.visual.confidence)} confidence`:"";return`<figure class="evidence-frame"><div class="evidence-media"><img src="${slide.visual.src}" alt="${alt}" loading="eager"/></div><figcaption class="visual-caption">${cap}${conf}</figcaption></figure>`}
+  if(slide.figureLabel)return`<div class="placeholder">${esc(slide.figureLabel)}</div>`;return""
+}
+function renderMetricValue(m){let c="metric-value";if(m.delta==="positive")c+=" positive";else if(m.delta==="negative")c+=" negative";return`<div class="${c}">${esc(String(m.value))}</div>`}
+
+/* ═══ CONTENT BLOCKS RENDERER ═══ */
+function renderBlock(block){
+  const s=block.style||"";const e=block.emphasis?` emphasis-${block.emphasis}`:"";
+  switch(block.type){
+    case"label":return`<div class="label${s==="positive"?" label-positive":s==="negative"?" label-negative":""}">${esc(block.content)}</div>`;
+    case"heading":return`<h2 class="title${e}">${esc(block.content)}</h2>`;
+    case"hero-text":return`<div class="hero-text${e}">${esc(block.content)}</div>`;
+    case"text":return`<p class="body-text${e}">${esc(block.content)}</p>`;
+    case"bullets":return renderBullets(block.content);
+    case"figure":{
+      const c=block.content||{};
+      if(c.src)return`<figure class="evidence-frame${e}"><div class="evidence-media"><img src="${c.src}" alt="${esc(c.alt||c.caption||"")}" loading="eager"/></div>${c.caption?`<figcaption class="visual-caption">${esc(c.caption)}</figcaption>`:""}</figure>`;
+      if(c.placeholder)return`<div class="placeholder${e}">${esc(c.placeholder)}</div>`;return""
+    }
+    case"metric":{const c=block.content||{};const dc=c.delta==="positive"?" positive":c.delta==="negative"?" negative":"";const sz=block.emphasis==="dramatic"?" hero-number":"metric-value";return`<div class="metric-card${e}"><div class="metric-label">${esc(c.label||"")}</div><div class="${sz}${dc}">${esc(String(c.value||""))}</div><div class="metric-detail">${esc(c.detail||"")}</div></div>`}
+    case"metric-grid":{const items=(block.content||[]).map(m=>{const dc=m.delta==="positive"?" positive":m.delta==="negative"?" negative":"";return`<div class="metric-card"><div class="metric-label">${esc(m.label||"")}</div><div class="metric-value${dc}">${esc(String(m.value||""))}</div><div class="metric-detail">${esc(m.detail||"")}</div></div>`}).join("");return`<div class="metric-grid${e}">${items}</div>`}
+    case"table":{const c=block.content||{};const hdrs=(c.headers||[]).map(h=>`<th>${esc(h)}</th>`).join("");const rows=(c.rows||[]).map(r=>{const cls=r.highlight?" class=\"highlight\"":r.best?" class=\"best\"":"";const cells=(r.cells||[]).map((cell,i)=>`<td${typeof cell==="number"||/^[\d.+%-]+$/.test(String(cell))?" class=\"num\"":""}>${esc(String(cell))}</td>`).join("");return`<tr${cls}>${cells}</tr>`}).join("");return`<div class="data-table${e}"><table class="result-table"><thead><tr>${hdrs}</tr></thead><tbody>${rows}</tbody></table>${c.caption?`<div class="table-caption">${esc(c.caption)}</div>`:""}</div>`}
+    case"equation":{const cLen=(block.content||"").length;const eqCls=cLen>120?" equation-tight":cLen>60?" equation-compact":"";return`<div class="equation-block${eqCls}${e}">${block.content}</div>${block.explanation?`<div class="equation-explain">${esc(block.explanation)}</div>`:""}`}
+    case"callout":return`<div class="callout-box${s?" "+s:""}${e}">${esc(block.content)}</div>`;
+    case"quote":return`<blockquote class="quote-block${e}">${esc(block.content)}${block.attribution?`<div class="quote-attr">— ${esc(block.attribution)}</div>`:""}</blockquote>`;
+    case"comparison":{const c=block.content||{};return`<div class="comparison-panel${e}"><div><div class="comparison-label comparison-label-accent">${esc(c.leftLabel||"Ours")}</div>${esc(c.left||"")}</div><div><div class="comparison-label comparison-label-neutral">${esc(c.rightLabel||"Baseline")}</div>${esc(c.right||"")}</div></div>`}
+    case"timeline":{const steps=(block.content||[]).map((s,i,a)=>`<div class="timeline-step">${esc(s)}</div>${i<a.length-1?'<div class="timeline-arrow">→</div>':""}`).join("");return`<div class="timeline-flow${e}">${steps}</div>`}
+    case"spacer":return`<div style="flex:${block.size||1}"></div>`;
+    case"custom-html":return block.content||"";
+    default:return`<div class="body-text${e}">${esc(block.content||"")}</div>`
+  }
+}
+
+function renderContentBlocks(slide){
+  const blocks=slide.contentBlocks||[];
+  const atmo=slide.atmosphere?` atmosphere-${slide.atmosphere}`:"";
+  const grid=slide.gridTemplate?`display:grid;grid-template:${slide.gridTemplate};gap:24px;flex:1;min-height:0;`:"";
+  const customCSS=slide.customCSS?Object.entries(slide.customCSS).map(([k,v])=>`${k}:${v}`).join(";"):"";
+  const style=grid||customCSS?` style="${grid}${customCSS}"`:"";
+  const inner=blocks.map(b=>renderBlock(b)).join("\n");
+  return`<section class="slide stack${atmo}"${style}>${inner}</section>`
+}
+
+/* ═══ CLASSIC LAYOUT RENDERER ═══ */
+function renderClassicSlide(slide){
+  const evidNote=slide.evidenceNote?`<div class="evidence">${esc(slide.evidenceNote)}</div>`:"";
+
+
+  if(slide.layout==="cover")return`<section class="slide region-center"><div class="region-inset"><div class="label">${venueLabels[venuePreset]||venuePreset}</div><h1 class="hero-text hero-text-mt">${esc(slide.title)}</h1>${slide.subtitle?`<p class="body-text cover-subtitle">${esc(slide.subtitle)}</p>`:""}<p class="body-text cover-body">${esc(slide.keyMessage||"")}</p></div></section>`;
+
+  if(slide.layout==="method-overview")return`<section class="slide split method-overview"><div class="text-col"><div class="label">Method</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div><div class="visual-col">${renderVisual(slide)}</div></section>`;
+
+  if(slide.layout==="split"||slide.layout==="diagram")return`<section class="slide split"><div class="text-col"><div class="label">Key point</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div><div class="visual-col">${renderVisual(slide)}</div></section>`;
+
+  if(slide.layout==="result-table"||slide.layout==="result-table-focus"){const mcs=(slide.metrics||[]).map(m=>`<div class="metric-card"><div class="metric-label">${esc(m.label)}</div>${renderMetricValue(m)}<div class="metric-detail">${esc(m.detail||"")}</div></div>`).join("");const vb=renderVisual(slide);if(vb)return`<section class="slide stack"><div><div class="label label-positive">Result</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p></div><div class="metric-grid result-metrics-row">${mcs}</div><div class="visual-overflow-guard result-visual-fill">${vb}</div>${evidNote}</section>`;return`<section class="slide stack"><div><div class="label label-positive">Result</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p><div class="metric-grid">${mcs}</div>${evidNote}</div></section>`}
+
+  if(slide.layout==="metrics"){const mcs=(slide.metrics||[]).map(m=>`<div class="metric-card"><div class="metric-label">${esc(m.label)}</div>${renderMetricValue(m)}<div class="metric-detail">${esc(m.detail||"")}</div></div>`).join("");return`<section class="slide stack"><div><div class="label label-positive">Result</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p><div class="metric-grid">${mcs}</div>${evidNote}</div></section>`}
+
+  if(slide.layout==="objective"){const eq=slide.equation||"";const eqLen=eq.length;const eqClass=eqLen>120?"equation-tight":eqLen>60?"equation-compact":"";return`<section class="slide"><div class="objective-shell"><div class="label">Objective</div><h2 class="title">${esc(slide.title)}</h2>${eq?`<div class="equation-block${eqClass?" "+eqClass:""}">${eq}</div>`:""}<p class="body-text objective-body">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div></section>`}
+
+  if(slide.layout==="qualitative-evidence")return`<section class="slide split"><div class="text-col qualitative-text-col"><div class="label">Qualitative</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${evidNote}</div><div class="visual-col qualitative-visual-col">${renderVisual(slide)}</div></section>`;
+
+  if(slide.layout==="limitations")return`<section class="slide stack"><div><div class="label label-negative">Limitations</div><h2 class="title">${esc(slide.title)}</h2><div class="limitation-block"><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}</div></div></section>`;
+
+  if(slide.layout==="ablation")return`<section class="slide split"><div class="text-col"><div class="label">Analysis</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div><div class="visual-col">${renderVisual(slide)}</div></section>`;
+
+  if(slide.layout==="takeaway")return`<section class="slide region-center"><div class="region-inset"><div class="label">Takeaway</div><h1 class="hero-text hero-text-mt">${esc(slide.title)}</h1><p class="body-text takeaway-body">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}</div></section>`;
+
+  /* Default fallback */
+  return`<section class="slide stack"><div><div class="label">${slide.appendix?"Appendix":"Core idea"}</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div></section>`
+}
+
+/* ── Slide router ── */
+function renderSlide(slide){
+  if(slide.contentBlocks&&slide.contentBlocks.length>0)return renderContentBlocks(slide);
+  return renderClassicSlide(slide)
+}
+
+/* ── Main render ── */
+function renderMath(container){
+  if(typeof renderMathInElement==='function'){
+    renderMathInElement(container,{
+      delimiters:[
+        {left:'$$',right:'$$',display:true},
+        {left:'$',right:'$',display:false},
+        {left:'\\(',right:'\\)',display:false},
+        {left:'\\[',right:'\\]',display:true}
+      ],
+      throwOnError:false
+    });
+  }
+}
+function fitRenderedSlide(container){
+  const slideEl=container.querySelector('.slide');
+  if(!slideEl)return;
+  slideEl.classList.remove('density-compact','density-tight');
+  slideEl.removeAttribute('data-overflow-fail');
+  for(const img of slideEl.querySelectorAll('img')){
+    if(img.dataset.fitBound==="1")continue;
+    img.dataset.fitBound="1";
+    img.addEventListener('load',()=>fitRenderedSlide(container),{once:true});
+    img.addEventListener('error',()=>fitRenderedSlide(container),{once:true});
+  }
+  const overflows=()=>slideEl.scrollHeight>slideEl.clientHeight+1||slideEl.scrollWidth>slideEl.clientWidth+1;
+  if(!overflows())return;
+  slideEl.classList.add('density-compact');
+  if(!overflows())return;
+  slideEl.classList.remove('density-compact');
+  slideEl.classList.add('density-tight');
+  if(!overflows()){return}
+  /* density-tight still overflows — mark as failed for audit */
+  slideEl.setAttribute('data-overflow-fail','true');
+}
+function render(){
+  if(!slides.length){root.innerHTML='<section class="slide stack"><div><h2 class="title" style="text-align:center;margin-top:200px;color:var(--muted)">No slides loaded</h2><p class="body-text" style="text-align:center">Inject slide data at the <code>@render-slide-data</code> marker.</p></div></section>';return}
+  const s=slides[state.currentSlide];
+  root.innerHTML=renderSlide(s);
+  counter.textContent=`${state.currentSlide+1} / ${slides.length}`;
+  progressBar.style.width=`${((state.currentSlide+1)/slides.length)*100}%`;
+  renderMath(root);
+  fitRenderedSlide(root);
+}
+
+/* ── Fullscreen ── */
+function isRealFullscreen(){return document.fullscreenElement===wrapperEl||document.webkitFullscreenElement===wrapperEl}
+function isSimulatedFS(){return wrapperEl.classList.contains('simulated-fs')}
+function isAnyFullscreen(){return isRealFullscreen()||isSimulatedFS()}
+function syncFSBody(){document.body.classList.toggle('fs-active',isAnyFullscreen())}
+function toggleFullscreen(){
+  if(isRealFullscreen()){
+    (document.exitFullscreen||document.webkitExitFullscreen||document.msExitFullscreen).call(document);
+  }else if(isSimulatedFS()){
+    wrapperEl.classList.remove('simulated-fs');document.body.style.overflow='';
+    syncFSBody();scaleDeck();render();
+  }else{
+    const rfs=wrapperEl.requestFullscreen||wrapperEl.webkitRequestFullscreen||wrapperEl.msRequestFullscreen;
+    if(rfs){rfs.call(wrapperEl).then(()=>{syncFSBody();scaleDeck();render()}).catch(()=>{
+      wrapperEl.classList.add('simulated-fs');document.body.style.overflow='hidden';
+      syncFSBody();scaleDeck();render();
+    })}
+    else{wrapperEl.classList.add('simulated-fs');document.body.style.overflow='hidden';syncFSBody();scaleDeck();render()}
+  }
+}
+document.addEventListener("fullscreenchange",()=>{syncFSBody();scaleDeck();render()});
+document.addEventListener("webkitfullscreenchange",()=>{syncFSBody();scaleDeck();render()});
+
+/* ── Init ── */
+applyTheme();render();
+
+/* ── Math readiness hook (KaTeX race condition fix) ── */
+(function waitForMath(){
+  if(typeof renderMathInElement==='function'){renderMath(root);return}
+  let attempts=0;
+  const poll=setInterval(()=>{
+    attempts++;
+    if(typeof renderMathInElement==='function'){
+      clearInterval(poll);
+      render();// re-render with math
+    }
+    if(attempts>50)clearInterval(poll);// give up after ~5s
+  },100);
+})();
+
+/* ── Events ── */
+document.getElementById("prev").addEventListener("click",()=>goTo(state.currentSlide-1));
+document.getElementById("next").addEventListener("click",()=>goTo(state.currentSlide+1));
+document.getElementById("home").addEventListener("click",()=>goTo(0));
+document.getElementById("fullscreen").addEventListener("click",toggleFullscreen);
+
+/* ── Laser pointer ── */
+function toggleLaser(){
+  state.laser=!state.laser;
+  laserDot.classList.toggle('active',state.laser);
+  deckEl.classList.toggle('laser-mode',state.laser);
+  laserBtn.classList.toggle('active',state.laser);
+}
+laserBtn.addEventListener('click',toggleLaser);
+document.addEventListener('mousemove',e=>{
+  if(state.laser){
+    laserDot.style.left=e.clientX+'px';
+    laserDot.style.top=e.clientY+'px';
+  }
+  /* Fullscreen controls: show when mouse near bottom */
+  if(isAnyFullscreen()){
+    if(e.clientY > window.innerHeight - 60){
+      controlsBar.classList.add('controls-visible');
+    } else {
+      controlsBar.classList.remove('controls-visible');
+    }
+  }
+});
+
+window.addEventListener("keydown",e=>{
+  if(state.editMode||e.target.closest('[contenteditable]'))return;
+  const k=e.key.toLowerCase();
+  if(k==="arrowright"||k===" "){e.preventDefault();goTo(state.currentSlide+1)}
+  if(k==="arrowleft")goTo(state.currentSlide-1);
+  if(k==="home")goTo(0);if(k==="end")goTo(slides.length-1);
+  if(k==="f")toggleFullscreen();
+  if(k==="l")toggleLaser();
+  if(k==="g")toggleGallery();
+  if(k==="escape"){if(galleryOverlay.classList.contains('show')){galleryOverlay.classList.remove('show');e.preventDefault();return}if(state.laser){toggleLaser();e.preventDefault();return}if(isRealFullscreen()){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else if(isSimulatedFS()){wrapperEl.classList.remove('simulated-fs');document.body.style.overflow='';syncFSBody();scaleDeck();render()}}
+  if(/^[1-9]$/.test(k)){const idx=Number(k)-1;if(idx<slides.length)goTo(idx)}
+});
+
+/* ── Scale ── */
+/* ── Scale (unified: same 1200×675 stage, just different scale factor) ── */
+function scaleDeck(){
+  const isFS=isAnyFullscreen();
+  const viewW=isFS?window.innerWidth:window.innerWidth-48;
+  const viewH=isFS?window.innerHeight:window.innerHeight-48;
+  const s=Math.min(viewW/1200,viewH/675);
+  deckEl.style.width='1200px';
+  deckEl.style.height='675px';
+  deckEl.style.transform=`scale(${s})`;
+  deckEl.style.transformOrigin='center center';
+}
+scaleDeck();window.addEventListener('resize',scaleDeck);document.addEventListener('fullscreenchange',scaleDeck);document.addEventListener('webkitfullscreenchange',scaleDeck);
+
+/* ═══════════════════════════════════════════════
+   EDITOR MODULE
+   ═══════════════════════════════════════════════ */
+const editDeck=document.getElementById('edit-deck');
+const editRoot=document.getElementById('edit-slide-root');
+const thumbList=document.getElementById('thumb-list');
+const layoutPicker=document.getElementById('layout-picker');
+const layoutGrid=document.getElementById('layout-grid');
+
+const AVAILABLE_LAYOUTS=[
+  {id:'cover',label:'Cover',icon:'📄'},
+  {id:'method-overview',label:'Method',icon:'🔬'},
+  {id:'split',label:'Split',icon:'📊'},
+  {id:'result-table',label:'Results',icon:'📈'},
+  {id:'metrics',label:'Metrics',icon:'🎯'},
+  {id:'objective',label:'Objective',icon:'🎓'},
+  {id:'limitations',label:'Limitations',icon:'⚠️'},
+  {id:'qualitative-evidence',label:'Qualitative',icon:'🖼'},
+  {id:'ablation',label:'Ablation',icon:'🧪'},
+  {id:'takeaway',label:'Takeaway',icon:'💡'},
+  {id:'contentBlocks',label:'Custom Blocks',icon:'🧩'},
+];
+
+let undoStack=[];
+function pushUndo(){
+  undoStack.push(JSON.stringify(slides));
+  if(undoStack.length>10)undoStack.shift();
+}
+function popUndo(){
+  if(!undoStack.length)return;
+  const prev=JSON.parse(undoStack.pop());
+  slides.length=0;slides.push(...prev);
+  editorRender();
+}
+
+/* ── Mode toggle ── */
+function enterEditMode(){
+  document.body.classList.add('edit-mode');
+  state.editMode=true;
+  editorRender();
+  scaleEditDeck();
+}
+function enterPresentMode(){
+  document.body.classList.remove('edit-mode');
+  state.editMode=false;
+  render();
+  scaleDeck();
+}
+
+/* ── Scale edit deck ── */
+function scaleEditDeck(){
+  if(!editDeck)return;
+  const container=document.getElementById('editor-main');
+  if(!container)return;
+  const cw=container.clientWidth-48;
+  const ch=container.clientHeight-48;
+  const s=Math.min(Math.min(cw/1200,ch/675),1);
+  editDeck.style.transform=`scale(${s})`;
+  editDeck.style.transformOrigin='center center';
+  editDeck.style.width='1200px';
+  editDeck.style.height='675px';
+}
+
+/* ── Editor render ── */
+function editorRender(){
+  const s=slides[state.currentSlide];
+  if(!s)return;
+  editRoot.innerHTML=renderSlide(s);
+  renderMath(editRoot);
+  fitRenderedSlide(editRoot);
+  makeEditable();
+  renderThumbnails();
+  scaleEditDeck();
+}
+
+/* ── Make text elements editable ── */
+function makeEditable(){
+  const slide=slides[state.currentSlide];
+  if(!slide)return;
+
+  // Title
+  editRoot.querySelectorAll('.title,.hero-text').forEach(el=>{
+    el.setAttribute('contenteditable','true');
+    el.setAttribute('data-editable','title');
+    el.addEventListener('blur',function(){
+      pushUndo();
+      slide.title=this.textContent.trim();
+      renderThumbnails();
+    },{once:true});
+  });
+
+  // Body text / key message
+  editRoot.querySelectorAll('.body,.body-text').forEach(el=>{
+    el.setAttribute('contenteditable','true');
+    el.setAttribute('data-editable','keyMessage');
+    el.addEventListener('blur',function(){
+      pushUndo();
+      slide.keyMessage=this.textContent.trim();
+    },{once:true});
+  });
+
+  // Subtitle
+  editRoot.querySelectorAll('.cover-subtitle').forEach(el=>{
+    el.setAttribute('contenteditable','true');
+    el.setAttribute('data-editable','subtitle');
+    el.addEventListener('blur',function(){
+      pushUndo();
+      slide.subtitle=this.textContent.trim();
+    },{once:true});
+  });
+
+  // Bullets
+  editRoot.querySelectorAll('.bullet').forEach((el,i)=>{
+    const textSpan=el.querySelector('span:last-child')||el;
+    textSpan.setAttribute('contenteditable','true');
+    textSpan.setAttribute('data-editable','bullet');
+    textSpan.addEventListener('blur',function(){
+      if(!slide.bullets)return;
+      pushUndo();
+      if(typeof slide.bullets[i]==='string')slide.bullets[i]=this.textContent.trim();
+      else if(slide.bullets[i])slide.bullets[i].text=this.textContent.trim();
+    },{once:true});
+
+    // Add bullet button
+    const addBtn=document.createElement('button');
+    addBtn.className='bullet-add';addBtn.textContent='+';addBtn.title='Add bullet after';
+    addBtn.addEventListener('click',()=>{
+      pushUndo();
+      if(!slide.bullets)slide.bullets=[];
+      slide.bullets.splice(i+1,0,'New bullet point');
+      editorRender();
+    });
+    el.appendChild(addBtn);
+
+    // Delete bullet button
+    const delBtn=document.createElement('button');
+    delBtn.className='bullet-del';delBtn.textContent='×';delBtn.title='Delete bullet';
+    delBtn.addEventListener('click',()=>{
+      pushUndo();
+      if(slide.bullets)slide.bullets.splice(i,1);
+      editorRender();
+    });
+    el.appendChild(delBtn);
+  });
+
+  // ContentBlocks editing
+  if(slide.contentBlocks){
+    editRoot.querySelectorAll('.callout-box').forEach((el,i)=>{
+      el.setAttribute('contenteditable','true');
+      el.setAttribute('data-editable','callout');
+      el.addEventListener('blur',function(){
+        const blk=slide.contentBlocks.filter(b=>b.type==='callout')[i];
+        if(blk){pushUndo();blk.content=this.textContent.trim();}
+      },{once:true});
+    });
+    editRoot.querySelectorAll('.metric-label').forEach(el=>{
+      el.setAttribute('contenteditable','true');
+      el.setAttribute('data-editable','metric-label');
+    });
+    editRoot.querySelectorAll('.metric-value').forEach(el=>{
+      el.setAttribute('contenteditable','true');
+      el.setAttribute('data-editable','metric-value');
+    });
+  }
+}
+
+/* ── Thumbnails ── */
+function renderThumbnails(){
+  thumbList.innerHTML='';
+  slides.forEach((s,i)=>{
+    const item=document.createElement('div');
+    item.className='thumb-item'+(i===state.currentSlide?' active':'');
+    const title=s.title||'Untitled';
+    const layout=s.contentBlocks?'blocks':(s.layout||'default');
+    item.innerHTML=`
+      <div class="thumb-canvas" style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px;font-family:system-ui;overflow:hidden">
+        <div style="font-size:7px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">${esc(layout)}</div>
+        <div style="font-size:9px;font-weight:600;text-align:center;line-height:1.2;color:#1a1a2e;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(title)}</div>
+      </div>
+      <span class="thumb-idx">${i+1}</span>
+      <div class="thumb-actions">
+        ${i>0?'<button class="thumb-act" data-action="up" title="Move up">↑</button>':''}
+        ${i<slides.length-1?'<button class="thumb-act" data-action="down" title="Move down">↓</button>':''}
+        <button class="thumb-act" data-action="dup" title="Duplicate">⧉</button>
+        <button class="thumb-act" data-action="del" title="Delete" style="background:rgba(220,38,38,.7)">×</button>
+      </div>
+    `;
+    item.addEventListener('click',(e)=>{
+      if(e.target.closest('.thumb-act'))return;
+      state.currentSlide=i;
+      editorRender();
+    });
+    // Thumbnail action buttons
+    item.querySelectorAll('.thumb-act').forEach(btn=>{
+      btn.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        const action=btn.dataset.action;
+        pushUndo();
+        if(action==='up'&&i>0){[slides[i-1],slides[i]]=[slides[i],slides[i-1]];state.currentSlide=i-1;}
+        else if(action==='down'&&i<slides.length-1){[slides[i],slides[i+1]]=[slides[i+1],slides[i]];state.currentSlide=i+1;}
+        else if(action==='dup'){slides.splice(i+1,0,JSON.parse(JSON.stringify(slides[i])));slides[i+1].id=Date.now();state.currentSlide=i+1;}
+        else if(action==='del'&&slides.length>1){slides.splice(i,1);if(state.currentSlide>=slides.length)state.currentSlide=slides.length-1;}
+        editorRender();
+      });
+    });
+    thumbList.appendChild(item);
+  });
+}
+
+/* ── Layout picker ── */
+function showLayoutPicker(){
+  layoutGrid.innerHTML='';
+  AVAILABLE_LAYOUTS.forEach(l=>{
+    const opt=document.createElement('div');
+    opt.className='layout-option';
+    opt.innerHTML=`<div style="font-size:20px;margin-bottom:4px">${l.icon}</div>${l.label}`;
+    opt.addEventListener('click',()=>{
+      pushUndo();
+      const newSlide={id:Date.now(),title:'New Slide',keyMessage:'Edit this slide content.',layout:l.id};
+      if(l.id==='contentBlocks'){
+        delete newSlide.layout;
+        newSlide.contentBlocks=[
+          {type:'label',content:'Section'},
+          {type:'heading',content:'New Slide Title'},
+          {type:'text',content:'Click to edit this content.'}
+        ];
+      }
+      if(l.id==='cover'){newSlide.subtitle='Subtitle';newSlide.keyMessage='Key message goes here.';}
+      if(l.id==='limitations'||l.id==='method-overview'||l.id==='split'||l.id==='ablation'){
+        newSlide.bullets=['First point','Second point'];
+      }
+      if(l.id==='metrics'||l.id==='result-table'){
+        newSlide.metrics=[{label:'Metric',value:'0.0',detail:'Description',delta:'positive'}];
+      }
+      slides.splice(state.currentSlide+1,0,newSlide);
+      state.currentSlide++;
+      layoutPicker.classList.remove('show');
+      editorRender();
+    });
+    layoutGrid.appendChild(opt);
+  });
+  layoutPicker.classList.add('show');
+}
+layoutPicker.addEventListener('click',e=>{if(e.target===layoutPicker)layoutPicker.classList.remove('show')});
+
+/* ── Export ── */
+function exportHTML(){
+  const templateHTML=document.documentElement.outerHTML;
+  /* Encode slide data to UTF-8 base64 to ensure pristine transport of LaTeX equations without escape collisions */
+  const slideJSON=JSON.stringify(slides);
+  // UTF-8 safe base64 encoding in browser
+  const b64Data=btoa(unescape(encodeURIComponent(slideJSON)));
+  let html=templateHTML;
+  /* Replace both primary (B64) and legacy (RAW) transport markers */
+  html=html.replace(
+    /const SLIDE_DATA_B64\s*=\s*"[^"]*"\s*;\s*\/\/\s*@render-slide-data-b64/,
+    'const SLIDE_DATA_B64 = "'+b64Data+'"; // @render-slide-data-b64'
+  );
+  html=html.replace(
+    /const SLIDE_DATA_RAW\s*=\s*String\.raw`[\s\S]*?`\s*;\s*\/\/\s*@render-slide-data/,
+    'const SLIDE_DATA_RAW = String.raw``; // @render-slide-data'
+  );
+  // Remove edit-mode class from body
+  html=html.replace('class="edit-mode"','');
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='presentation.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ── Wire up toolbar buttons ── */
+document.getElementById('tb-present').addEventListener('click',enterPresentMode);
+document.getElementById('tb-export').addEventListener('click',exportHTML);
+document.getElementById('tb-undo').addEventListener('click',popUndo);
+document.getElementById('tb-add-slide').addEventListener('click',showLayoutPicker);
+document.getElementById('sidebar-add-slide').addEventListener('click',showLayoutPicker);
+document.getElementById('tb-del-slide').addEventListener('click',()=>{
+  if(slides.length<=1)return;
+  pushUndo();
+  slides.splice(state.currentSlide,1);
+  if(state.currentSlide>=slides.length)state.currentSlide=slides.length-1;
+  editorRender();
+});
+
+/* ── Slide Gallery Overview ── */
+const galleryOverlay=document.getElementById('gallery-overlay');
+const galleryGrid=document.getElementById('gallery-grid');
+const galleryBtn=document.getElementById('gallery-btn');
+
+function toggleGallery(){
+  if(galleryOverlay.classList.contains('show')){
+    galleryOverlay.classList.remove('show');
+    return;
+  }
+  galleryGrid.innerHTML='';
+  slides.forEach((s,i)=>{
+    const card=document.createElement('div');
+    card.className='gallery-card'+(i===state.currentSlide?' current':'');
+    const title=s.title||'Untitled';
+    const layout=s.contentBlocks?'blocks':(s.layout||'default');
+    card.innerHTML=`
+      <div class="gallery-card-inner">
+        <span class="gallery-card-idx">${i+1}</span>
+        <div class="gallery-card-layout">${esc(layout)}</div>
+        <div class="gallery-card-title">${esc(title)}</div>
+      </div>
+    `;
+    card.addEventListener('click',()=>{
+      goTo(i);
+      galleryOverlay.classList.remove('show');
+    });
+    galleryGrid.appendChild(card);
+  });
+  galleryOverlay.classList.add('show');
+}
+
+galleryBtn.addEventListener('click',toggleGallery);
+document.getElementById('gallery-close').addEventListener('click',()=>galleryOverlay.classList.remove('show'));
+galleryOverlay.addEventListener('click',e=>{if(e.target===galleryOverlay)galleryOverlay.classList.remove('show')});
+
+/* ── Insert image ── */
+const imgFileInput=document.getElementById('img-file-input');
+document.getElementById('tb-insert-img').addEventListener('click',()=>imgFileInput.click());
+imgFileInput.addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const dataUrl=ev.target.result;
+    pushUndo();
+    const slide=slides[state.currentSlide];
+    if(slide.contentBlocks){
+      // Insert as a figure content block
+      slide.contentBlocks.push({type:'figure',content:{src:dataUrl,caption:file.name,alt:file.name}});
+    } else {
+      // Classic layout: set visual
+      slide.visual={src:dataUrl,alt:file.name,caption:file.name};
+      // If layout doesn't show visuals, switch to split
+      if(slide.layout==='cover'||slide.layout==='takeaway'||slide.layout==='objective'){
+        slide.layout='split';
+      }
+    }
+    editorRender();
+  };
+  reader.readAsDataURL(file);
+  imgFileInput.value=''; // reset so same file can be re-selected
+});
+
+/* ── Theme picker ── */
+const themePanel=document.getElementById('theme-panel');
+const paletteGridEl=document.getElementById('palette-grid');
+const customColorsEl=document.getElementById('custom-colors');
+
+const PALETTES=[
+  {name:'Zinc Editorial',bg:'#f5f5f4',frame:'#fff',text:'#1a1a2e',muted:'#4a4a6a',accent:'#2563eb',border:'#e2e8f0',positive:'#059669',negative:'#dc2626'},
+  {name:'Deep Navy',bg:'#f8fafc',frame:'#fff',text:'#0a2540',muted:'#4b5563',accent:'#1d4ed8',border:'#dbe3ea',positive:'#059669',negative:'#b91c1c'},
+  {name:'Warm Coral',bg:'#fef7f0',frame:'#fff',text:'#1c1917',muted:'#78716c',accent:'#ea580c',border:'#e7e5e4',positive:'#16a34a',negative:'#dc2626'},
+  {name:'Forest Green',bg:'#f0fdf4',frame:'#fff',text:'#14532d',muted:'#4b5563',accent:'#15803d',border:'#d1d5db',positive:'#059669',negative:'#dc2626'},
+  {name:'Royal Purple',bg:'#faf5ff',frame:'#fff',text:'#1e1b4b',muted:'#6b7280',accent:'#7c3aed',border:'#e5e7eb',positive:'#059669',negative:'#e11d48'},
+  {name:'Sunset Gold',bg:'#fffbeb',frame:'#fff',text:'#1c1917',muted:'#71717a',accent:'#d97706',border:'#e5e7eb',positive:'#059669',negative:'#dc2626'},
+  {name:'Ocean Teal',bg:'#f0fdfa',frame:'#fff',text:'#134e4a',muted:'#4b5563',accent:'#0d9488',border:'#d1d5db',positive:'#059669',negative:'#dc2626'},
+  {name:'Slate Minimal',bg:'#f8fafc',frame:'#fff',text:'#0f172a',muted:'#64748b',accent:'#475569',border:'#e2e8f0',positive:'#059669',negative:'#dc2626'},
+  {name:'Rose Academic',bg:'#fff1f2',frame:'#fff',text:'#1c1917',muted:'#6b7280',accent:'#e11d48',border:'#e5e7eb',positive:'#059669',negative:'#dc2626'},
+  {name:'Midnight Dark',bg:'#0f172a',frame:'#1e293b',text:'#f1f5f9',muted:'#94a3b8',accent:'#38bdf8',border:'#334155',positive:'#34d399',negative:'#f87171'},
+];
+
+let activePalette=0;
+const COLOR_FIELDS=[
+  {key:'bg',label:'Background'},
+  {key:'frame',label:'Frame'},
+  {key:'text',label:'Text'},
+  {key:'muted',label:'Muted'},
+  {key:'accent',label:'Accent'},
+  {key:'border',label:'Border'},
+];
+
+function getCurrentColors(){
+  const r=document.documentElement.style;
+  return{
+    bg:r.getPropertyValue('--bg').trim()||'#f5f5f4',
+    frame:r.getPropertyValue('--frame').trim()||'#fff',
+    text:r.getPropertyValue('--text').trim()||'#1a1a2e',
+    muted:r.getPropertyValue('--muted').trim()||'#4a4a6a',
+    accent:r.getPropertyValue('--accent').trim()||'#2563eb',
+    border:r.getPropertyValue('--border').trim()||'#e2e8f0',
+  };
+}
+
+function applyColors(colors){
+  const r=document.documentElement.style;
+  r.setProperty('--bg',colors.bg);
+  r.setProperty('--frame',colors.frame);
+  r.setProperty('--text',colors.text);
+  r.setProperty('--muted',colors.muted);
+  r.setProperty('--accent',colors.accent);
+  r.setProperty('--border',colors.border);
+  if(colors.positive)r.setProperty('--positive',colors.positive);
+  if(colors.negative)r.setProperty('--negative',colors.negative);
+  r.setProperty('--accent-bg',hexToRgba(colors.accent,.07));
+  // Update edit deck background too
+  if(editDeck)editDeck.style.background=colors.frame;
+}
+
+function renderPaletteGrid(){
+  paletteGridEl.innerHTML='';
+  PALETTES.forEach((p,i)=>{
+    const card=document.createElement('div');
+    card.className='palette-card'+(i===activePalette?' active':'');
+    card.innerHTML=`
+      <div class="palette-name">${p.name}</div>
+      <div class="palette-swatches">
+        <span style="background:${p.bg}"></span>
+        <span style="background:${p.frame}"></span>
+        <span style="background:${p.accent}"></span>
+        <span style="background:${p.text}"></span>
+        <span style="background:${p.muted}"></span>
+      </div>
+    `;
+    card.addEventListener('click',()=>{
+      activePalette=i;
+      applyColors(p);
+      renderPaletteGrid();
+      renderCustomColors();
+      if(state.editMode)editorRender();
+    });
+    paletteGridEl.appendChild(card);
+  });
+}
+
+function renderCustomColors(){
+  customColorsEl.innerHTML='';
+  const current=getCurrentColors();
+  COLOR_FIELDS.forEach(f=>{
+    const field=document.createElement('div');
+    field.className='color-field';
+    field.innerHTML=`<label>${f.label}</label><input type="color" value="${current[f.key]}" data-key="${f.key}">`;
+    const input=field.querySelector('input');
+    input.addEventListener('input',e=>{
+      const r=document.documentElement.style;
+      r.setProperty('--'+f.key,e.target.value);
+      if(f.key==='accent')r.setProperty('--accent-bg',hexToRgba(e.target.value,.07));
+      if(editDeck&&f.key==='frame')editDeck.style.background=e.target.value;
+      activePalette=-1;
+      renderPaletteGrid();
+    });
+    customColorsEl.appendChild(field);
+  });
+}
+
+document.getElementById('tb-theme').addEventListener('click',()=>{
+  const isOpen=themePanel.classList.toggle('show');
+  if(isOpen){renderPaletteGrid();renderCustomColors();}
+});
+// Close theme panel when clicking outside
+document.addEventListener('click',e=>{
+  if(themePanel.classList.contains('show')&&!themePanel.contains(e.target)&&e.target.id!=='tb-theme'&&!e.target.closest('#tb-theme')){
+    themePanel.classList.remove('show');
+  }
+});
+
+/* ── Edit mode keyboard shortcut ── */
+window.addEventListener('keydown',e=>{
+  if(e.key==='e'&&!e.ctrlKey&&!e.metaKey&&!state.editMode&&!e.target.closest('[contenteditable]')){
+    enterEditMode();
+  }
+  if(e.key==='Escape'&&state.editMode){
+    if(themePanel.classList.contains('show')){themePanel.classList.remove('show');return;}
+    if(layoutPicker.classList.contains('show')){layoutPicker.classList.remove('show');return;}
+    enterPresentMode();
+  }
+});
+
+/* ── Resize observer for edit deck ── */
+window.addEventListener('resize',()=>{if(state.editMode)scaleEditDeck()});
+
+/* ── Add "Edit" button to present-mode controls ── */
+const editBtn=document.createElement('button');
+editBtn.id='edit-mode-btn';editBtn.textContent='✏️';editBtn.title='Edit mode (E)';
+editBtn.setAttribute('aria-label','Edit mode');
+controlsBar.insertBefore(editBtn,document.getElementById('fullscreen'));
+editBtn.addEventListener('click',enterEditMode);
+
+</script>
+</body>
+</html>

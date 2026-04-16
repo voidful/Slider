@@ -1,0 +1,30 @@
+interface:
+  display_name: "ArXiv Talk Web"
+  short_description: "Turn an arXiv paper into an interactive research slideshow website."
+  icon: "presentation"
+  color: "#0f172a"
+
+platform: claude
+version: "22"
+
+# Claude Code uses CLAUDE.md placed in the project root or in this directory.
+# Claude Projects (web UI) uses the same file as project instructions,
+# with references uploaded as project knowledge files.
+instructions_source: "CLAUDE.md"
+
+knowledge_files:
+  - ../../references/presentation-logic.md
+  - ../../references/design-system.md
+  - ../../references/output-contracts.md
+  - ../../references/ui-patterns.md
+  - ../../references/paper-ingestion-workflow.md
+  - ../../references/figure-table-extraction.md
+  - ../../references/slide-data-generation.md
+  - ../../references/react-implementation-rules.md
+  - ../../references/html-engine-template.md
+  - ../../references/presenter-ux.md
+  - ../../references/slide-quality-rubric.md
+  - ../../references/theme-presets.md
+  - ../../references/venue-style-variants.md
+  - ../../references/artifact-rendering.md
+  - ../../references/bug-and-conciseness-audit.md

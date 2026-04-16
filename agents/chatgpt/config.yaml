@@ -1,0 +1,16 @@
+interface:
+  display_name: "ArXiv Talk Web"
+  short_description: "Turn an arXiv paper into an interactive research slideshow website."
+  icon: "presentation"
+  color: "#0f172a"
+
+platform: chatgpt
+version: "22"
+
+# ChatGPT Custom GPTs use the system_prompt.md as the Instructions field.
+# Knowledge files are uploaded through the GPT builder UI.
+instructions_source: "system_prompt.md"
+
+# ChatGPT supports up to 20 knowledge files.
+# Upload these reference files in the GPT builder's Knowledge section.
+knowledge_manifest: "knowledge_manifest.json"

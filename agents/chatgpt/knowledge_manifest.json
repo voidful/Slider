@@ -1,0 +1,113 @@
+{
+  "version": "23",
+  "platform": "chatgpt",
+  "max_files": 20,
+  "description": "Priority-ordered list of reference files for ChatGPT Custom GPT knowledge upload.",
+  "files": [
+    {
+      "path": "references/paper-visual-inclusion-policy.md",
+      "priority": 1,
+      "description": "Mandatory paper visual inclusion rules"
+    },
+    {
+      "path": "references/research-visual-priority.md",
+      "priority": 1,
+      "description": "Visual priority tiers and suppression rules"
+    },
+    {
+      "path": "references/paper-type-policy.md",
+      "priority": 1,
+      "description": "Paper type classification and type-specific deck policies"
+    },
+    {
+      "path": "references/research-slide-patterns.md",
+      "priority": 1,
+      "description": "Research slide layout patterns with density limits"
+    },
+    {
+      "path": "assets/design/DESIGN.md",
+      "priority": 1,
+      "description": "Design control plane — colors, typography, layout, anti-patterns"
+    },
+    {
+      "path": "references/slide-data-generation.md",
+      "priority": 1,
+      "description": "Expanded slide data schema with evidence fields"
+    },
+    {
+      "path": "references/presentation-logic.md",
+      "priority": 1,
+      "description": "Talk arc and storyline structure"
+    },
+    {
+      "path": "references/output-contracts.md",
+      "priority": 1,
+      "description": "Output mode selection — built HTML default"
+    },
+    {
+      "path": "references/paper-ingestion-workflow.md",
+      "priority": 1,
+      "description": "Evidence extraction pipeline"
+    },
+    {
+      "path": "references/faithful-redraw-policy.md",
+      "priority": 1,
+      "description": "Faithful figure redraw constraints"
+    },
+    {
+      "path": "references/slide-quality-rubric.md",
+      "priority": 2,
+      "description": "Slide quality audit checklist"
+    },
+    {
+      "path": "references/html-engine-template.md",
+      "priority": 2,
+      "description": "HTML engine structure and rules"
+    },
+    {
+      "path": "references/presenter-ux.md",
+      "priority": 2,
+      "description": "Controls and presenter mode rules"
+    },
+    {
+      "path": "references/artifact-rendering.md",
+      "priority": 2,
+      "description": "Rendering workflow and research element priority"
+    },
+    {
+      "path": "references/figure-table-extraction.md",
+      "priority": 2,
+      "description": "Figure and table triage"
+    },
+    {
+      "path": "references/theme-presets.md",
+      "priority": 2,
+      "description": "Base theme options"
+    },
+    {
+      "path": "references/venue-style-variants.md",
+      "priority": 3,
+      "description": "Venue-specific finishing layers"
+    },
+    {
+      "path": "references/visual-selection-scoring.md",
+      "priority": 3,
+      "description": "Visual candidate ranking criteria"
+    },
+    {
+      "path": "references/redundancy-suppression.md",
+      "priority": 3,
+      "description": "Redundant visual suppression rules"
+    },
+    {
+      "path": "references/bug-and-conciseness-audit.md",
+      "priority": 3,
+      "description": "Final audit checklist"
+    }
+  ],
+  "notes": [
+    "v23 reorders priorities: evidence and visual policy files are now priority 1.",
+    "DESIGN.md is included as a knowledge file for the first time.",
+    "Remaining reference files (panel detection, table parsing, separator geometry) are specialized."
+  ]
+}

@@ -1,0 +1,38 @@
+export type Layout = "cover" | "split" | "bullets" | "metrics" | "limitations" | "diagram";
+export type Venue = "neurips" | "iclr" | "acl" | "cvpr";
+export type Theme = "zinc-editorial" | "deep-navy-academic" | "monochrome-impeccable";
+
+export type Metric = {
+  label: string;
+  value: string;
+  detail: string;
+};
+
+export type VisualAsset = {
+  src: string;
+  alt?: string;
+  caption?: string;
+  pageNumber?: number;
+  storyRole?: string;
+  score?: number;
+  cropMode?: string;
+  confidence?: "high" | "medium" | "low";
+};
+
+export type Slide = {
+  id: number;
+  title: string;
+  layout: Layout;
+  purpose: string;
+  keyMessage: string;
+  speakerNote: string;
+  subtitle?: string;
+  bullets?: string[];
+  metrics?: Metric[];
+  figureLabel?: string;
+  visualBinding?: { label?: string; pageNumber?: number; caption?: string; storyRole?: string; recommendedDeck?: string; score?: number };
+  visual?: VisualAsset;
+  visualBindingStatus?: { status?: "bound" | "placeholder"; confidence?: "high" | "medium" | "low"; reason?: string; candidateScore?: number; exportScore?: number; bindingScore?: number; policy?: string; fallbackStrategy?: string };
+  appendix?: boolean;
+  evidenceNote?: string;
+};
