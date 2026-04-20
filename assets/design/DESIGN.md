@@ -123,6 +123,30 @@ The `applyTheme()` function must set ALL tokens including `*-bg` variants.
 
 ---
 
+## Content discipline
+
+### Every element earns its place
+
+- Do not add filler content to fill empty space. If a slide feels empty, solve with layout and whitespace — not by inventing bullets, badges, or decorative icons.
+- Do not add decorative icons, progress indicators, or status badges that don't communicate research content.
+- One thousand no's for every yes: each bullet, metric card, and annotation must directly support the slide's `keyMessage`. If it doesn't, remove it.
+- Avoid "data slop" — unnecessary numbers, stats, or metrics that don't serve the narrative. A single powerful number is worth more than five mediocre ones.
+
+### Less is more
+
+- If choosing between "add more content" and "use better composition", always choose composition.
+- An empty slide with one powerful figure is better than a busy slide with three weak cards.
+- Whitespace is a design choice, not a bug. It signals confidence and gives the audience breathing room.
+- When a slide feels crowded, remove content — never reduce spacing or shrink type.
+
+### Remove before adding
+
+- When preparing slides, delete marginal content before adding decoration.
+- Every visual element should have a `whyThisElement` justification in planning.
+- If you cannot articulate why an element is on the slide in one sentence, it should not be there.
+
+---
+
 ## Typography scale
 
 **Presentation principle: all text must be readable from the back of a conference room.** These sizes are for the fixed 1200×675 canvas. Because the deck uses stage-consistent scaling, the same sizes apply in fullscreen — `transform: scale()` handles the enlargement.
@@ -144,6 +168,8 @@ The `applyTheme()` function must set ALL tokens including `*-bg` variants.
 - Never use all-caps for slide titles (labels may be uppercase).
 - Limit body text to ≤ 4 bullet points per slide.
 - Each bullet ≤ 15 words.
+- Use `text-wrap: pretty` on body text and bullets for improved line breaking. Keep `text-wrap: balance` on titles.
+- Use `font-variant-numeric: tabular-nums` on all numeric content: metric values, table cells, data labels.
 
 ---
 
@@ -605,6 +631,9 @@ These common failures are expressly prohibited:
 | **App-shell chrome** | Deck looks like a dashboard or product UI | Minimize controls, chips, hover states, and widget framing |
 | **Motion-first deck** | Animation compensates for weak composition | Prove the static layout first, then add only necessary motion |
 | **Text-only method** | Architecture described in words when a figure exists | Always include the method figure |
+| **AI-slop aesthetic** | Deck looks AI-generated, not researcher-authored | No emoji icons, no left-border accent cards, no aggressive gradients as default, no CDN-loaded AI-default fonts (Inter/Roboto/Arial) |
+| **Filler content** | Bullets/cards added to fill space rather than communicate | Every element earns its place; use whitespace instead of inventing content |
+| **SVG illustration** | Detailed imagery drawn with SVG paths instead of real figures | Use paper figures or labeled placeholder boxes — never SVG illustrations |
 
 ---
 

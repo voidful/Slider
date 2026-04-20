@@ -1,6 +1,7 @@
-# slider v23
+# slider v24
 
 > Research slides are evidence displays with narrative pacing, not generic summaries with decoration.
+> Every element earns its place. One thousand no's for every yes.
 
 A skill that turns an arXiv paper into a ready-to-present conference talk. Output is a single self-contained HTML file that opens directly in any browser.
 
@@ -10,12 +11,27 @@ A skill that turns an arXiv paper into a ready-to-present conference talk. Outpu
 2. Classify paper type (architecture / optimization / benchmark / theory / qualitative).
 3. Select mandatory main-deck visuals based on paper type.
 4. Export, score, and inspect paper figures.
-5. Create slide plan with explicit visual binding.
-6. Generate a single built HTML file with minified CSS/JS.
-7. Run design audit and evidence fidelity audit.
-8. Package the final artifact.
+5. Compile deck design (mood, palette, type scale, motion policy).
+6. Create slide plan with explicit visual binding and density budgets.
+7. Generate a single built HTML file with minified CSS/JS.
+8. Run structured verification (3-phase: quick check → static audit → browser audit).
+9. Package the final artifact.
 
-## v23 highlights
+## v24 highlights
+
+- **Anti-AI-slop rules.** Explicit ban on generic AI-generated aesthetics: emoji icons, left-border accent cards, aggressive gradient defaults, CDN-loaded AI fonts, SVG illustrations. Decks must look researcher-authored, not AI-generated.
+- **Content discipline.** "Every element earns its place" — no filler content, no data slop. Whitespace is a design choice, not a bug.
+- **Structured verification workflow.** Three-phase gated pipeline: quick check → static audit → browser audit. Each phase must pass before the next begins.
+- **Live tweaks protocol.** Post-generation design customization panel (accent colors, font sizes, mood, transitions) with `localStorage` persistence and JSON export.
+- **Speaker notes protocol.** Structured JSON storage with `postMessage({slideIndexChanged})` for external tool integration.
+- **CSS modernization.** `text-wrap: pretty` on body text, `text-wrap: balance` on titles, `font-variant-numeric: tabular-nums` on all numeric content.
+- **Claude adapter rewrite.** Comprehensive v24 CLAUDE.md covering contentBlocks, deck design compilation, anti-slop rules, content discipline, base64 transport, 18-step pedagogical arc, and full acceptance test suite.
+- **Version bump.** All platform configs updated to v24.
+
+## Prior versions
+
+<details>
+<summary>v23 highlights</summary>
 
 - **Evidence-first workflow.** Paper figures, tables, and diagrams are first-class content, not optional.
 - **Mandatory visual inclusion.** Architecture-heavy papers must have a method figure. Benchmark-heavy papers must have a result table. And so on.
@@ -27,6 +43,8 @@ A skill that turns an arXiv paper into a ready-to-present conference talk. Outpu
 - **Built HTML default.** Output is a single minified HTML file that opens directly — no build step needed.
 - **Faithful redraw policy.** Clear rules for when and how to redraw paper figures.
 - **Design reference injection.** Users can provide external design references that influence visual style without breaking research readability.
+
+</details>
 
 ## Platform support
 
@@ -58,12 +76,15 @@ agents/                        — per-platform configs
 | `generate_slide_data.py` | Create structured slide plan |
 | `export_pdf_visuals.py` | Crop visuals from PDF |
 | `bind_visual_assets.py` | Bind visuals to slides |
+| `compile_deck_design.py` | Compile deck-level visual design |
 | `render_slideshow_artifact.py` | Render HTML/React artifact |
-| `audit_research_slides.py` | Design + evidence fidelity audit |
+| `audit_research_slides.py` | Evidence fidelity audit |
+| `audit_design_comfort.py` | Design comfort audit |
+| `browser_slide_audit.py` | Browser-level overflow/scroll audit |
 | `check_skill_health.py` | Skill integrity check |
 | `export_platform_configs.py` | Validate/export platform configs |
 
-## Key references (new in v23)
+## Key references
 
 | File | Purpose |
 |:---|:---|
@@ -71,8 +92,14 @@ agents/                        — per-platform configs
 | `research-visual-priority.md` | Priority A/B/C visual classification |
 | `paper-type-policy.md` | Type-specific deck policies |
 | `research-slide-patterns.md` | Layout patterns with density limits |
+| `research-slide-anti-patterns.md` | Codified anti-patterns including AI-slop aesthetic |
 | `faithful-redraw-policy.md` | Fidelity constraints for redrawing figures |
 | `DESIGN.md` | Design control plane (colors, type, grid, anti-patterns) |
+| `external-design-principles.md` | Slide-safe guardrails from external design sources |
+| `verification-workflow.md` | Three-phase verification pipeline |
+| `live-tweaks-protocol.md` | Post-generation design customization |
+| `deck-design-control-plane.md` | `deck_design.json` contract |
+| `page-role-layout-families.md` | Page role → layout family bindings |
 
 ## Health checks
 
@@ -80,4 +107,6 @@ agents/                        — per-platform configs
 python scripts/check_skill_health.py
 python scripts/export_platform_configs.py --platform all --validate
 python scripts/audit_research_slides.py --slide-data slide-plan.json --paper-type architecture-heavy
+python scripts/audit_design_comfort.py deck.html
+python scripts/browser_slide_audit.py deck.html
 ```

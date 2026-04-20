@@ -5,7 +5,7 @@ interface:
   color: "#0f172a"
 
 platform: openai
-version: "22"
+version: "24"
 
 instructions_source: "system_prompt.md"
 

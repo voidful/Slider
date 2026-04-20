@@ -5,7 +5,7 @@ interface:
   color: "#0f172a"
 
 platform: chatgpt
-version: "22"
+version: "24"
 
 # ChatGPT Custom GPTs use the system_prompt.md as the Instructions field.
 # Knowledge files are uploaded through the GPT builder UI.

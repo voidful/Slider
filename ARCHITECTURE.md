@@ -24,29 +24,34 @@
    - `scripts/export_pdf_visuals.py`
    - Crop, inspect, and apply faithful redraw per `references/faithful-redraw-policy.md`.
 
-5. **Slide planning**
+5. **Deck design compilation**
+   - `scripts/compile_deck_design.py`
+   - Compile paper type → mood family → theme preset → semantic palette → type scale → motion policy → page-role bindings into `deck_design.json`.
+   - Contract defined in `references/deck-design-control-plane.md`.
+   - This locks the deck's visual direction before any individual slide is composed.
+
+6. **Slide planning**
    - `scripts/generate_slide_data.py`
    - Build structured slide plan with evidence bindings, visual references, and density budgets.
    - Schema defined in `references/slide-data-generation.md`.
 
-6. **Binding**
+7. **Binding**
    - `scripts/bind_visual_assets.py`
    - Attach exported visuals to slides with source metadata.
+   - Produce visual binding manifest for verification.
 
-7. **Rendering**
+8. **Rendering**
    - `scripts/render_slideshow_artifact.py`
    - Produce a single self-contained HTML file (default), React component, or React project.
    - Design rules from `assets/design/DESIGN.md`.
    - Layout patterns from `references/research-slide-patterns.md`.
+   - Base64 transport for slide data to avoid LaTeX-JSON collision.
 
-8. **Design audit**
-   - Check against `assets/design/DESIGN.md`.
-   - Verify hierarchy, whitespace, projector safety, figure prominence.
-
-9. **Evidence fidelity audit**
-   - `scripts/audit_research_slides.py`
-   - Check visual inclusion, evidence binding, text density, anti-patterns.
-   - Output: actionable revision checklist.
+9. **Structured verification** (three-phase pipeline)
+   - **Phase 1 (Quick Check):** Structural validity, console errors, template identity marker.
+   - **Phase 2 (Static Audit):** Design comfort (`scripts/audit_design_comfort.py`) + evidence fidelity (`scripts/audit_research_slides.py`) + anti-slop check.
+   - **Phase 3 (Browser Audit):** Pixel-level overflow verification (`scripts/browser_slide_audit.py`) when Chromium is available.
+   - Each phase gates the next. See `references/verification-workflow.md`.
 
 10. **Health audit**
     - `scripts/check_skill_health.py`
@@ -56,6 +61,14 @@
     - `scripts/export_platform_configs.py`
     - Validate and export for Gemini, ChatGPT, Claude.
 
+## Post-render capabilities
+
+### Live tweaks
+The rendered HTML includes a customization panel (`references/live-tweaks-protocol.md`) for post-generation adjustments to accent colors, font sizes, mood family, and transition speed. Values persist via `localStorage` and can be exported as `deck_tweaks.json`.
+
+### Speaker notes protocol
+Speaker notes are stored as a structured JSON `<script>` block. The template emits `postMessage({slideIndexChanged})` on every slide change for external tool integration.
+
 ## Data contracts
 
 ### Evidence bundle
@@ -64,8 +77,11 @@ Normalized paper content: claims, contributions, method, experiments, visuals.
 ### Visual candidates
 Captions, page numbers, roles, priority tier (A/B/C), multi-panel hints, scores.
 
-### Slide data (expanded v23)
-Structured slide plan with: id, title, layout, claim, evidenceType, evidenceSource, mustIncludeVisual, visualBinding, visualFallbackStrategy, densityBudget, audienceGoal, appendixCandidate, fidelityRisk.
+### Deck design (v24)
+Compiled design decisions: paper type, mood family, theme preset, semantic palette, type scale, spacing scale, motion policy, content handling, cohesion rules, page-role bindings, anti-patterns enforced, comfort targets.
+
+### Slide data (expanded v24)
+Structured slide plan with: id, title, contentBlocks/layout, claim, evidenceType, evidenceSource, mustIncludeVisual, visualBinding, visualRequirement, visualSourceType, visualFallbackStrategy, densityBudget, audienceGoal, pageRole, whyThisVisual, whyNow, appendixCandidate, fidelityRisk.
 
 ## Render targets
 
@@ -77,10 +93,19 @@ Structured slide plan with: id, title, layout, claim, evidenceType, evidenceSour
 
 `assets/design/DESIGN.md` is the single source of truth for all visual rules. Both the generator and auditor read this file. External design references are merged but cannot override research readability rules.
 
+Key v24 additions:
+- **Content discipline:** every element earns its place; no filler content or data slop.
+- **Anti-AI-slop:** explicit ban on generic AI-generated aesthetics.
+- **CSS modernization:** `text-wrap: pretty`, `font-variant-numeric: tabular-nums`.
+
 ## Platform adapter layer
 
 Adapted instructions in `agents/`: Gemini CLI, ChatGPT, Claude, OpenAI. See `references/platform-adaptation-guide.md`.
 
-## Design principle
+## Design principles
 
-Evidence first. Paper visuals are first-class content. Design serves communication. Audits enforce quality. Output is ready to open.
+1. **Evidence first.** Paper visuals are first-class content. Design serves communication.
+2. **Content discipline.** Every element earns its place. One thousand no's for every yes.
+3. **Researcher-authored feel.** No AI-slop aesthetics. The deck must look authored, not generated.
+4. **Audits enforce quality.** Three-phase verification pipeline gates delivery.
+5. **Output is ready to open.** Single self-contained HTML file, no dependencies.

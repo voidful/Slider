@@ -5,7 +5,7 @@ interface:
   color: "#0f172a"
 
 platform: claude
-version: "22"
+version: "24"
 
 # Claude Code uses CLAUDE.md placed in the project root or in this directory.
 # Claude Projects (web UI) uses the same file as project instructions,
@@ -13,18 +13,41 @@ version: "22"
 instructions_source: "CLAUDE.md"
 
 knowledge_files:
+  # Core design and rendering
   - ../../references/presentation-logic.md
-  - ../../references/design-system.md
   - ../../references/output-contracts.md
-  - ../../references/ui-patterns.md
-  - ../../references/paper-ingestion-workflow.md
-  - ../../references/figure-table-extraction.md
   - ../../references/slide-data-generation.md
-  - ../../references/react-implementation-rules.md
   - ../../references/html-engine-template.md
-  - ../../references/presenter-ux.md
   - ../../references/slide-quality-rubric.md
+  - ../../references/reading-comfort-rubric.md
   - ../../references/theme-presets.md
   - ../../references/venue-style-variants.md
+
+  # Design system and patterns
+  - ../../references/research-slide-patterns.md
+  - ../../references/research-slide-anti-patterns.md
+  - ../../references/page-role-layout-families.md
+  - ../../references/deck-design-control-plane.md
+  - ../../references/external-design-principles.md
+  - ../../references/fullscreen-contract.md
+
+  # Evidence and ingestion
+  - ../../references/paper-visual-inclusion-policy.md
+  - ../../references/research-visual-priority.md
+  - ../../references/faithful-redraw-policy.md
+  - ../../references/paper-type-policy.md
+  - ../../references/paper-ingestion-workflow.md
+  - ../../references/figure-table-extraction.md
+
+  # UI and interaction
+  - ../../references/presenter-ux.md
+  - ../../references/ui-patterns.md
   - ../../references/artifact-rendering.md
+  - ../../references/live-tweaks-protocol.md
+
+  # Verification and audit
+  - ../../references/verification-workflow.md
   - ../../references/bug-and-conciseness-audit.md
+
+  # React (for Mode B/C)
+  - ../../references/react-implementation-rules.md

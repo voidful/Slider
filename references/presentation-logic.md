@@ -98,9 +98,25 @@ Remove:
 - Method steps that do not directly tie back to the intuition.
 - Redundant ablation tables that add no pedagogical value. 
 - Overly dense equation sequences that do not have a plain-english translation.
+- Decorative elements (emoji icons, badges, progress indicators) that don't communicate research content.
+- Filler bullets added to fill space rather than support the key message.
 
 Preserve:
 - The core conceptual leap.
 - Visual analogies and simplifications.
 - The headline empirical proof.
 - An honest assessment of limitations.
+
+## Content Discipline
+
+### Remove before adding
+
+When in doubt, delete content rather than add decoration. Every element on a slide must directly support the slide's `keyMessage`. If you cannot articulate why an element is on the slide in one sentence, remove it.
+
+### Whitespace is a design choice
+
+Empty space is not a bug — it signals confidence and gives the audience breathing room. If a slide feels empty after removing marginal content, improve the layout composition rather than padding with weak bullets or decorative cards.
+
+### Data slop is banned
+
+Unnecessary numbers, stats, metrics, or icons that don't serve the narrative are "data slop." A single powerful number is worth more than five mediocre ones. Each metric must answer a question the audience is already asking.

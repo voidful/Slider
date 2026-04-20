@@ -172,3 +172,29 @@ In sandbox environments (ChatGPT Code Interpreter, Claude tool use), headless Ch
 | No external deps (except KaTeX) | No remote font/image/script URLs beyond KaTeX CDN |
 
 **When the deck is delivered for final use**, it should be re-audited locally with `python scripts/browser_slide_audit.py <deck.html>` where Chromium is available.
+
+---
+
+## Verification workflow per platform
+
+All platforms follow the three-phase verification workflow ([verification-workflow.md](verification-workflow.md)), with platform-specific adaptations:
+
+| Platform | Phase 1 (Quick Check) | Phase 2 (Static Audit) | Phase 3 (Browser Audit) |
+|:---|:---|:---|:---|
+| **Gemini CLI** | ✅ Full | ✅ Full (scripts) | ✅ Full (Chromium) |
+| **ChatGPT** | ✅ Console via Code Interpreter | ✅ Static checks inline | ⚠️ Skip (no Chromium) |
+| **Claude Projects** | ✅ Artifact preview | ✅ Static checks inline | ⚠️ Skip (no Chromium) |
+| **Claude Code** | ✅ Full | ✅ Full (scripts) | ✅ Full if Chromium installed |
+
+When Phase 3 is skipped, the LM must note it in the delivery message and recommend local re-audit.
+
+---
+
+## Live tweaks support
+
+The canonical template includes a live tweaks panel ([live-tweaks-protocol.md](live-tweaks-protocol.md)) for post-generation design customization. Platform-specific notes:
+
+- **Gemini CLI / Claude Code:** Full support. Tweaks persist via `localStorage` and can be exported.
+- **ChatGPT / Claude Projects:** Tweaks work within the artifact preview. Exported HTML preserves tweaked values.
+- **All platforms:** The tweaks panel is activated via `T` key or toolbar button. It is hidden by default in presentation mode.
+

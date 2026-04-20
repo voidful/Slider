@@ -62,3 +62,21 @@ Use it when refining `designLock`, `deck_design.json`, or renderer defaults.
 - Dense content should split across slides before typography shrinks.
 - Presenter chrome must stay quiet, secondary, and keyboard-friendly.
 - A good slide should still read correctly from the back row on a projector and under fullscreen scaling.
+
+### 8. Avoid AI-default aesthetic tropes
+
+- The deck must look researcher-authored, not AI-generated. Audiences immediately notice the "ChatGPT energy" — purple gradients, floating cards, decorative emoji, and generic card grids.
+- Avoid aggressive gradient backgrounds as the default surface. Reserve gradients for 1–2 mood-accent slides (opener, climax).
+- Never use emoji as icons or visual markers (✨, 🚀, 💡, etc.). Use SVG icons or paper figures.
+- Never style containers with the "AI summary card" pattern: `border-left: 3-4px solid accent` + `border-radius` + light background. Use clean editorial surfaces.
+- Never draw detailed imagery using SVG `<path>` elements. Use real paper figures or labeled placeholder boxes.
+- Never load fonts from CDNs that are AI-default choices (Inter, Roboto, Arial, Fraunces). Use the local-first font stack.
+- Every visual element should earn its place. Do not add filler content, decorative badges, or progress indicators that don't communicate research content.
+
+### 9. Content discipline over decoration
+
+- "One thousand no's for every yes" — each element on a slide must directly support the slide's key message.
+- If a slide feels empty, solve with layout and whitespace, not by inventing bullets or adding decorative elements.
+- Avoid "data slop" — unnecessary numbers, stats, or icons that do not serve the narrative.
+- An empty slide with one powerful figure is better than a busy slide with three weak cards.
+- When choosing between adding content and improving composition, always choose composition.

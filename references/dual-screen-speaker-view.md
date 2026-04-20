@@ -73,3 +73,32 @@ Never:
 - require the speaker to manually refresh the popup,
 - open multiple duplicate presenter windows,
 - expose dense debug state in the presenter view.
+
+## postMessage Synchronization Protocol
+
+The main deck emits `window.postMessage({slideIndexChanged: N})` on init and every slide change. The speaker window uses this as the primary synchronization signal.
+
+### Message format
+
+```js
+// Emitted by the main deck
+window.postMessage({slideIndexChanged: 0}, '*');  // on init
+window.postMessage({slideIndexChanged: 5}, '*');  // on navigate to slide 5
+```
+
+### Speaker window listener
+
+```js
+window.addEventListener('message', (e) => {
+  if (e.data && typeof e.data.slideIndexChanged === 'number') {
+    updatePresenterView(e.data.slideIndexChanged);
+  }
+});
+```
+
+### Benefits
+
+- **Decoupled architecture:** The main deck doesn't need to know about the speaker window's internal structure.
+- **External tool support:** Any tool can listen for `slideIndexChanged` to track presentation progress.
+- **Host frame integration:** When the deck is embedded in an iframe (Claude artifacts, preview tools), the host can display contextual information based on the current slide.
+

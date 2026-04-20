@@ -63,11 +63,13 @@ The deck uses a **fixed 1200×675 coordinate system** (stage model). This contra
 - artifact rendering: [references/artifact-rendering.md](references/artifact-rendering.md)
 - slide quality rubric: [references/slide-quality-rubric.md](references/slide-quality-rubric.md)
 - bug and conciseness audit: [references/bug-and-conciseness-audit.md](references/bug-and-conciseness-audit.md)
+- verification workflow: [references/verification-workflow.md](references/verification-workflow.md)
 
 ### UI and interaction
 - UI pattern mapping: [references/ui-patterns.md](references/ui-patterns.md)
 - presenter UX: [references/presenter-ux.md](references/presenter-ux.md)
 - dual-screen speaker view: [references/dual-screen-speaker-view.md](references/dual-screen-speaker-view.md)
+- live tweaks protocol: [references/live-tweaks-protocol.md](references/live-tweaks-protocol.md)
 - HTML engine rules: [references/html-engine-template.md](references/html-engine-template.md)
 - React rules: [references/react-implementation-rules.md](references/react-implementation-rules.md)
 - multi-file React project: [references/multi-file-react-project.md](references/multi-file-react-project.md)
@@ -231,7 +233,7 @@ For each slide, specify:
 - `id`, `title` (argumentative), `purpose`
 - `pageRole` — what job this slide plays in the talk arc (hook, bottleneck, method overview, headline result, limitation, close)
 - `keyMessage`, `claim`, `speakerNote`
-- `mood` — chosen from the mood library only after the `designLock` is set. Default to one primary deck mood family and use stronger contrast moods only where the story needs them.
+- `mood` — chosen from the mood library only after the `designLock` is set. Default to one primary deck mood family and use stronger contrast moods paper-slideonly where the story needs them.
 - `evidenceType`, `evidenceSource`
 - `mustIncludeVisual` (boolean)
 - `visualBinding` (paper figure/table/section reference)
@@ -471,9 +473,13 @@ If the user explicitly requests React output instead of HTML:
 - Multi-file React project follows [references/multi-file-react-project.md](references/multi-file-react-project.md).
 - The same quality gates apply.
 
-### Step 7. Run design and rendering audit
+### Step 7. Run structured verification
 
-Check against [assets/design/DESIGN.md](assets/design/DESIGN.md) and [references/bug-and-conciseness-audit.md](references/bug-and-conciseness-audit.md):
+Follow the three-phase verification workflow in [references/verification-workflow.md](references/verification-workflow.md):
+
+**Phase 1: Quick Check** — Open the HTML, verify zero console errors, confirm template identity marker (`slider/paper-presentation-v1`), verify nav controls and `fitRenderedSlide` exist.
+
+**Phase 2: Static Audit** — Check against [assets/design/DESIGN.md](assets/design/DESIGN.md) and [references/bug-and-conciseness-audit.md](references/bug-and-conciseness-audit.md):
 
 **Design:**
 - Every slide has one dominant message.
@@ -506,7 +512,7 @@ Check against [assets/design/DESIGN.md](assets/design/DESIGN.md) and [references
 - No evidence figure renders as a thumbnail.
 - Tables are readable at ≥18px.
 
-### Step 8. Run evidence fidelity audit
+### Step 8. Run evidence fidelity audit (Phase 2 continued)
 
 Run `scripts/audit_research_slides.py --slide-data <plan.json> --paper-type <type>` or apply these checks manually:
 
@@ -520,21 +526,25 @@ Run `scripts/audit_research_slides.py --slide-data <plan.json> --paper-type <typ
 7. HTML template uses stage-preserve fullscreen on the wrapper and keeps `transform: scale(...)` in both windowed and fullscreen modes.
 8. HTML template HAS semantic color tokens.
 9. HTML template HAS overflow protection CSS.
+10. No AI-slop aesthetic: no emoji icons, no left-border accent cards, no CDN-loaded AI-default fonts, no aggressive gradient defaults.
 
 **Revision checks:**
-10. No text-dense slides exceeding density budget.
-11. No titles longer than 18 words.
-12. No generic titles ("Method", "Results").
-13. No marketing language.
-14. No duplicate consecutive claims.
-15. Metric values with positive gains should have `delta: "positive"`.
-16. No thumbnail-wall slides (>3 visuals on one slide).
+11. No text-dense slides exceeding density budget.
+12. No titles longer than 18 words.
+13. No generic titles ("Method", "Results").
+14. No marketing language.
+15. No duplicate consecutive claims.
+16. Metric values with positive gains should have `delta: "positive"`.
+17. No thumbnail-wall slides (>3 visuals on one slide).
+18. No filler content: every element must directly support the slide's `keyMessage`.
 
 Output is an actionable revision checklist, not abstract advice.
 
+**Phase 3: Browser Audit** (when Chromium is available) — Run `scripts/browser_slide_audit.py <deck.html>` to verify pixel-level overflow, broken images, and fullscreen scaling. When unavailable (sandbox environments), note it in the delivery message.
+
 ### Step 9. Revise and finalize
 
-Fix all errors from the audit. Recheck after revision.
+Fix all errors from the audit. Recheck after revision. Maximum 3 revision cycles — if the deck cannot pass after 3 cycles, revisit the content plan (slide data) since the problem is likely structural.
 
 ### Step 10. Package
 

@@ -56,6 +56,26 @@ The style block must define these tokens:
 
 The `applyTheme()` function must set ALL tokens including `*-bg` variants.
 
+### Typography CSS (MANDATORY)
+
+```css
+/* Body text uses text-wrap: pretty for improved line breaking */
+.body-text, .bullets, .callout-box, .quote-block {
+  text-wrap: pretty;
+}
+
+/* Titles use text-wrap: balance for centered visual weight */
+.title, .hero-text {
+  text-wrap: balance;
+  hyphens: auto;
+}
+
+/* All numeric content uses tabular figures for alignment */
+.metric-card .value, .data-table td, .hero-number, [data-delta] {
+  font-variant-numeric: tabular-nums;
+}
+```
+
 ## Two rendering modes
 
 ### Classic mode (backwards compatible)
@@ -220,3 +240,17 @@ Same as before — nav buttons, progress bar, notes, overview, presenter, fullsc
 
 If a block type is unsupported, fall back to rendering it as plain text.
 If a feature is not feasible in pure HTML, keep the presentation core solid and omit the feature.
+
+## Live tweaks integration
+
+The template supports a post-generation customization panel. See [live-tweaks-protocol.md](live-tweaks-protocol.md) for the full specification.
+
+Key integration points:
+- The `TWEAK_DEFAULTS` block with `/*EDITMODE-BEGIN*/` / `/*EDITMODE-END*/` markers is embedded in the `<script>` section.
+- The `applyTheme()` function reads tweaked values and overrides semantic color tokens.
+- The tweaks panel UI is hidden by default and activated via `T` key or toolbar button.
+- Tweaked values persist via `localStorage` and are included in `exportHTML()` output.
+
+## Verification
+
+After rendering, the deck should pass the three-phase verification workflow defined in [verification-workflow.md](verification-workflow.md). See that document for the complete gated pipeline.
