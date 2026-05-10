@@ -1,112 +1,153 @@
-# slider v24
+# Slider
 
-> Research slides are evidence displays with narrative pacing, not generic summaries with decoration.
-> Every element earns its place. One thousand no's for every yes.
+Evidence-first research slide generation for conference talks.
 
-A skill that turns an arXiv paper into a ready-to-present conference talk. Output is a single self-contained HTML file that opens directly in any browser.
+Slider turns an arXiv paper, PDF, title, DOI, or extracted text into a browser-native presentation that is faithful to the paper, visually restrained, and ready to audit before delivery.
 
-## What it does
+![Slider React starter preview](assets/readme/slider-react-preview.jpg)
 
-1. Ingest paper and extract evidence.
-2. Classify paper type (architecture / optimization / benchmark / theory / qualitative).
-3. Select mandatory main-deck visuals based on paper type.
-4. Export, score, and inspect paper figures.
-5. Compile deck design (mood, palette, type scale, motion policy).
-6. Create slide plan with explicit visual binding and density budgets.
-7. Generate a single built HTML file with minified CSS/JS.
-8. Run structured verification (3-phase: quick check → static audit → browser audit).
-9. Package the final artifact.
+## Why Slider
 
-## v24 highlights
+Most paper-to-slide workflows produce generic summaries. Slider is built around a stricter product promise: the deck should explain the paper through evidence, not decoration.
 
-- **Anti-AI-slop rules.** Explicit ban on generic AI-generated aesthetics: emoji icons, left-border accent cards, aggressive gradient defaults, CDN-loaded AI fonts, SVG illustrations. Decks must look researcher-authored, not AI-generated.
-- **Content discipline.** "Every element earns its place" — no filler content, no data slop. Whitespace is a design choice, not a bug.
-- **Structured verification workflow.** Three-phase gated pipeline: quick check → static audit → browser audit. Each phase must pass before the next begins.
-- **Live tweaks protocol.** Post-generation design customization panel (accent colors, font sizes, mood, transitions) with `localStorage` persistence and JSON export.
-- **Speaker notes protocol.** Structured JSON storage with `postMessage({slideIndexChanged})` for external tool integration.
-- **CSS modernization.** `text-wrap: pretty` on body text, `text-wrap: balance` on titles, `font-variant-numeric: tabular-nums` on all numeric content.
-- **Claude adapter rewrite.** Comprehensive v24 CLAUDE.md covering contentBlocks, deck design compilation, anti-slop rules, content discipline, base64 transport, 18-step pedagogical arc, and full acceptance test suite.
-- **Version bump.** All platform configs updated to v24.
+- **Evidence-first planning:** extracts claims, methods, results, limitations, figures, and tables before composing slides.
+- **Mandatory visual inclusion:** key paper figures and tables are treated as main-deck content, not optional garnish.
+- **Paper-type policy:** architecture, optimization, benchmark, theory, and qualitative papers get different deck policies.
+- **Research-grade design:** projector-safe typography, density budgets, anti-AI-slop rules, and stable fullscreen rendering.
+- **Self-contained output:** the default artifact is one HTML file that opens directly in a browser.
+- **Audit-backed delivery:** static, design, evidence, and browser overflow checks are part of the workflow.
 
-## Prior versions
+## What You Get
 
-<details>
-<summary>v23 highlights</summary>
+Slider can generate or scaffold:
 
-- **Evidence-first workflow.** Paper figures, tables, and diagrams are first-class content, not optional.
-- **Mandatory visual inclusion.** Architecture-heavy papers must have a method figure. Benchmark-heavy papers must have a result table. And so on.
-- **Paper-type-aware policy.** Different paper types have different mandatory visual requirements.
-- **DESIGN.md as first-class asset.** A shared design control plane read by both generator and auditor.
-- **Research slide patterns.** Codified layout patterns with text density limits and visual requirements.
-- **Dual audit phase.** Post-render design audit + evidence fidelity audit with actionable revision checklist.
-- **Acceptance tests.** Decks that fail visual inclusion or design quality checks are explicitly rejected.
-- **Built HTML default.** Output is a single minified HTML file that opens directly — no build step needed.
-- **Faithful redraw policy.** Clear rules for when and how to redraw paper figures.
-- **Design reference injection.** Users can provide external design references that influence visual style without breaking research readability.
+| Output | Use case |
+|:---|:---|
+| Built HTML deck | Default deliverable. Single self-contained presentation file. |
+| React single-file component | Quick integration into an existing React workflow. |
+| React project starter | Multi-file Vite project with presenter controls and a fixed 1200x675 stage. |
+| Platform configs | Instructions for Gemini, ChatGPT, Claude, Claude Code, and OpenAI agents. |
 
-</details>
+## Example Product Surface
 
-## Platform support
+The bundled React project starter includes a fixed-stage deck shell, keyboard navigation, progress, overview, speaker notes, fullscreen controls, and product-quality CSS without relying on implicit global styling.
 
-| Platform | Instructions | Setup |
-|:---|:---|:---|
-| **Gemini CLI** | `SKILL.md` (native) | Place in `.gemini/skills/` |
-| **ChatGPT Custom GPT** | `agents/chatgpt/system_prompt.md` | Paste + upload knowledge files |
-| **Claude Projects** | `agents/claude/CLAUDE.md` | Set as project instructions |
-| **Claude Code** | `agents/claude/CLAUDE.md` | Copy to project root |
-
-## Directory layout
-
-```
-SKILL.md                       — control plane (evidence-first workflow)
-assets/design/DESIGN.md        — design control plane
-references/                    — policy, pattern, and rule documents
-scripts/                       — deterministic pipeline + audit scripts
-assets/                        — starter templates
-agents/                        — per-platform configs
+```bash
+cd assets/react-project-starter
+npm install
+npm run dev
 ```
 
-## Key scripts
+Then open the local Vite URL and use:
+
+- `Left` / `Right` or `Space` for slide navigation.
+- `O` for overview.
+- `N` for speaker notes.
+- `F` for fullscreen.
+- `?` for keyboard help.
+
+## Pipeline
+
+Slider follows a deterministic, evidence-backed flow:
+
+1. Ingest paper text or PDF.
+2. Extract title, authors, claims, method, experiments, limitations, figures, and tables.
+3. Classify paper type.
+4. Score and select visual candidates.
+5. Export or bind paper visuals.
+6. Compile deck design from policy.
+7. Generate slide data with density budgets and evidence bindings.
+8. Render HTML, React, or a React project.
+9. Run verification before delivery.
+
+## Quick Start
+
+Run the core health check:
+
+```bash
+python3 scripts/check_skill_health.py
+```
+
+Render a deck from prepared slide data:
+
+```bash
+python3 scripts/render_slideshow_artifact.py \
+  --slide-data slide-plan.json \
+  --mode html \
+  --output deck.html
+```
+
+Render a React project:
+
+```bash
+python3 scripts/render_slideshow_artifact.py \
+  --slide-data slide-plan.json \
+  --mode react-project \
+  --output deck-project
+```
+
+Validate platform exports:
+
+```bash
+python3 scripts/export_platform_configs.py --platform all --validate
+```
+
+## Verification
+
+Use the checks that match the artifact you are shipping:
+
+```bash
+python3 scripts/check_skill_health.py
+python3 scripts/audit_design_comfort.py deck.html
+python3 scripts/audit_research_slides.py --slide-data slide-plan.json --paper-type architecture-heavy
+python3 scripts/browser_slide_audit.py deck.html
+```
+
+The browser audit checks windowed and simulated-fullscreen rendering, fixed-stage overflow, and broken image state.
+
+## Repository Layout
+
+```text
+SKILL.md                         Core agent workflow and product contract
+assets/design/DESIGN.md          Design control plane
+assets/html-slideshow-starter/   Canonical self-contained HTML deck template
+assets/react-slideshow-starter/  Single-file React starter
+assets/react-project-starter/    Vite React project starter
+assets/readme/                   README screenshots and media
+references/                      Policy, design, rendering, and verification docs
+scripts/                         Pipeline, rendering, and audit scripts
+agents/                          Platform-specific agent configs
+```
+
+## Key Scripts
 
 | Script | Purpose |
 |:---|:---|
-| `extract_paper_evidence.py` | Extract evidence bundle from paper |
-| `find_visual_evidence.py` | Locate figure and table candidates |
-| `score_visual_candidates.py` | Rank visual candidates |
-| `generate_slide_data.py` | Create structured slide plan |
-| `export_pdf_visuals.py` | Crop visuals from PDF |
-| `bind_visual_assets.py` | Bind visuals to slides |
-| `compile_deck_design.py` | Compile deck-level visual design |
-| `render_slideshow_artifact.py` | Render HTML/React artifact |
-| `audit_research_slides.py` | Evidence fidelity audit |
-| `audit_design_comfort.py` | Design comfort audit |
-| `browser_slide_audit.py` | Browser-level overflow/scroll audit |
-| `check_skill_health.py` | Skill integrity check |
-| `export_platform_configs.py` | Validate/export platform configs |
+| `extract_paper_evidence.py` | Extract an evidence bundle from paper text or PDF. |
+| `find_visual_evidence.py` | Locate figure and table candidates. |
+| `score_visual_candidates.py` | Rank visual candidates for main deck or appendix use. |
+| `generate_slide_data.py` | Create structured slide data. |
+| `export_pdf_visuals.py` | Crop visual assets from PDFs. |
+| `bind_visual_assets.py` | Attach exported visuals to slides. |
+| `compile_deck_design.py` | Compile deck-level design policy. |
+| `render_slideshow_artifact.py` | Render HTML, React, or React project output. |
+| `audit_research_slides.py` | Check evidence fidelity and visual policy. |
+| `audit_design_comfort.py` | Check design comfort and readability. |
+| `browser_slide_audit.py` | Check browser rendering and overflow. |
+| `check_skill_health.py` | Run repository health checks. |
 
-## Key references
+## Platform Support
 
-| File | Purpose |
-|:---|:---|
-| `paper-visual-inclusion-policy.md` | When paper visuals must appear in main deck |
-| `research-visual-priority.md` | Priority A/B/C visual classification |
-| `paper-type-policy.md` | Type-specific deck policies |
-| `research-slide-patterns.md` | Layout patterns with density limits |
-| `research-slide-anti-patterns.md` | Codified anti-patterns including AI-slop aesthetic |
-| `faithful-redraw-policy.md` | Fidelity constraints for redrawing figures |
-| `DESIGN.md` | Design control plane (colors, type, grid, anti-patterns) |
-| `external-design-principles.md` | Slide-safe guardrails from external design sources |
-| `verification-workflow.md` | Three-phase verification pipeline |
-| `live-tweaks-protocol.md` | Post-generation design customization |
-| `deck-design-control-plane.md` | `deck_design.json` contract |
-| `page-role-layout-families.md` | Page role → layout family bindings |
+| Platform | Instructions | Setup |
+|:---|:---|:---|
+| Gemini CLI | `SKILL.md` | Place in `.gemini/skills/` |
+| ChatGPT Custom GPT | `agents/chatgpt/system_prompt.md` | Paste instructions and upload knowledge files |
+| Claude Projects | `agents/claude/CLAUDE.md` | Set as project instructions |
+| Claude Code | `agents/claude/CLAUDE.md` | Copy to project root |
+| OpenAI agents | `agents/openai/config.yaml` | Use as agent configuration input |
 
-## Health checks
+## Project Status
 
-```bash
-python scripts/check_skill_health.py
-python scripts/export_platform_configs.py --platform all --validate
-python scripts/audit_research_slides.py --slide-data slide-plan.json --paper-type architecture-heavy
-python scripts/audit_design_comfort.py deck.html
-python scripts/browser_slide_audit.py deck.html
-```
+Slider is an active research-tooling project. The current focus is making every generated deck traceable, visually stable, and realistic to present without manual rescue work.
+
+See [TEST_MATRIX.md](TEST_MATRIX.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [CHANGELOG.md](CHANGELOG.md) for implementation details and release notes.
