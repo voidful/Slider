@@ -6,3 +6,6 @@ dist/
 build/
 node_modules/
 .env
+
+!assets/react-project-starter/src/lib/
+!assets/react-project-starter/src/lib/*.ts

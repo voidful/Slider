@@ -15,6 +15,15 @@
   - Checks windowed and simulated-fullscreen scaling.
   - Checks image load status.
 
+## React Project Starter
+
+- `cd assets/react-project-starter && npm install && npm run build`
+  - Verifies the multi-file starter type-checks and builds through Vite.
+  - Confirms the starter does not depend on implicit global CSS or ignored config files.
+- Browser smoke test at the local Vite URL.
+  - Verify previous/next navigation, disabled edge buttons, overview, notes, and fullscreen controls.
+  - Confirm speaker notes do not cover slide evidence or metrics.
+
 ## Manual Editor Smoke Test
 
 - Open `assets/html-slideshow-starter/paper-presentation.html`.

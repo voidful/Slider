@@ -83,7 +83,13 @@ for (const path of JSON.parse(process.argv[1])) {
   }
 }
 '''
-    proc = subprocess.run([node, '-e', code, json.dumps([str(p) for p in paths])], capture_output=True, text=True)
+    starter_dir = ROOT / 'assets' / 'react-project-starter'
+    proc = subprocess.run(
+        [node, '-e', code, json.dumps([str(p) for p in paths])],
+        capture_output=True,
+        text=True,
+        cwd=starter_dir if (starter_dir / 'node_modules' / 'typescript').exists() else ROOT,
+    )
     if proc.returncode == 0:
         return [], []
     stderr = proc.stderr.strip()
@@ -154,6 +160,8 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
         subprocess.run([sys.executable, str(SCRIPTS_DIR/'render_slideshow_artifact.py'), '--slide-data', str(bound_json), '--mode', 'react', '--output', str(react_out)], check=True, capture_output=True, text=True)
         subprocess.run([sys.executable, str(SCRIPTS_DIR/'render_slideshow_artifact.py'), '--slide-data', str(bound_json), '--mode', 'html', '--output', str(html_out)], check=True, capture_output=True, text=True)
         subprocess.run([sys.executable, str(SCRIPTS_DIR/'render_slideshow_artifact.py'), '--slide-data', str(bound_json), '--mode', 'react-project', '--output', str(project_dir)], check=True, capture_output=True, text=True)
+        if (project_dir / 'node_modules').exists() or (project_dir / 'dist').exists() or (project_dir / 'build').exists():
+            failures.append('React project renderer copied generated dependency/build directories into the output')
         ts_files = [react_out, project_dir/'src/App.tsx', project_dir/'src/components/SlideRenderer.tsx', project_dir/'src/components/PresenterPanel.tsx', project_dir/'src/data/slideData.ts', project_dir/'src/lib/presentationConfig.ts', project_dir/'src/lib/presenterWindow.ts']
         ts_files = [path for path in ts_files if path.exists()]
         ts_failures, ts_warnings = validate_typescript_files(ts_files)
@@ -175,10 +183,11 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
             or not any(token in html_text for token in ('metrics-with-visual', 'result-metrics-row', 'result-visual-fill'))
         ):
             failures.append('Metrics layout does not appear to support bound visuals')
+        control_dock_text = (ROOT / 'assets/react-project-starter/src/components/ControlDock.tsx').read_text(encoding='utf-8')
         if (
             'Fullscreen' not in html_text
             or 'onFullscreen' not in project_app
-            or 'aria-label="Fullscreen"' not in (ROOT / 'assets/react-project-starter/src/components/ControlDock.tsx').read_text(encoding='utf-8')
+            or not any(token in control_dock_text for token in ('aria-label="Fullscreen"', 'label="Fullscreen"'))
         ):
             failures.append('Fullscreen controls were not found in one or more rendered artifacts')
         if fitz is None:

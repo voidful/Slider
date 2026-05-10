@@ -206,7 +206,12 @@ def to_ts_module(slides: list[dict[str, Any]]) -> str:
 def render_react_project(slides: list[dict[str, Any]], theme: str, venue: str, title: str | None, output_dir: Path) -> list[Path]:
     if output_dir.exists() and output_dir.is_file():
         raise ValueError("react-project output must be a directory path")
-    shutil.copytree(REACT_PROJECT_TEMPLATE, output_dir, dirs_exist_ok=True)
+    shutil.copytree(
+        REACT_PROJECT_TEMPLATE,
+        output_dir,
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("node_modules", "dist", "build", ".DS_Store"),
+    )
 
     slide_data_path = output_dir / "src" / "data" / "slideData.ts"
     slide_data_path.write_text(to_ts_module(slides), encoding="utf-8")

@@ -1,27 +1,79 @@
-import { ChevronLeft, ChevronRight, HelpCircle, Maximize } from "lucide-react";
+import { ChevronLeft, ChevronRight, Grid2X2, HelpCircle, Maximize, StickyNote } from "lucide-react";
 
-export function ControlDock({
-  count,
-  current,
-  onPrev,
-  onNext,
-  onFullscreen,
-  onHelp,
-}: {
+type ControlDockProps = {
   count: number;
   current: number;
+  notesOpen: boolean;
+  overviewOpen: boolean;
+  helpOpen: boolean;
   onPrev: () => void;
   onNext: () => void;
   onFullscreen: () => void;
   onHelp: () => void;
-}) {
+  onNotes: () => void;
+  onOverview: () => void;
+};
+
+type DockButtonProps = {
+  label: string;
+  pressed?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+};
+
+function DockButton({ label, pressed, disabled, onClick, children }: DockButtonProps) {
   return (
-    <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-zinc-200 bg-white/85 px-3 py-2 shadow-sm backdrop-blur-md">
-      <button className="rounded-full p-2 hover:bg-zinc-100" onClick={onPrev} aria-label="Previous slide"><ChevronLeft className="h-4 w-4" /></button>
-      <button className="rounded-full p-2 hover:bg-zinc-100" onClick={onNext} aria-label="Next slide"><ChevronRight className="h-4 w-4" /></button>
-      <div className="mx-2 text-sm font-medium text-zinc-600">{current + 1} / {count}</div>
-      <button className="rounded-full p-2 hover:bg-zinc-100" onClick={onFullscreen} aria-label="Fullscreen"><Maximize className="h-4 w-4" /></button>
-      <button className="rounded-full p-2 hover:bg-zinc-100" onClick={onHelp} aria-label="Help"><HelpCircle className="h-4 w-4" /></button>
+    <button
+      className="dock-button"
+      type="button"
+      aria-label={label}
+      aria-pressed={pressed}
+      disabled={disabled}
+      title={label}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function ControlDock({
+  count,
+  current,
+  notesOpen,
+  overviewOpen,
+  helpOpen,
+  onPrev,
+  onNext,
+  onFullscreen,
+  onHelp,
+  onNotes,
+  onOverview,
+}: ControlDockProps) {
+  return (
+    <div className="control-dock" role="toolbar" aria-label="Presentation controls">
+      <DockButton label="Previous slide" onClick={onPrev} disabled={current === 0}>
+        <ChevronLeft aria-hidden="true" />
+      </DockButton>
+      <DockButton label="Next slide" onClick={onNext} disabled={current >= count - 1}>
+        <ChevronRight aria-hidden="true" />
+      </DockButton>
+      <div className="slide-counter" aria-live="polite">
+        {current + 1} / {count}
+      </div>
+      <DockButton label="Slide overview" onClick={onOverview} pressed={overviewOpen}>
+        <Grid2X2 aria-hidden="true" />
+      </DockButton>
+      <DockButton label="Speaker notes" onClick={onNotes} pressed={notesOpen}>
+        <StickyNote aria-hidden="true" />
+      </DockButton>
+      <DockButton label="Fullscreen" onClick={onFullscreen}>
+        <Maximize aria-hidden="true" />
+      </DockButton>
+      <DockButton label="Keyboard help" onClick={onHelp} pressed={helpOpen}>
+        <HelpCircle aria-hidden="true" />
+      </DockButton>
     </div>
   );
 }
