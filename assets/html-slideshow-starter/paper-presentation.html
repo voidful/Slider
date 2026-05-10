@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
 :root{--bg:#f5f5f4;--frame:#fff;--text:#1a1a2e;--muted:#4a4a6a;--border:#e2e8f0;--accent:#2563eb;--accent-bg:rgba(37,99,235,.07);--positive:#059669;--positive-bg:rgba(5,150,105,.07);--negative:#dc2626;--negative-bg:rgba(220,38,38,.07);--neutral:#6b7280;--panel:#fafafa;--slide-w:1200;--slide-h:675;--col-size:40%}
 *{box-sizing:border-box;margin:0}
@@ -198,6 +200,76 @@ button{border:none;background:transparent;cursor:pointer;color:var(--text);paddi
 button:hover{background:rgba(0,0,0,.05)}
 button.active{background:rgba(220,38,38,.12);color:#dc2626}
 .counter{min-width:56px;text-align:center;font-size:13px;font-weight:600;color:var(--muted)}
+.play-state{min-width:54px;text-align:center;font-size:12px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+
+/* ── Phone remote / annotations ── */
+.annotation-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:14}
+.remote-pointer{position:absolute;width:18px;height:18px;border-radius:50%;background:rgba(239,68,68,.92);box-shadow:0 0 0 8px rgba(239,68,68,.16),0 0 24px rgba(239,68,68,.42);transform:translate(-50%,-50%);pointer-events:none;z-index:19;display:none}
+.remote-pointer.active{display:block}
+.remote-note{position:absolute;right:24px;top:70px;z-index:18;max-width:320px;max-height:220px;overflow:auto;border:1px solid rgba(250,204,21,.45);border-radius:10px;background:rgba(255,251,235,.94);box-shadow:0 14px 38px rgba(0,0,0,.12);padding:14px 16px;color:#713f12;font-size:15px;line-height:1.45;display:none;white-space:pre-wrap}
+.remote-note.show{display:block}
+.collab-strip{position:absolute;left:18px;top:18px;z-index:18;display:none;align-items:center;gap:6px;max-width:420px}
+.collab-strip.show{display:flex}
+.collab-pill{display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.54);border-radius:999px;background:rgba(255,255,255,.88);box-shadow:0 8px 24px rgba(0,0,0,.1);padding:4px 8px;font-size:11px;font-weight:800;color:#0f172a;backdrop-filter:blur(8px)}
+.collab-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+.collab-note-list{display:grid;gap:8px;white-space:normal}
+.collab-note-item{border-left:3px solid var(--accent);padding-left:9px}
+.collab-note-author{font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em;color:#92400e}
+.collab-note-text{margin-top:2px;white-space:pre-wrap}
+.remote-panel{position:absolute;right:20px;bottom:72px;z-index:35;width:310px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 16px 44px rgba(0,0,0,.14);padding:16px;display:none;color:var(--text);backdrop-filter:blur(12px)}
+.remote-panel.show{display:block}
+.remote-panel h3{margin:0;font-size:15px;font-weight:800}
+.remote-panel p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
+.remote-panel .remote-status{margin-top:10px;font-size:12px;font-weight:700;color:var(--accent)}
+.remote-panel .remote-url{margin-top:10px;padding:8px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;color:#334155;font-size:11px;line-height:1.35;word-break:break-all}
+.remote-panel .qr-box{margin-top:12px;display:grid;place-items:center;min-height:190px;border:1px solid var(--border);border-radius:10px;background:#fff}
+.remote-panel .qr-fallback{padding:18px;text-align:center;color:var(--muted);font-size:12px}
+.remote-panel .mini-actions{margin-top:10px}
+.collab-roster{margin-top:12px;display:grid;gap:6px}
+.collab-roster-row{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;padding:7px 8px;font-size:12px;color:#334155}
+.collab-roster-row .name{font-weight:800;color:#0f172a}
+.collab-roster-row .meta{margin-left:auto;color:#64748b;font-size:11px}
+
+.remote-controller-mode{display:block;min-height:100vh;padding:0;background:#0f172a;overflow:auto}
+.remote-controller-mode .deck-wrapper,.remote-controller-mode .editor-toolbar,.remote-controller-mode .editor-sidebar,.remote-controller-mode .editor-main,.remote-controller-mode .editor-inspector,.remote-controller-mode .theme-panel{display:none!important}
+.mobile-controller{display:none;min-height:100vh;background:linear-gradient(155deg,#0f172a 0%,#172554 52%,#042f2e 100%);color:#f8fafc;font-family:"Avenir Next","Segoe UI","SF Pro Text",system-ui,-apple-system,sans-serif;padding:18px}
+.remote-controller-mode .mobile-controller{display:block}
+.mobile-shell{max-width:520px;margin:0 auto;display:grid;gap:14px}
+.mobile-card{border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.1);box-shadow:0 16px 44px rgba(0,0,0,.2);backdrop-filter:blur(16px);padding:16px}
+.mobile-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mobile-title{font-size:20px;font-weight:850;letter-spacing:0}
+.mobile-subtitle{margin-top:4px;color:rgba(248,250,252,.68);font-size:13px;line-height:1.45}
+.mobile-status{font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 10px;color:#fde68a;background:rgba(250,204,21,.1);white-space:nowrap}
+.mobile-status.connected{color:#86efac;background:rgba(34,197,94,.12)}
+.mobile-identity{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px}
+.mobile-identity input{width:100%;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(15,23,42,.45);color:#f8fafc;padding:9px 10px;font:14px/1.3 system-ui,sans-serif}
+.mobile-identity input[type=color]{width:46px;padding:3px}
+.mobile-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mobile-tab{border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(255,255,255,.08);color:#e2e8f0;padding:10px 8px;font-size:13px;font-weight:800}
+.mobile-tab.active{background:#f8fafc;color:#0f172a}
+.mobile-pane{display:none;gap:12px}
+.mobile-pane.active{display:grid}
+.mobile-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mobile-btn{border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.1);color:#fff;padding:14px 12px;font-size:15px;font-weight:800}
+.mobile-btn.primary{background:#f8fafc;color:#0f172a}
+.mobile-btn.warn{background:rgba(251,191,36,.15);color:#fde68a}
+.mobile-btn.danger{background:rgba(239,68,68,.14);color:#fecaca}
+.mobile-slide-meta{font-size:13px;color:rgba(248,250,252,.7);line-height:1.45}
+.mobile-range{width:100%}
+.mobile-field{display:grid;gap:6px}
+.mobile-field label{font-size:12px;font-weight:800;color:rgba(248,250,252,.72)}
+.mobile-field textarea,.mobile-field input{width:100%;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(15,23,42,.55);color:#f8fafc;padding:10px 12px;font:15px/1.45 system-ui,sans-serif}
+.mobile-field textarea{min-height:126px;resize:vertical}
+.mobile-draw-pad{aspect-ratio:16/9;border:1px solid rgba(255,255,255,.18);border-radius:16px;background:rgba(15,23,42,.62);touch-action:none;position:relative;overflow:hidden}
+.mobile-draw-pad::after{content:"";position:absolute;inset:12px;border:1px dashed rgba(255,255,255,.16);border-radius:12px;pointer-events:none}
+.mobile-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mobile-swatch{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.24)}
+.mobile-swatch.active{outline:3px solid #f8fafc}
+.mobile-width{min-width:42px;border-radius:999px;padding:8px 10px}
+.mobile-small{font-size:12px;color:rgba(248,250,252,.62);line-height:1.45}
+.mobile-collab-list{display:grid;gap:7px}
+.mobile-collab-row{display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.07);padding:8px 9px;font-size:13px}
+.mobile-collab-row span:last-child{margin-left:auto;color:rgba(248,250,252,.56);font-size:11px}
 
 /* ── Laser pointer ── */
 .laser-dot{position:fixed;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle,#ff1a1a 0%,#ff4444 40%,rgba(255,0,0,.4) 70%,transparent 100%);box-shadow:0 0 8px 3px rgba(255,0,0,.5),0 0 20px 6px rgba(255,0,0,.25);pointer-events:none;z-index:99998;transform:translate(-50%,-50%);display:none;will-change:left,top}
@@ -248,13 +320,38 @@ body.edit-mode .deck{border-radius:8px;box-shadow:0 2px 16px rgba(0,0,0,.08);mar
 .tb-btn.tb-danger:hover{background:#fef2f2}
 .tb-title{font-weight:700;font-size:14px;color:var(--text);margin-right:8px}
 .tb-spacer{flex:1}
+.editor-status{font-size:12px;color:var(--muted);white-space:nowrap}
 
 /* Sidebar */
 .editor-sidebar{display:none;position:fixed;top:48px;left:0;bottom:0;width:200px;background:#f9fafb;border-right:1px solid var(--border);overflow-y:auto;padding:12px 8px;z-index:999}
 body.edit-mode .editor-sidebar{display:block}
-.editor-main{margin-top:48px;margin-left:200px;display:none;min-height:calc(100vh - 48px);place-items:center;padding:24px}
+.editor-main{margin-top:48px;margin-left:200px;margin-right:340px;display:none;min-height:calc(100vh - 48px);place-items:center;padding:24px}
 body.edit-mode .editor-main{display:grid}
 body.edit-mode .deck-wrapper{display:none}
+.editor-inspector{display:none;position:fixed;top:48px;right:0;bottom:0;width:340px;background:#fff;border-left:1px solid var(--border);overflow-y:auto;z-index:999;font-family:system-ui,sans-serif}
+body.edit-mode .editor-inspector{display:block}
+.inspector-head{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);padding:12px 14px;z-index:1}
+.inspector-title{font-size:13px;font-weight:800;color:var(--text)}
+.inspector-subtitle{margin-top:2px;font-size:11px;color:var(--muted)}
+.inspector-body{padding:12px 14px 24px;display:grid;gap:14px}
+.inspector-section{display:grid;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.inspector-section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.field{display:grid;gap:4px}
+.field label{font-size:11px;font-weight:700;color:var(--muted)}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font:13px/1.4 system-ui,sans-serif;padding:7px 8px}
+.field textarea{min-height:68px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.check-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.check-row input{width:auto}
+.mini-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mini-btn{border:1px solid var(--border);border-radius:6px;background:#fff;padding:5px 8px;font-size:12px;font-weight:600;color:var(--text)}
+.mini-btn:hover{background:#f5f5f5}
+.mini-btn.danger{color:#dc2626;border-color:#fecaca}
+.block-row,.metric-row{border:1px solid var(--border);border-radius:8px;padding:8px;display:grid;gap:8px;background:#fafafa}
+.block-row-head,.metric-row-head{display:flex;gap:6px;align-items:center}
+.block-row-head select{flex:1}
+.json-area{font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;min-height:140px}
+.inline-hint{font-size:11px;color:var(--muted);line-height:1.4}
 
 /* Thumbnails */
 .thumb-list{display:flex;flex-direction:column;gap:8px}
@@ -274,6 +371,7 @@ body.edit-mode .deck-wrapper{display:none}
 body.edit-mode [data-editable]{outline:2px dashed transparent;outline-offset:2px;cursor:text;transition:outline-color 200ms;border-radius:4px;min-height:1em}
 body.edit-mode [data-editable]:hover{outline-color:rgba(37,99,235,.3)}
 body.edit-mode [data-editable]:focus{outline-color:var(--accent);outline-style:solid;background:rgba(37,99,235,.03)}
+body.edit-mode [contenteditable="true"]{caret-color:var(--accent)}
 
 /* Slide action bar in edit mode */
 .slide-actions{display:none;position:absolute;top:8px;right:8px;gap:4px;z-index:30}
@@ -346,12 +444,19 @@ body.edit-mode .progress{display:none}
       <main id="slide-root"></main>
     </div>
   </div>
+  <canvas class="annotation-canvas" id="annotation-canvas" width="1200" height="675" aria-hidden="true"></canvas>
+  <div class="remote-pointer" id="remote-pointer"></div>
+  <div class="remote-note" id="remote-note"></div>
+  <div class="collab-strip" id="collab-strip"></div>
 
   <div class="controls" id="controls-bar">
     <button id="prev" aria-label="Previous slide">←</button>
     <button id="home" aria-label="First slide">⌂</button>
     <span class="counter" id="counter">1 / 1</span>
     <button id="next" aria-label="Next slide">→</button>
+    <button id="play-btn" aria-label="Play slideshow" title="Play / pause (P)">▶</button>
+    <span class="play-state" id="play-state">00:00</span>
+    <button id="phone-btn" aria-label="Phone remote" title="Phone remote (R)">Phone</button>
     <button id="laser-btn" aria-label="Laser pointer" title="Laser pointer (L)">🪄</button>
     <button id="gallery-btn" aria-label="Slide overview" title="Slide overview (G)">⊞</button>
     <button id="fullscreen" aria-label="Fullscreen">Full</button>
@@ -362,8 +467,104 @@ body.edit-mode .progress{display:none}
     <button class="gallery-close" id="gallery-close">×</button>
     <div class="gallery-grid" id="gallery-grid"></div>
   </div>
+  <div class="remote-panel" id="remote-panel">
+    <h3>Phone Remote / Collaboration</h3>
+    <p>Scan this deck controller URL from multiple phones. Control data goes through PeerJS/WebRTC; no app control server is required.</p>
+    <div class="remote-status" id="remote-status">Not started</div>
+    <div class="collab-roster" id="collab-roster"></div>
+    <div class="qr-box" id="remote-qr"><div class="qr-fallback">Click Phone to start connection.</div></div>
+    <div class="remote-url" id="remote-url"></div>
+    <p id="remote-file-warning" style="display:none"></p>
+    <div class="mini-actions">
+      <button class="mini-btn" id="remote-copy-url">Copy URL</button>
+      <button class="mini-btn danger" id="remote-clear-ink">Clear ink</button>
+      <button class="mini-btn danger" id="remote-clear-notes">Clear notes</button>
+    </div>
+  </div>
 </div>
 </div><!-- end deck-wrapper -->
+
+<div class="mobile-controller" id="mobile-controller">
+  <div class="mobile-shell">
+    <section class="mobile-card">
+      <div class="mobile-head">
+        <div>
+          <div class="mobile-title">Slide Remote</div>
+          <div class="mobile-subtitle" id="mobile-subtitle">Connecting to desktop...</div>
+        </div>
+        <div class="mobile-status" id="mobile-status">Connecting</div>
+      </div>
+      <div class="mobile-identity">
+        <input id="mobile-name-input" type="text" maxlength="24" autocomplete="name" placeholder="Your name">
+        <input id="mobile-color-input" type="color" aria-label="Your collaboration color">
+      </div>
+    </section>
+
+    <nav class="mobile-tabs">
+      <button class="mobile-tab active" data-mobile-tab="control">Control</button>
+      <button class="mobile-tab" data-mobile-tab="draw">Mark</button>
+      <button class="mobile-tab" data-mobile-tab="notes">Notes</button>
+      <button class="mobile-tab" data-mobile-tab="more">More</button>
+    </nav>
+
+    <section class="mobile-card mobile-pane active" data-mobile-pane="control">
+      <div class="mobile-slide-meta" id="mobile-slide-meta">Slide - / -</div>
+      <div class="mobile-grid-2">
+        <button class="mobile-btn" data-send-key="ArrowUp">Previous</button>
+        <button class="mobile-btn primary" data-send-key="ArrowDown">Next</button>
+      </div>
+      <div class="mobile-grid-2">
+        <button class="mobile-btn" data-send-key="Home">First</button>
+        <button class="mobile-btn" data-send-key="End">Last</button>
+      </div>
+      <input class="mobile-range" id="mobile-slide-range" type="range" min="1" max="1" value="1">
+      <div class="mobile-grid-2">
+        <button class="mobile-btn" id="mobile-fullscreen">Fullscreen</button>
+        <button class="mobile-btn" id="mobile-play">Play / Pause</button>
+      </div>
+    </section>
+
+    <section class="mobile-card mobile-pane" data-mobile-pane="draw">
+      <div class="mobile-tools" id="mobile-color-tools"></div>
+      <div class="mobile-tools" id="mobile-width-tools"></div>
+      <div class="mobile-draw-pad" id="mobile-draw-pad"></div>
+      <div class="mobile-grid-2">
+        <button class="mobile-btn warn" id="mobile-highlight">Highlighter</button>
+        <button class="mobile-btn danger" id="mobile-clear-draw">Clear marks</button>
+      </div>
+      <div class="mobile-small">Drag inside the 16:9 pad to mark the current slide.</div>
+    </section>
+
+    <section class="mobile-card mobile-pane" data-mobile-pane="notes">
+      <div class="mobile-field">
+        <label>Notes for current slide</label>
+        <textarea id="mobile-note-input" placeholder="Write a note, reminder, or audience question..."></textarea>
+      </div>
+      <div class="mobile-grid-2">
+        <button class="mobile-btn primary" id="mobile-show-note">Show note</button>
+        <button class="mobile-btn" id="mobile-save-note">Save as speaker note</button>
+      </div>
+      <button class="mobile-btn danger" id="mobile-clear-note">Clear shown note</button>
+    </section>
+
+    <section class="mobile-card mobile-pane" data-mobile-pane="more">
+      <div class="mobile-field">
+        <label>Open link on desktop</label>
+        <input id="mobile-link-input" type="url" placeholder="https://example.com">
+      </div>
+      <button class="mobile-btn primary" id="mobile-send-link">Open link</button>
+      <div class="mobile-grid-2">
+        <button class="mobile-btn" id="mobile-overview">Overview</button>
+        <button class="mobile-btn" data-send-key="Escape">Escape</button>
+      </div>
+      <div class="mobile-field">
+        <label>Collaborators</label>
+        <div class="mobile-collab-list" id="mobile-collab-list"></div>
+      </div>
+      <div class="mobile-small">Connection pattern adapted from SnapShare: QR code plus PeerJS data channel.</div>
+    </section>
+  </div>
+</div>
 
 <!-- Editor UI (hidden in present mode) -->
 <div class="editor-toolbar" id="editor-toolbar">
@@ -371,10 +572,12 @@ body.edit-mode .progress{display:none}
   <div class="tb-sep"></div>
   <div class="tb-group">
     <button class="tb-btn" id="tb-undo" title="Undo">↩</button>
+    <button class="tb-btn" id="tb-redo" title="Redo">↪</button>
   </div>
   <div class="tb-sep"></div>
   <div class="tb-group">
     <button class="tb-btn" id="tb-add-slide" title="Add slide">+ Slide</button>
+    <button class="tb-btn" id="tb-add-block" title="Add content block">+ Block</button>
     <button class="tb-btn" id="tb-insert-img" title="Insert image">🖼 Image</button>
     <button class="tb-btn tb-danger" id="tb-del-slide" title="Delete current slide">🗑</button>
   </div>
@@ -383,8 +586,14 @@ body.edit-mode .progress{display:none}
     <button class="tb-btn" id="tb-theme" title="Theme & colors">🎨 Theme</button>
   </div>
   <input type="file" id="img-file-input" accept="image/*" style="display:none">
+  <input type="file" id="json-file-input" accept="application/json,.json" style="display:none">
   <span class="tb-spacer"></span>
+  <span class="editor-status" id="editor-status">Clean</span>
   <div class="tb-group">
+    <button class="tb-btn" id="tb-save-draft" title="Save browser draft">Save</button>
+    <button class="tb-btn" id="tb-load-draft" title="Load browser draft">Load</button>
+    <button class="tb-btn" id="tb-json-import" title="Import slide JSON">Import</button>
+    <button class="tb-btn" id="tb-json-export" title="Export slide JSON">JSON</button>
     <button class="tb-btn tb-primary" id="tb-present" title="Present mode">▶ Present</button>
     <button class="tb-btn" id="tb-export" title="Download HTML">⬇ Export</button>
   </div>
@@ -414,6 +623,14 @@ body.edit-mode .progress{display:none}
   </div>
 </div>
 
+<aside class="editor-inspector" id="editor-inspector">
+  <div class="inspector-head">
+    <div class="inspector-title">Slide Inspector</div>
+    <div class="inspector-subtitle" id="inspector-subtitle">Slide 1</div>
+  </div>
+  <div class="inspector-body" id="inspector-body"></div>
+</aside>
+
 <!-- Layout picker modal -->
 <div class="layout-picker" id="layout-picker">
   <div class="layout-picker-inner">
@@ -435,29 +652,105 @@ const venueLabels={neurips:"NeurIPS",iclr:"ICLR",acl:"ACL",cvpr:"CVPR"};
 
 /* ── Slide data transport ──
    Two transport modes, tried in order:
-   1. Base64 (preferred): @render-slide-data-b64 marker contains base64-encoded JSON.
+   1. Base64 (preferred): the base64 marker contains base64-encoded JSON.
       This eliminates ALL escaping issues — base64 only uses [A-Za-z0-9+/=].
-   2. String.raw (legacy): @render-slide-data marker contains raw JSON in String.raw`...`.
+   2. String.raw (legacy): the raw marker contains raw JSON in String.raw`...`.
       Fragile — LaTeX backslashes can crash JSON.parse or silently corrupt math.
    If the renderer injects base64, the String.raw block is left empty. */
 
 const SLIDE_DATA_B64 = ""; // @render-slide-data-b64
+const SLIDE_DATA_RAW = String.raw`[
+  {
+    "id": 1,
+    "title": "Paper Title Goes Here",
+    "layout": "cover",
+    "purpose": "Introduce the paper and central claim.",
+    "keyMessage": "A live, editable research-talk template with presenter controls.",
+    "speakerNote": "Open with the paper's problem, then state the one-sentence contribution.",
+    "subtitle": "Authors - Venue - Year"
+  },
+  {
+    "id": 2,
+    "title": "Why this problem matters",
+    "layout": "split",
+    "purpose": "Frame the motivation.",
+    "keyMessage": "Current methods fail in a regime that matters to the field.",
+    "speakerNote": "Use one sentence for context, one for the bottleneck, and one for impact.",
+    "bullets": ["Context that grounds the task.", "Pain point that states the bottleneck.", "Impact that explains why the audience should care."],
+    "figureLabel": "Insert Figure: motivating comparison or task framing",
+    "evidenceNote": "Map this claim to the introduction or motivating example."
+  },
+  {
+    "id": 3,
+    "title": "The strongest result",
+    "layout": "metrics",
+    "purpose": "Highlight the main quantitative takeaway.",
+    "keyMessage": "The method delivers the clearest gain on the most relevant benchmark.",
+    "speakerNote": "Anchor on one number, then name the baseline and metric.",
+    "metrics": [
+      {"label": "Main gain", "value": "+4.2%", "detail": "Accuracy on Dataset X", "delta": "positive"},
+      {"label": "Baseline", "value": "81.3", "detail": "Strong prior method"},
+      {"label": "Ours", "value": "85.5", "detail": "Proposed method", "delta": "positive"}
+    ],
+    "evidenceNote": "Every displayed number should map to a precise dataset, metric, and comparison target."
+  },
+  {
+    "id": 4,
+    "title": "Editable content blocks",
+    "purpose": "Demonstrate the preferred renderer.",
+    "keyMessage": "Content blocks are editable inline and in the inspector.",
+    "speakerNote": "Show that labels, headings, text, bullets, metrics, tables, and visuals can all be changed.",
+    "contentBlocks": [
+      {"type": "label", "content": "Editor-ready"},
+      {"type": "heading", "content": "Every visible text field can be revised"},
+      {"type": "bullets", "content": ["Click text directly on the slide.", "Use the inspector for structured fields.", "Export HTML when the talk is ready."]},
+      {"type": "callout", "content": "Generated decks keep the same controls: fullscreen, overview, laser, playback, editor, and export."}
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Takeaway",
+    "layout": "takeaway",
+    "purpose": "Close the demo deck.",
+    "keyMessage": "Use the base webpage as the stable shell; generate only slide data into it.",
+    "speakerNote": "Close by repeating the contribution in one plain sentence."
+  }
+]`; // @render-slide-data
+
+function decodeB64Utf8(b64){
+  const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+function encodeB64Utf8(text){
+  const bytes=new TextEncoder().encode(text);
+  let bin="";
+  bytes.forEach(b=>bin+=String.fromCharCode(b));
+  return btoa(bin);
+}
+function showDataError(kind,e){
+  document.body.innerHTML='<pre style="padding:40px;font-size:16px;color:#dc2626">Failed to load slide data from '+kind+'.\n\nError: '+esc(e.message)+'</pre>';
+}
 
 let slides = [];
-if (SLIDE_DATA_B64) {
-  /* Base64 transport — safe, no escaping issues. 
-     Decode UTF-8 base64 properly. */
+if (SLIDE_DATA_B64.trim()) {
   try {
-    slides = JSON.parse(decodeURIComponent(escape(atob(SLIDE_DATA_B64))));
+    slides = JSON.parse(decodeB64Utf8(SLIDE_DATA_B64.trim()));
   } catch (e) {
-    document.body.innerHTML = '<pre style="padding:40px;font-size:16px;color:#dc2626">❌ Failed to decode base64 slide data.\n\nThis likely means the base64 payload was corrupted during generation.\n\nError: ' + e.message + '</pre>';
+    showDataError("base64 payload",e);
+    throw e;
+  }
+} else if (SLIDE_DATA_RAW.trim()) {
+  try {
+    slides = JSON.parse(SLIDE_DATA_RAW);
+  } catch (e) {
+    showDataError("raw JSON fallback",e);
     throw e;
   }
 }
 
 const deckEl=document.getElementById("deck");
 const wrapperEl=document.getElementById("deck-wrapper");
-const state={currentSlide:0,showHelp:false,laser:false};
+const state={currentSlide:0,showHelp:false,laser:false,editMode:false,playing:false,playSeconds:12,elapsed:0,dirty:false};
 const root=document.getElementById("slide-root");
 const progressBar=document.getElementById("progress");
 const helpPanel=document.getElementById("help");
@@ -465,11 +758,70 @@ const counter=document.getElementById("counter");
 const controlsBar=document.getElementById("controls-bar");
 const laserDot=document.getElementById("laser-dot");
 const laserBtn=document.getElementById("laser-btn");
+const playBtn=document.getElementById("play-btn");
+const playState=document.getElementById("play-state");
+const phoneBtn=document.getElementById("phone-btn");
+const remotePanel=document.getElementById("remote-panel");
+const remoteStatus=document.getElementById("remote-status");
+const remoteQr=document.getElementById("remote-qr");
+const remoteUrl=document.getElementById("remote-url");
+const remoteFileWarning=document.getElementById("remote-file-warning");
+const annotationCanvas=document.getElementById("annotation-canvas");
+const annotationCtx=annotationCanvas.getContext("2d");
+const remotePointer=document.getElementById("remote-pointer");
+const remoteNote=document.getElementById("remote-note");
+const collabStrip=document.getElementById("collab-strip");
+const collabRoster=document.getElementById("collab-roster");
+var annotations={};
+var activeInk=null;
+var pointerTimer=null;
+var activeInks={};
+let playTimer=null;
+let elapsedTimer=null;
 
 /* ── Helpers ── */
-function esc(t){const d=document.createElement("div");d.textContent=t;return d.innerHTML}
+function esc(t){const d=document.createElement("div");d.textContent=t==null?"":String(t);return d.innerHTML}
 function hexToRgba(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgba(${r},${g},${b},${a})`}
 function formatElapsed(s){return`${String(Math.floor(s/60)).padStart(2,"0")}:${String(Math.floor(s%60)).padStart(2,"0")}`}
+function cloneData(v){return JSON.parse(JSON.stringify(v))}
+function pathParts(path){return String(path).split(".").map(p=>/^\d+$/.test(p)?Number(p):p)}
+function getByPath(obj,path){return pathParts(path).reduce((acc,p)=>acc==null?undefined:acc[p],obj)}
+function setByPath(obj,path,value){
+  const parts=pathParts(path);let cur=obj;
+  for(let i=0;i<parts.length-1;i++){
+    const p=parts[i],n=parts[i+1];
+    if(cur[p]==null)cur[p]=typeof n==="number"?[]:{};
+    cur=cur[p];
+  }
+  cur[parts[parts.length-1]]=value;
+}
+function deleteByPath(obj,path){
+  const parts=pathParts(path);let cur=obj;
+  for(let i=0;i<parts.length-1;i++){cur=cur?.[parts[i]];if(cur==null)return}
+  if(Array.isArray(cur))cur.splice(parts[parts.length-1],1);else delete cur[parts[parts.length-1]];
+}
+function dataBind(path){return` data-bind="${esc(path)}" data-editable`}
+function normalizeUrl(url){return /^https?:\/\//i.test(url)?url:`https://${url}`}
+function generateRemoteId(){return`snap-${Math.random().toString(36).slice(2,8)}`}
+function getTokenFromUrl(){return new URLSearchParams(window.location.search).get("token")||new URLSearchParams(window.location.search).get("remote")}
+function peerOptions(){return{debug:1,host:"0.peerjs.com",port:443,path:"/",secure:true,config:{iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:global.stun.twilio.com:3478"}]}}}
+function configuredRemoteControllerUrl(){return(document.documentElement.dataset.remoteControllerUrl||"").trim()}
+function buildRemoteUrl(peerId){
+  const base=configuredRemoteControllerUrl()||window.location.href;
+  const u=new URL(base,window.location.href);
+  u.searchParams.set("token",peerId);
+  u.hash="";
+  return u.href;
+}
+function remotePairingHint(url){
+  const u=new URL(url,window.location.href);
+  const localHosts=new Set(["localhost","127.0.0.1","::1"]);
+  if(u.protocol==="file:")return"This controller is bundled in the deck. To pair a phone, open the deck from an http/https URL the phone can reach, or set data-remote-controller-url to your own static controller/deck URL.";
+  if(localHosts.has(u.hostname))return"This URL uses localhost, which points to the phone itself. Use this computer's LAN IP or your own static hosted deck URL for phone pairing.";
+  return"No custom backend is used for slide control. Phones load this controller page, then connect through PeerJS/WebRTC.";
+}
+function colorFromText(text){let h=0;for(const ch of String(text||"guest"))h=(h*31+ch.charCodeAt(0))>>>0;const palette=["#ef4444","#f59e0b","#22c55e","#06b6d4","#6366f1","#ec4899","#84cc16"];return palette[h%palette.length]}
+function nowTime(){return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
 
 /* ── Theme ── */
 function applyTheme(){
@@ -480,41 +832,75 @@ function applyTheme(){
 }
 
 /* ── Navigation ── */
-function goTo(i){state.currentSlide=Math.max(0,Math.min(i,slides.length-1));render()}
+function goTo(i){
+  state.currentSlide=Math.max(0,Math.min(i,slides.length-1));
+  if(state.editMode)editorRender();else render();
+  redrawAnnotations();
+  syncRemoteState();
+}
+function stopPlayback(){
+  state.playing=false;
+  clearInterval(playTimer);clearInterval(elapsedTimer);
+  playTimer=null;elapsedTimer=null;
+  playBtn.textContent="▶";playBtn.classList.remove("active");
+  syncRemoteState();
+}
+function startPlayback(){
+  if(!slides.length)return;
+  state.playing=true;state.elapsed=0;
+  playBtn.textContent="❚❚";playBtn.classList.add("active");
+  playState.textContent=formatElapsed(state.elapsed);
+  clearInterval(playTimer);clearInterval(elapsedTimer);
+  elapsedTimer=setInterval(()=>{state.elapsed++;playState.textContent=formatElapsed(state.elapsed)},1000);
+  playTimer=setInterval(()=>{
+    if(state.currentSlide>=slides.length-1){stopPlayback();return}
+    goTo(state.currentSlide+1);
+  },Math.max(2,state.playSeconds)*1000);
+  syncRemoteState();
+}
+function togglePlayback(){state.playing?stopPlayback():startPlayback()}
 
 /* ── Rendering: Legacy helpers ── */
-function renderBullets(bullets){if(!bullets||!bullets.length)return"";return`<div class="bullets">${bullets.map(b=>`<div class="bullet"><span class="bullet-dot"></span><span>${esc(typeof b==="string"?b:b.text||"")}</span></div>`).join("")}</div>`}
-function renderVisual(slide){
-  if(slide.visual&&slide.visual.src){const alt=esc(slide.visual.alt||slide.figureLabel||slide.title);const cap=esc(slide.visual.caption||slide.figureLabel||"Paper visual");const conf=slide.visual.confidence?` · ${esc(slide.visual.confidence)} confidence`:"";return`<figure class="evidence-frame"><div class="evidence-media"><img src="${slide.visual.src}" alt="${alt}" loading="eager"/></div><figcaption class="visual-caption">${cap}${conf}</figcaption></figure>`}
-  if(slide.figureLabel)return`<div class="placeholder">${esc(slide.figureLabel)}</div>`;return""
+function renderBullets(bullets,path){
+  if(!bullets||!bullets.length)return"";
+  return`<div class="bullets">${bullets.map((b,i)=>{
+    const text=typeof b==="string"?b:b.text||"";
+    const bind=path?dataBind(typeof b==="string"?`${path}.${i}`:`${path}.${i}.text`):"";
+    return`<div class="bullet" data-bullet-path="${esc(path||"")}"><span class="bullet-dot"></span><span${bind}>${esc(text)}</span></div>`;
+  }).join("")}</div>`
 }
-function renderMetricValue(m){let c="metric-value";if(m.delta==="positive")c+=" positive";else if(m.delta==="negative")c+=" negative";return`<div class="${c}">${esc(String(m.value))}</div>`}
+function renderVisual(slide){
+  if(slide.visual&&slide.visual.src){const alt=esc(slide.visual.alt||slide.figureLabel||slide.title);const cap=esc(slide.visual.caption||slide.figureLabel||"Paper visual");const conf=slide.visual.confidence?` · ${esc(slide.visual.confidence)} confidence`:"";return`<figure class="evidence-frame"><div class="evidence-media"><img src="${slide.visual.src}" alt="${alt}" loading="eager"/></div><figcaption class="visual-caption"${dataBind("visual.caption")}>${cap}${conf}</figcaption></figure>`}
+  if(slide.figureLabel)return`<div class="placeholder"${dataBind("figureLabel")}>${esc(slide.figureLabel)}</div>`;return""
+}
+function renderMetricValue(m,path){let c="metric-value";if(m.delta==="positive")c+=" positive";else if(m.delta==="negative")c+=" negative";return`<div class="${c}"${path?dataBind(`${path}.value`):""}>${esc(String(m.value))}</div>`}
 
 /* ═══ CONTENT BLOCKS RENDERER ═══ */
-function renderBlock(block){
+function renderBlock(block,idx){
   const s=block.style||"";const e=block.emphasis?` emphasis-${block.emphasis}`:"";
+  const base=`contentBlocks.${idx}`;
   switch(block.type){
-    case"label":return`<div class="label${s==="positive"?" label-positive":s==="negative"?" label-negative":""}">${esc(block.content)}</div>`;
-    case"heading":return`<h2 class="title${e}">${esc(block.content)}</h2>`;
-    case"hero-text":return`<div class="hero-text${e}">${esc(block.content)}</div>`;
-    case"text":return`<p class="body-text${e}">${esc(block.content)}</p>`;
-    case"bullets":return renderBullets(block.content);
+    case"label":return`<div class="label${s==="positive"?" label-positive":s==="negative"?" label-negative":""}"${dataBind(`${base}.content`)}>${esc(block.content)}</div>`;
+    case"heading":return`<h2 class="title${e}"${dataBind(`${base}.content`)}>${esc(block.content)}</h2>`;
+    case"hero-text":return`<div class="hero-text${e}"${dataBind(`${base}.content`)}>${esc(block.content)}</div>`;
+    case"text":return`<p class="body-text${e}"${dataBind(`${base}.content`)}>${esc(block.content)}</p>`;
+    case"bullets":return renderBullets(block.content,`${base}.content`);
     case"figure":{
       const c=block.content||{};
-      if(c.src)return`<figure class="evidence-frame${e}"><div class="evidence-media"><img src="${c.src}" alt="${esc(c.alt||c.caption||"")}" loading="eager"/></div>${c.caption?`<figcaption class="visual-caption">${esc(c.caption)}</figcaption>`:""}</figure>`;
-      if(c.placeholder)return`<div class="placeholder${e}">${esc(c.placeholder)}</div>`;return""
+      if(c.src)return`<figure class="evidence-frame${e}"><div class="evidence-media"><img src="${c.src}" alt="${esc(c.alt||c.caption||"")}" loading="eager"/></div><figcaption class="visual-caption"${dataBind(`${base}.content.caption`)}>${esc(c.caption||"Paper visual")}</figcaption></figure>`;
+      if(c.placeholder)return`<div class="placeholder${e}"${dataBind(`${base}.content.placeholder`)}>${esc(c.placeholder)}</div>`;return`<div class="placeholder${e}"${dataBind(`${base}.content.placeholder`)}>Insert figure</div>`
     }
-    case"metric":{const c=block.content||{};const dc=c.delta==="positive"?" positive":c.delta==="negative"?" negative":"";const sz=block.emphasis==="dramatic"?" hero-number":"metric-value";return`<div class="metric-card${e}"><div class="metric-label">${esc(c.label||"")}</div><div class="${sz}${dc}">${esc(String(c.value||""))}</div><div class="metric-detail">${esc(c.detail||"")}</div></div>`}
-    case"metric-grid":{const items=(block.content||[]).map(m=>{const dc=m.delta==="positive"?" positive":m.delta==="negative"?" negative":"";return`<div class="metric-card"><div class="metric-label">${esc(m.label||"")}</div><div class="metric-value${dc}">${esc(String(m.value||""))}</div><div class="metric-detail">${esc(m.detail||"")}</div></div>`}).join("");return`<div class="metric-grid${e}">${items}</div>`}
-    case"table":{const c=block.content||{};const hdrs=(c.headers||[]).map(h=>`<th>${esc(h)}</th>`).join("");const rows=(c.rows||[]).map(r=>{const cls=r.highlight?" class=\"highlight\"":r.best?" class=\"best\"":"";const cells=(r.cells||[]).map((cell,i)=>`<td${typeof cell==="number"||/^[\d.+%-]+$/.test(String(cell))?" class=\"num\"":""}>${esc(String(cell))}</td>`).join("");return`<tr${cls}>${cells}</tr>`}).join("");return`<div class="data-table${e}"><table class="result-table"><thead><tr>${hdrs}</tr></thead><tbody>${rows}</tbody></table>${c.caption?`<div class="table-caption">${esc(c.caption)}</div>`:""}</div>`}
+    case"metric":{const c=block.content||{};const dc=c.delta==="positive"?" positive":c.delta==="negative"?" negative":"";const sz=block.emphasis==="dramatic"?" hero-number":"metric-value";return`<div class="metric-card${e}"><div class="metric-label"${dataBind(`${base}.content.label`)}>${esc(c.label||"")}</div><div class="${sz}${dc}"${dataBind(`${base}.content.value`)}>${esc(String(c.value||""))}</div><div class="metric-detail"${dataBind(`${base}.content.detail`)}>${esc(c.detail||"")}</div></div>`}
+    case"metric-grid":{const items=(block.content||[]).map((m,j)=>{const dc=m.delta==="positive"?" positive":m.delta==="negative"?" negative":"";return`<div class="metric-card"><div class="metric-label"${dataBind(`${base}.content.${j}.label`)}>${esc(m.label||"")}</div><div class="metric-value${dc}"${dataBind(`${base}.content.${j}.value`)}>${esc(String(m.value||""))}</div><div class="metric-detail"${dataBind(`${base}.content.${j}.detail`)}>${esc(m.detail||"")}</div></div>`}).join("");return`<div class="metric-grid${e}">${items}</div>`}
+    case"table":{const c=block.content||{};const hdrs=(c.headers||[]).map((h,j)=>`<th${dataBind(`${base}.content.headers.${j}`)}>${esc(h)}</th>`).join("");const rows=(c.rows||[]).map((r,ri)=>{const cls=r.highlight?" class=\"highlight\"":r.best?" class=\"best\"":"";const cells=(r.cells||[]).map((cell,ci)=>`<td${typeof cell==="number"||/^[\d.+%-]+$/.test(String(cell))?" class=\"num\"":""}${dataBind(`${base}.content.rows.${ri}.cells.${ci}`)}>${esc(String(cell))}</td>`).join("");return`<tr${cls}>${cells}</tr>`}).join("");return`<div class="data-table${e}"><table class="result-table"><thead><tr>${hdrs}</tr></thead><tbody>${rows}</tbody></table>${c.caption?`<div class="table-caption"${dataBind(`${base}.content.caption`)}>${esc(c.caption)}</div>`:""}</div>`}
     case"equation":{const cLen=(block.content||"").length;const eqCls=cLen>120?" equation-tight":cLen>60?" equation-compact":"";return`<div class="equation-block${eqCls}${e}">${block.content}</div>${block.explanation?`<div class="equation-explain">${esc(block.explanation)}</div>`:""}`}
-    case"callout":return`<div class="callout-box${s?" "+s:""}${e}">${esc(block.content)}</div>`;
-    case"quote":return`<blockquote class="quote-block${e}">${esc(block.content)}${block.attribution?`<div class="quote-attr">— ${esc(block.attribution)}</div>`:""}</blockquote>`;
-    case"comparison":{const c=block.content||{};return`<div class="comparison-panel${e}"><div><div class="comparison-label comparison-label-accent">${esc(c.leftLabel||"Ours")}</div>${esc(c.left||"")}</div><div><div class="comparison-label comparison-label-neutral">${esc(c.rightLabel||"Baseline")}</div>${esc(c.right||"")}</div></div>`}
-    case"timeline":{const steps=(block.content||[]).map((s,i,a)=>`<div class="timeline-step">${esc(s)}</div>${i<a.length-1?'<div class="timeline-arrow">→</div>':""}`).join("");return`<div class="timeline-flow${e}">${steps}</div>`}
+    case"callout":return`<div class="callout-box${s?" "+s:""}${e}"${dataBind(`${base}.content`)}>${esc(block.content)}</div>`;
+    case"quote":return`<blockquote class="quote-block${e}"><span${dataBind(`${base}.content`)}>${esc(block.content)}</span>${block.attribution?`<div class="quote-attr"${dataBind(`${base}.attribution`)}>— ${esc(block.attribution)}</div>`:""}</blockquote>`;
+    case"comparison":{const c=block.content||{};return`<div class="comparison-panel${e}"><div><div class="comparison-label comparison-label-accent"${dataBind(`${base}.content.leftLabel`)}>${esc(c.leftLabel||"Ours")}</div><div${dataBind(`${base}.content.left`)}>${esc(c.left||"")}</div></div><div><div class="comparison-label comparison-label-neutral"${dataBind(`${base}.content.rightLabel`)}>${esc(c.rightLabel||"Baseline")}</div><div${dataBind(`${base}.content.right`)}>${esc(c.right||"")}</div></div></div>`}
+    case"timeline":{const steps=(block.content||[]).map((step,i,a)=>`<div class="timeline-step"${dataBind(`${base}.content.${i}`)}>${esc(step)}</div>${i<a.length-1?'<div class="timeline-arrow">→</div>':""}`).join("");return`<div class="timeline-flow${e}">${steps}</div>`}
     case"spacer":return`<div style="flex:${block.size||1}"></div>`;
     case"custom-html":return block.content||"";
-    default:return`<div class="body-text${e}">${esc(block.content||"")}</div>`
+    default:return`<div class="body-text${e}"${dataBind(`${base}.content`)}>${esc(block.content||"")}</div>`
   }
 }
 
@@ -524,37 +910,40 @@ function renderContentBlocks(slide){
   const grid=slide.gridTemplate?`display:grid;grid-template:${slide.gridTemplate};gap:24px;flex:1;min-height:0;`:"";
   const customCSS=slide.customCSS?Object.entries(slide.customCSS).map(([k,v])=>`${k}:${v}`).join(";"):"";
   const style=grid||customCSS?` style="${grid}${customCSS}"`:"";
-  const inner=blocks.map(b=>renderBlock(b)).join("\n");
+  const inner=blocks.map((b,i)=>renderBlock(b,i)).join("\n");
   return`<section class="slide stack${atmo}"${style}>${inner}</section>`
 }
 
 /* ═══ CLASSIC LAYOUT RENDERER ═══ */
 function renderClassicSlide(slide){
-  const evidNote=slide.evidenceNote?`<div class="evidence">${esc(slide.evidenceNote)}</div>`:"";
+  const title=`<h2 class="title"${dataBind("title")}>${esc(slide.title)}</h2>`;
+  const hero=`<h1 class="hero-text hero-text-mt"${dataBind("title")}>${esc(slide.title)}</h1>`;
+  const body=`<p class="body-text"${dataBind("keyMessage")}>${esc(slide.keyMessage||"")}</p>`;
+  const evidNote=slide.evidenceNote?`<div class="evidence"${dataBind("evidenceNote")}>${esc(slide.evidenceNote)}</div>`:"";
+  const metricCards=(prefix="metrics")=>(slide.metrics||[]).map((m,i)=>`<div class="metric-card"><div class="metric-label"${dataBind(`${prefix}.${i}.label`)}>${esc(m.label)}</div>${renderMetricValue(m,`${prefix}.${i}`)}<div class="metric-detail"${dataBind(`${prefix}.${i}.detail`)}>${esc(m.detail||"")}</div></div>`).join("");
 
+  if(slide.layout==="cover")return`<section class="slide region-center"><div class="region-inset"><div class="label">${venueLabels[venuePreset]||venuePreset}</div>${hero}${slide.subtitle?`<p class="body-text cover-subtitle"${dataBind("subtitle")}>${esc(slide.subtitle)}</p>`:""}<p class="body-text cover-body"${dataBind("keyMessage")}>${esc(slide.keyMessage||"")}</p></div></section>`;
 
-  if(slide.layout==="cover")return`<section class="slide region-center"><div class="region-inset"><div class="label">${venueLabels[venuePreset]||venuePreset}</div><h1 class="hero-text hero-text-mt">${esc(slide.title)}</h1>${slide.subtitle?`<p class="body-text cover-subtitle">${esc(slide.subtitle)}</p>`:""}<p class="body-text cover-body">${esc(slide.keyMessage||"")}</p></div></section>`;
+  if(slide.layout==="method-overview")return`<section class="slide split method-overview"><div class="text-col"><div class="label">Method</div>${title}${body}${renderBullets(slide.bullets,"bullets")}${evidNote}</div><div class="visual-col">${renderVisual(slide)}</div></section>`;
 
-  if(slide.layout==="method-overview")return`<section class="slide split method-overview"><div class="text-col"><div class="label">Method</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div><div class="visual-col">${renderVisual(slide)}</div></section>`;
+  if(slide.layout==="split"||slide.layout==="diagram")return`<section class="slide split"><div class="text-col"><div class="label">Key point</div>${title}${body}${renderBullets(slide.bullets,"bullets")}${evidNote}</div><div class="visual-col">${renderVisual(slide)}</div></section>`;
 
-  if(slide.layout==="split"||slide.layout==="diagram")return`<section class="slide split"><div class="text-col"><div class="label">Key point</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div><div class="visual-col">${renderVisual(slide)}</div></section>`;
+  if(slide.layout==="result-table"||slide.layout==="result-table-focus"){const mcs=metricCards();const vb=renderVisual(slide);if(vb)return`<section class="slide stack"><div><div class="label label-positive">Result</div>${title}${body}</div><div class="metric-grid result-metrics-row">${mcs}</div><div class="visual-overflow-guard result-visual-fill">${vb}</div>${evidNote}</section>`;return`<section class="slide stack"><div><div class="label label-positive">Result</div>${title}${body}<div class="metric-grid">${mcs}</div>${evidNote}</div></section>`}
 
-  if(slide.layout==="result-table"||slide.layout==="result-table-focus"){const mcs=(slide.metrics||[]).map(m=>`<div class="metric-card"><div class="metric-label">${esc(m.label)}</div>${renderMetricValue(m)}<div class="metric-detail">${esc(m.detail||"")}</div></div>`).join("");const vb=renderVisual(slide);if(vb)return`<section class="slide stack"><div><div class="label label-positive">Result</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p></div><div class="metric-grid result-metrics-row">${mcs}</div><div class="visual-overflow-guard result-visual-fill">${vb}</div>${evidNote}</section>`;return`<section class="slide stack"><div><div class="label label-positive">Result</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p><div class="metric-grid">${mcs}</div>${evidNote}</div></section>`}
+  if(slide.layout==="metrics"){const mcs=metricCards();return`<section class="slide stack"><div><div class="label label-positive">Result</div>${title}${body}<div class="metric-grid">${mcs}</div>${evidNote}</div></section>`}
 
-  if(slide.layout==="metrics"){const mcs=(slide.metrics||[]).map(m=>`<div class="metric-card"><div class="metric-label">${esc(m.label)}</div>${renderMetricValue(m)}<div class="metric-detail">${esc(m.detail||"")}</div></div>`).join("");return`<section class="slide stack"><div><div class="label label-positive">Result</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p><div class="metric-grid">${mcs}</div>${evidNote}</div></section>`}
+  if(slide.layout==="objective"){const eq=slide.equation||"";const eqLen=eq.length;const eqClass=eqLen>120?"equation-tight":eqLen>60?"equation-compact":"";return`<section class="slide"><div class="objective-shell"><div class="label">Objective</div>${title}${eq?`<div class="equation-block${eqClass?" "+eqClass:""}">${eq}</div>`:""}<p class="body-text objective-body"${dataBind("keyMessage")}>${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets,"bullets")}${evidNote}</div></section>`}
 
-  if(slide.layout==="objective"){const eq=slide.equation||"";const eqLen=eq.length;const eqClass=eqLen>120?"equation-tight":eqLen>60?"equation-compact":"";return`<section class="slide"><div class="objective-shell"><div class="label">Objective</div><h2 class="title">${esc(slide.title)}</h2>${eq?`<div class="equation-block${eqClass?" "+eqClass:""}">${eq}</div>`:""}<p class="body-text objective-body">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div></section>`}
+  if(slide.layout==="qualitative-evidence")return`<section class="slide split"><div class="text-col qualitative-text-col"><div class="label">Qualitative</div>${title}${body}${evidNote}</div><div class="visual-col qualitative-visual-col">${renderVisual(slide)}</div></section>`;
 
-  if(slide.layout==="qualitative-evidence")return`<section class="slide split"><div class="text-col qualitative-text-col"><div class="label">Qualitative</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${evidNote}</div><div class="visual-col qualitative-visual-col">${renderVisual(slide)}</div></section>`;
+  if(slide.layout==="limitations")return`<section class="slide stack"><div><div class="label label-negative">Limitations</div>${title}<div class="limitation-block"><p class="body-text"${dataBind("keyMessage")}>${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets,"bullets")}</div></div></section>`;
 
-  if(slide.layout==="limitations")return`<section class="slide stack"><div><div class="label label-negative">Limitations</div><h2 class="title">${esc(slide.title)}</h2><div class="limitation-block"><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}</div></div></section>`;
+  if(slide.layout==="ablation")return`<section class="slide split"><div class="text-col"><div class="label">Analysis</div>${title}${body}${renderBullets(slide.bullets,"bullets")}${evidNote}</div><div class="visual-col">${renderVisual(slide)}</div></section>`;
 
-  if(slide.layout==="ablation")return`<section class="slide split"><div class="text-col"><div class="label">Analysis</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div><div class="visual-col">${renderVisual(slide)}</div></section>`;
-
-  if(slide.layout==="takeaway")return`<section class="slide region-center"><div class="region-inset"><div class="label">Takeaway</div><h1 class="hero-text hero-text-mt">${esc(slide.title)}</h1><p class="body-text takeaway-body">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}</div></section>`;
+  if(slide.layout==="takeaway")return`<section class="slide region-center"><div class="region-inset"><div class="label">Takeaway</div>${hero}<p class="body-text takeaway-body"${dataBind("keyMessage")}>${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets,"bullets")}</div></section>`;
 
   /* Default fallback */
-  return`<section class="slide stack"><div><div class="label">${slide.appendix?"Appendix":"Core idea"}</div><h2 class="title">${esc(slide.title)}</h2><p class="body-text">${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets)}${evidNote}</div></section>`
+  return`<section class="slide stack"><div><div class="label">${slide.appendix?"Appendix":"Core idea"}</div>${title}${body}${renderBullets(slide.bullets,"bullets")}${evidNote}</div></section>`
 }
 
 /* ── Slide router ── */
@@ -599,13 +988,15 @@ function fitRenderedSlide(container){
   slideEl.setAttribute('data-overflow-fail','true');
 }
 function render(){
-  if(!slides.length){root.innerHTML='<section class="slide stack"><div><h2 class="title" style="text-align:center;margin-top:200px;color:var(--muted)">No slides loaded</h2><p class="body-text" style="text-align:center">Inject slide data at the <code>@render-slide-data</code> marker.</p></div></section>';return}
+  if(!slides.length){root.innerHTML='<section class="slide stack"><div><h2 class="title" style="text-align:center;margin-top:200px;color:var(--muted)">No slides loaded</h2><p class="body-text" style="text-align:center">Inject slide data at the slide-data marker.</p></div></section>';return}
   const s=slides[state.currentSlide];
   root.innerHTML=renderSlide(s);
   counter.textContent=`${state.currentSlide+1} / ${slides.length}`;
   progressBar.style.width=`${((state.currentSlide+1)/slides.length)*100}%`;
   renderMath(root);
   fitRenderedSlide(root);
+  renderCollaborativeNotes();
+  redrawAnnotations();
 }
 
 /* ── Fullscreen ── */
@@ -653,6 +1044,7 @@ document.getElementById("prev").addEventListener("click",()=>goTo(state.currentS
 document.getElementById("next").addEventListener("click",()=>goTo(state.currentSlide+1));
 document.getElementById("home").addEventListener("click",()=>goTo(0));
 document.getElementById("fullscreen").addEventListener("click",toggleFullscreen);
+playBtn.addEventListener("click",togglePlayback);
 
 /* ── Laser pointer ── */
 function toggleLaser(){
@@ -686,7 +1078,9 @@ window.addEventListener("keydown",e=>{
   if(k==="f")toggleFullscreen();
   if(k==="l")toggleLaser();
   if(k==="g")toggleGallery();
-  if(k==="escape"){if(galleryOverlay.classList.contains('show')){galleryOverlay.classList.remove('show');e.preventDefault();return}if(state.laser){toggleLaser();e.preventDefault();return}if(isRealFullscreen()){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else if(isSimulatedFS()){wrapperEl.classList.remove('simulated-fs');document.body.style.overflow='';syncFSBody();scaleDeck();render()}}
+  if(k==="r")toggleRemotePanel();
+  if(k==="p")togglePlayback();
+  if(k==="escape"){if(galleryOverlay.classList.contains('show')){galleryOverlay.classList.remove('show');e.preventDefault();return}if(state.playing){stopPlayback();e.preventDefault();return}if(state.laser){toggleLaser();e.preventDefault();return}if(isRealFullscreen()){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else if(isSimulatedFS()){wrapperEl.classList.remove('simulated-fs');document.body.style.overflow='';syncFSBody();scaleDeck();render()}}
   if(/^[1-9]$/.test(k)){const idx=Number(k)-1;if(idx<slides.length)goTo(idx)}
 });
 
@@ -705,6 +1099,317 @@ function scaleDeck(){
 scaleDeck();window.addEventListener('resize',scaleDeck);document.addEventListener('fullscreenchange',scaleDeck);document.addEventListener('webkitfullscreenchange',scaleDeck);
 
 /* ═══════════════════════════════════════════════
+   SNAPSHARE-STYLE PHONE REMOTE
+   ═══════════════════════════════════════════════ */
+const remoteState={peer:null,peerId:null,connections:[],collaborators:{},started:false,connected:false,error:null};
+
+function getCurrentStrokes(){return annotations[state.currentSlide]||(annotations[state.currentSlide]=[])}
+function getCollaborator(id){return remoteState.collaborators[id]||{id,name:"Guest",color:colorFromText(id),online:false}}
+function ensureCollaborator(conn,data={}){
+  const id=conn?.peer||data.clientId||"local";
+  const prev=remoteState.collaborators[id]||{};
+  const collab={
+    id,
+    name:(data.name||prev.name||`Guest ${Object.keys(remoteState.collaborators).length+1}`).slice(0,24),
+    color:data.color||prev.color||colorFromText(id),
+    online:true,
+    lastSeen:Date.now()
+  };
+  remoteState.collaborators[id]=collab;
+  renderCollaborators();
+  return collab;
+}
+function collaboratorList(){return Object.values(remoteState.collaborators).sort((a,b)=>(b.online-a.online)||(a.name||"").localeCompare(b.name||""))}
+function renderCollaborators(){
+  const list=collaboratorList();
+  if(collabStrip){
+    collabStrip.classList.toggle("show",list.length>0);
+    collabStrip.innerHTML=list.slice(0,5).map(c=>`<div class="collab-pill" title="${esc(c.name)}"><span class="collab-dot" style="background:${esc(c.color)}"></span>${esc(c.name)}</div>`).join("");
+  }
+  if(collabRoster){
+    collabRoster.innerHTML=list.length?list.map(c=>`<div class="collab-roster-row"><span class="collab-dot" style="background:${esc(c.color)}"></span><span class="name">${esc(c.name)}</span><span class="meta">${c.online?"online":"left"}</span></div>`).join(""):`<div class="collab-roster-row"><span class="meta">No collaborators yet</span></div>`;
+  }
+}
+function getSlideNotes(){const slide=slides[state.currentSlide]||{};return slide.collabNotes||(slide.collabNotes=[])}
+function renderCollaborativeNotes(){
+  const notes=getSlideNotes();
+  if(!notes.length){remoteNote.classList.remove("show");remoteNote.innerHTML="";return}
+  remoteNote.innerHTML=`<div class="collab-note-list">${notes.slice(-5).map(note=>`<div class="collab-note-item" style="border-left-color:${esc(note.color||"#f59e0b")}"><div class="collab-note-author">${esc(note.author||"Guest")} · ${esc(note.time||"")}</div><div class="collab-note-text">${esc(note.text||"")}</div></div>`).join("")}</div>`;
+  remoteNote.classList.add("show");
+}
+function redrawAnnotations(){
+  if(!annotationCtx)return;
+  annotationCtx.clearRect(0,0,1200,675);
+  const strokes=getCurrentStrokes();
+  for(const stroke of strokes){
+    if(!stroke.points||stroke.points.length<1)continue;
+    annotationCtx.save();
+    annotationCtx.globalCompositeOperation=stroke.tool==="highlighter"?"multiply":"source-over";
+    annotationCtx.globalAlpha=stroke.tool==="highlighter"?.42:1;
+    annotationCtx.strokeStyle=stroke.color||"#ef4444";
+    annotationCtx.lineWidth=stroke.width||5;
+    annotationCtx.lineCap="round";
+    annotationCtx.lineJoin="round";
+    annotationCtx.beginPath();
+    stroke.points.forEach((p,i)=>{const x=p.x*1200,y=p.y*675;if(i===0)annotationCtx.moveTo(x,y);else annotationCtx.lineTo(x,y)});
+    annotationCtx.stroke();
+    annotationCtx.restore();
+  }
+}
+function clearAnnotations(slideIndex=state.currentSlide){
+  annotations[slideIndex]=[];
+  redrawAnnotations();
+  broadcastCollab({type:"annotation-clear",index:slideIndex});
+  syncRemoteState();
+}
+function handleDrawCommand(data,sourceId="local"){
+  const collab=getCollaborator(sourceId);
+  if(data.action==="clear"){clearAnnotations();return}
+  if(data.action==="undo"){getCurrentStrokes().pop();redrawAnnotations();return}
+  if(data.action==="start"){
+    const stroke={authorId:sourceId,author:collab.name,color:data.color||collab.color||"#ef4444",width:data.width||5,tool:data.tool||"pen",points:[{x:data.x||0,y:data.y||0}]};
+    activeInks[sourceId]=stroke;
+    activeInk=stroke;
+    getCurrentStrokes().push(stroke);
+    redrawAnnotations();
+    return;
+  }
+  if(data.action==="move"&&activeInks[sourceId]){
+    activeInks[sourceId].points.push({x:data.x||0,y:data.y||0});
+    redrawAnnotations();
+    return;
+  }
+  if(data.action==="end"){delete activeInks[sourceId];activeInk=null;syncRemoteState()}
+}
+function showRemotePointer(x,y,active=true,source=null){
+  if(!remotePointer)return;
+  remotePointer.style.left=`${Math.max(0,Math.min(1,x))*1200}px`;
+  remotePointer.style.top=`${Math.max(0,Math.min(1,y))*675}px`;
+  if(source?.color){
+    remotePointer.style.background=source.color;
+    remotePointer.style.boxShadow=`0 0 0 8px ${hexToRgba(source.color,.16)},0 0 24px ${hexToRgba(source.color,.42)}`;
+  }
+  remotePointer.classList.toggle("active",active);
+  clearTimeout(pointerTimer);
+  if(active)pointerTimer=setTimeout(()=>remotePointer.classList.remove("active"),1200);
+}
+function addCollaborativeNote(text,sourceId="local"){
+  const clean=(text||"").trim();
+  const collab=getCollaborator(sourceId);
+  const notes=getSlideNotes();
+  if(!clean){
+    slides[state.currentSlide].collabNotes=notes.filter(note=>note.authorId!==sourceId);
+  }else{
+    notes.push({id:`${Date.now()}-${sourceId}`,authorId:sourceId,author:collab.name,color:collab.color,text:clean,time:nowTime()});
+  }
+  renderCollaborativeNotes();
+  broadcastCollab({type:"notes-sync",index:state.currentSlide,notes:getSlideNotes()});
+  syncRemoteState();
+}
+function clearCollaborativeNotes(){
+  slides[state.currentSlide].collabNotes=[];
+  renderCollaborativeNotes();
+  broadcastCollab({type:"notes-sync",index:state.currentSlide,notes:[]});
+  syncRemoteState();
+}
+function setRemoteNote(text){
+  if(text)addCollaborativeNote(text,"local");
+  else clearCollaborativeNotes();
+}
+function handleRemoteKey(key){
+  if(key==="ArrowDown"||key==="ArrowRight"||key===" "||key==="Space")goTo(state.currentSlide+1);
+  else if(key==="ArrowUp"||key==="ArrowLeft")goTo(state.currentSlide-1);
+  else if(key==="Home")goTo(0);
+  else if(key==="End")goTo(slides.length-1);
+  else if(key==="Escape"){if(state.playing)stopPlayback();if(isAnyFullscreen())toggleFullscreen()}
+  else if(key==="f"||key==="F")toggleFullscreen();
+  else if(key==="p"||key==="P")togglePlayback();
+  else if(key==="g"||key==="G")toggleGallery();
+}
+function handleRemoteData(data,conn){
+  if(!data||typeof data!=="object")return;
+  const source=ensureCollaborator(conn,data);
+  if(data.type==="hello"){syncRemoteState();return}
+  if(data.type==="keyboard"&&data.key)handleRemoteKey(data.key);
+  if(data.type==="slide"&&data.action==="goTo")goTo(Number(data.index)||0);
+  if(data.type==="fullscreen")toggleFullscreen();
+  if(data.type==="play")togglePlayback();
+  if(data.type==="gallery")toggleGallery();
+  if(data.type==="draw")handleDrawCommand(data,source.id);
+  if(data.type==="pointer")showRemotePointer(data.x,data.y,data.active!==false,source);
+  if(data.type==="notes")addCollaborativeNote(data.text||"",source.id);
+  if(data.type==="speaker-note"){slides[state.currentSlide].speakerNote=data.text||"";broadcastCollab({type:"speaker-note-sync",index:state.currentSlide,text:data.text||"",author:source.name});syncRemoteState()}
+  if(data.type==="link"&&data.url)window.open(normalizeUrl(data.url),"_blank","noopener");
+}
+function remotePayload(){
+  const slide=slides[state.currentSlide]||{};
+  return{type:"state",index:state.currentSlide,count:slides.length,title:slide.title||"",speakerNote:slide.speakerNote||"",remoteNote:slide.remoteNote||"",notes:getSlideNotes(),collaborators:collaboratorList(),playing:state.playing,inkCount:getCurrentStrokes().length};
+}
+function broadcastCollab(payload,exceptConn){
+  remoteState.connections.forEach(conn=>{try{if(conn!==exceptConn&&conn.open)conn.send(payload)}catch(_e){}});
+}
+function syncRemoteState(){
+  if(!remoteState.connections.length)return;
+  const payload=remotePayload();
+  remoteState.connections.forEach(conn=>{try{if(conn.open)conn.send(payload)}catch(_e){}});
+}
+function updateRemoteStatus(text){
+  if(remoteStatus)remoteStatus.textContent=text;
+}
+function startRemoteHost(){
+  remotePanel.classList.add("show");
+  if(remoteState.started)return;
+  remoteState.started=true;
+  if(typeof Peer!=="function"){
+    updateRemoteStatus("PeerJS failed to load. Check network access.");
+    return;
+  }
+  const id=generateRemoteId();
+  updateRemoteStatus("Starting peer...");
+  remoteState.peer=new Peer(id,peerOptions());
+  remoteState.peer.on("open",peerId=>{
+    remoteState.peerId=peerId;
+    const url=buildRemoteUrl(peerId);
+    remoteUrl.textContent=url;
+    remoteFileWarning.textContent=remotePairingHint(url);
+    remoteFileWarning.style.display="block";
+    remoteQr.innerHTML="";
+    if(typeof QRCode==="function")new QRCode(remoteQr,{text:url,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
+    else remoteQr.innerHTML='<div class="qr-fallback">QR library unavailable. Open the URL below on your phone.</div>';
+    updateRemoteStatus("Waiting for phone...");
+  });
+  remoteState.peer.on("connection",conn=>{
+    remoteState.connections.push(conn);
+    conn.on("open",()=>{remoteState.connected=true;ensureCollaborator(conn,{});updateRemoteStatus(`Connected: ${remoteState.connections.filter(c=>c.open).length} collaborator(s)`);conn.send(remotePayload());syncRemoteState()});
+    conn.on("data",data=>handleRemoteData(data,conn));
+    conn.on("close",()=>{remoteState.connections=remoteState.connections.filter(c=>c!==conn);if(remoteState.collaborators[conn.peer])remoteState.collaborators[conn.peer].online=false;remoteState.connected=remoteState.connections.some(c=>c.open);renderCollaborators();updateRemoteStatus(remoteState.connected?`Connected: ${remoteState.connections.filter(c=>c.open).length} collaborator(s)`:"All collaborators disconnected");syncRemoteState()});
+    conn.on("error",err=>updateRemoteStatus(`Connection error: ${err.message||err}`));
+  });
+  remoteState.peer.on("error",err=>{remoteState.error=err;updateRemoteStatus(`Peer error: ${err.message||err}`)});
+}
+function toggleRemotePanel(){remotePanel.classList.toggle("show");if(remotePanel.classList.contains("show"))startRemoteHost()}
+phoneBtn.addEventListener("click",toggleRemotePanel);
+document.getElementById("remote-clear-ink").addEventListener("click",()=>clearAnnotations());
+document.getElementById("remote-clear-notes").addEventListener("click",()=>clearCollaborativeNotes());
+document.getElementById("remote-copy-url").addEventListener("click",async()=>{
+  if(!remoteUrl.textContent)return;
+  try{await navigator.clipboard.writeText(remoteUrl.textContent);updateRemoteStatus("URL copied")}catch(_e){updateRemoteStatus("Copy failed; select the URL manually")}
+});
+window.addEventListener("resize",redrawAnnotations);
+
+/* ── Phone controller page ── */
+const mobileIdentity=(()=>{
+  const saved=(()=>{try{return JSON.parse(localStorage.getItem("slider-mobile-identity")||"{}")}catch(_e){return{}}})();
+  const id=saved.clientId||`m-${Math.random().toString(36).slice(2,9)}`;
+  return{clientId:id,name:saved.name||`Guest ${id.slice(-3).toUpperCase()}`,color:saved.color||colorFromText(id)};
+})();
+const mobileState={peer:null,conn:null,connected:false,drawColor:mobileIdentity.color,drawWidth:5,drawTool:"pen",host:null,lastSlideIndex:null,identity:mobileIdentity};
+function saveMobileIdentity(){
+  try{localStorage.setItem("slider-mobile-identity",JSON.stringify(mobileState.identity))}catch(_e){}
+}
+function mobileSend(data){
+  const payload={clientId:mobileState.identity.clientId,name:mobileState.identity.name,color:mobileState.identity.color,...data};
+  if(mobileState.conn&&mobileState.conn.open){mobileState.conn.send(payload);return true}
+  updateMobileStatus("Disconnected",false);
+  return false;
+}
+function updateMobileStatus(text,connected=mobileState.connected){
+  const status=document.getElementById("mobile-status");
+  if(status){status.textContent=text;status.classList.toggle("connected",connected)}
+}
+function updateMobileUI(payload){
+  if(!payload||payload.type!=="state")return;
+  const meta=document.getElementById("mobile-slide-meta");
+  const subtitle=document.getElementById("mobile-subtitle");
+  const range=document.getElementById("mobile-slide-range");
+  const note=document.getElementById("mobile-note-input");
+  const slideNumber=(payload.index||0)+1;
+  if(meta)meta.textContent=`Slide ${slideNumber} / ${payload.count}: ${payload.title||"Untitled"}`;
+  if(subtitle)subtitle.textContent=payload.playing?"Desktop is playing":"Desktop is ready";
+  if(range){range.max=String(payload.count||1);range.value=String(slideNumber)}
+  const latestNote=(payload.notes||[]).slice(-1)[0]?.text||"";
+  if(note&&document.activeElement!==note&&mobileState.lastSlideIndex!==payload.index)note.value=latestNote||payload.remoteNote||payload.speakerNote||"";
+  const collabList=document.getElementById("mobile-collab-list");
+  if(collabList){
+    const list=payload.collaborators||[];
+    collabList.innerHTML=list.length?list.map(c=>`<div class="mobile-collab-row"><i class="collab-dot" style="background:${esc(c.color)}"></i><strong>${esc(c.name)}</strong><span>${c.online?"online":"left"}</span></div>`).join(""):`<div class="mobile-small">No collaborators yet.</div>`;
+  }
+  mobileState.lastSlideIndex=payload.index;
+}
+function setMobileTab(name){
+  document.querySelectorAll("[data-mobile-tab]").forEach(btn=>btn.classList.toggle("active",btn.dataset.mobileTab===name));
+  document.querySelectorAll("[data-mobile-pane]").forEach(pane=>pane.classList.toggle("active",pane.dataset.mobilePane===name));
+}
+function setupMobileTools(){
+  const colors=["#ef4444","#facc15","#22c55e","#38bdf8","#f8fafc"];
+  const widths=[3,5,9,14];
+  const colorBox=document.getElementById("mobile-color-tools");
+  const widthBox=document.getElementById("mobile-width-tools");
+  if(colorBox)colorBox.innerHTML=colors.map(c=>`<button class="mobile-swatch${c===mobileState.drawColor?" active":""}" data-color="${c}" style="background:${c}" aria-label="Color ${c}"></button>`).join("");
+  if(widthBox)widthBox.innerHTML=widths.map(w=>`<button class="mobile-btn mobile-width${w===mobileState.drawWidth?" active":""}" data-width="${w}">${w}</button>`).join("");
+  colorBox?.querySelectorAll("[data-color]").forEach(btn=>btn.addEventListener("click",()=>{mobileState.drawColor=btn.dataset.color;setupMobileTools()}));
+  widthBox?.querySelectorAll("[data-width]").forEach(btn=>btn.addEventListener("click",()=>{mobileState.drawWidth=Number(btn.dataset.width)||5;setupMobileTools()}));
+}
+function setupMobileDrawPad(){
+  const pad=document.getElementById("mobile-draw-pad");
+  if(!pad)return;
+  const point=e=>{const rect=pad.getBoundingClientRect();return{x:(e.clientX-rect.left)/rect.width,y:(e.clientY-rect.top)/rect.height}};
+  let drawing=false;
+  pad.addEventListener("pointerdown",e=>{
+    e.preventDefault();pad.setPointerCapture(e.pointerId);drawing=true;
+    const p=point(e);
+    mobileSend({type:"draw",action:"start",x:p.x,y:p.y,color:mobileState.drawColor,width:mobileState.drawWidth,tool:mobileState.drawTool});
+  });
+  pad.addEventListener("pointermove",e=>{
+    e.preventDefault();
+    const p=point(e);
+    if(drawing)mobileSend({type:"draw",action:"move",x:p.x,y:p.y});
+    else mobileSend({type:"pointer",x:p.x,y:p.y,active:true});
+  });
+  pad.addEventListener("pointerup",e=>{e.preventDefault();drawing=false;mobileSend({type:"draw",action:"end"});mobileSend({type:"pointer",active:false,x:0,y:0})});
+  pad.addEventListener("pointercancel",()=>{drawing=false;mobileSend({type:"draw",action:"end"});});
+}
+function bindMobileController(){
+  const nameInput=document.getElementById("mobile-name-input");
+  const colorInput=document.getElementById("mobile-color-input");
+  if(nameInput){nameInput.value=mobileState.identity.name;nameInput.addEventListener("input",()=>{mobileState.identity.name=nameInput.value.trim()||"Guest";saveMobileIdentity();mobileSend({type:"hello"})})}
+  if(colorInput){colorInput.value=mobileState.identity.color;colorInput.addEventListener("input",()=>{mobileState.identity.color=colorInput.value;mobileState.drawColor=colorInput.value;saveMobileIdentity();setupMobileTools();mobileSend({type:"hello"})})}
+  document.querySelectorAll("[data-mobile-tab]").forEach(btn=>btn.addEventListener("click",()=>setMobileTab(btn.dataset.mobileTab)));
+  document.querySelectorAll("[data-send-key]").forEach(btn=>btn.addEventListener("click",()=>mobileSend({type:"keyboard",key:btn.dataset.sendKey})));
+  document.getElementById("mobile-fullscreen").addEventListener("click",()=>mobileSend({type:"fullscreen"}));
+  document.getElementById("mobile-play").addEventListener("click",()=>mobileSend({type:"play"}));
+  document.getElementById("mobile-overview").addEventListener("click",()=>mobileSend({type:"gallery"}));
+  document.getElementById("mobile-clear-draw").addEventListener("click",()=>mobileSend({type:"draw",action:"clear"}));
+  document.getElementById("mobile-highlight").addEventListener("click",()=>{mobileState.drawTool=mobileState.drawTool==="highlighter"?"pen":"highlighter";mobileState.drawColor=mobileState.drawTool==="highlighter"?"#facc15":mobileState.drawColor;document.getElementById("mobile-highlight").classList.toggle("primary",mobileState.drawTool==="highlighter");setupMobileTools()});
+  document.getElementById("mobile-show-note").addEventListener("click",()=>mobileSend({type:"notes",text:document.getElementById("mobile-note-input").value}));
+  document.getElementById("mobile-save-note").addEventListener("click",()=>mobileSend({type:"speaker-note",text:document.getElementById("mobile-note-input").value}));
+  document.getElementById("mobile-clear-note").addEventListener("click",()=>{document.getElementById("mobile-note-input").value="";mobileSend({type:"notes",text:""})});
+  document.getElementById("mobile-send-link").addEventListener("click",()=>{const value=document.getElementById("mobile-link-input").value.trim();if(value)mobileSend({type:"link",url:value})});
+  document.getElementById("mobile-slide-range").addEventListener("change",e=>mobileSend({type:"slide",action:"goTo",index:Number(e.target.value)-1}));
+  setupMobileTools();
+  setupMobileDrawPad();
+}
+function initMobileController(hostPeerId){
+  document.body.classList.add("remote-controller-mode");
+  mobileState.host=hostPeerId;
+  bindMobileController();
+  if(typeof Peer!=="function"){updateMobileStatus("PeerJS unavailable",false);return}
+  updateMobileStatus("Connecting",false);
+  mobileState.peer=new Peer(undefined,peerOptions());
+  mobileState.peer.on("open",()=>{
+    const conn=mobileState.peer.connect(hostPeerId,{reliable:true});
+    mobileState.conn=conn;
+    conn.on("open",()=>{mobileState.connected=true;updateMobileStatus("Connected",true);mobileSend({type:"hello"})});
+    conn.on("data",updateMobileUI);
+    conn.on("close",()=>{mobileState.connected=false;updateMobileStatus("Disconnected",false)});
+    conn.on("error",err=>updateMobileStatus(err.message||"Connection error",false));
+  });
+  mobileState.peer.on("error",err=>updateMobileStatus(err.message||"Peer error",false));
+}
+const remoteToken=getTokenFromUrl();
+if(remoteToken)initMobileController(remoteToken);
+
+/* ═══════════════════════════════════════════════
    EDITOR MODULE
    ═══════════════════════════════════════════════ */
 const editDeck=document.getElementById('edit-deck');
@@ -712,6 +1417,11 @@ const editRoot=document.getElementById('edit-slide-root');
 const thumbList=document.getElementById('thumb-list');
 const layoutPicker=document.getElementById('layout-picker');
 const layoutGrid=document.getElementById('layout-grid');
+const inspectorBody=document.getElementById('inspector-body');
+const inspectorSubtitle=document.getElementById('inspector-subtitle');
+const editorStatus=document.getElementById('editor-status');
+const jsonFileInput=document.getElementById('json-file-input');
+const STORAGE_KEY='slider-draft:'+location.pathname;
 
 const AVAILABLE_LAYOUTS=[
   {id:'cover',label:'Cover',icon:'📄'},
@@ -728,23 +1438,50 @@ const AVAILABLE_LAYOUTS=[
 ];
 
 let undoStack=[];
+let redoStack=[];
+let editSnapshot=null;
+let autosaveTimer=null;
+function updateEditorStatus(extra){
+  if(!editorStatus)return;
+  editorStatus.textContent=extra||`${state.dirty?"Unsaved":"Clean"} · ${slides.length} slide${slides.length===1?"":"s"}`;
+}
+function markDirty(){
+  state.dirty=true;
+  updateEditorStatus();
+  clearTimeout(autosaveTimer);
+  autosaveTimer=setTimeout(()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify({slides,theme:getCurrentColors(),savedAt:new Date().toISOString()}));updateEditorStatus("Autosaved draft")}catch(_e){}},800);
+}
 function pushUndo(){
   undoStack.push(JSON.stringify(slides));
-  if(undoStack.length>10)undoStack.shift();
+  redoStack.length=0;
+  if(undoStack.length>50)undoStack.shift();
 }
 function popUndo(){
   if(!undoStack.length)return;
+  redoStack.push(JSON.stringify(slides));
   const prev=JSON.parse(undoStack.pop());
   slides.length=0;slides.push(...prev);
+  markDirty();
   editorRender();
 }
+function popRedo(){
+  if(!redoStack.length)return;
+  undoStack.push(JSON.stringify(slides));
+  const next=JSON.parse(redoStack.pop());
+  slides.length=0;slides.push(...next);
+  markDirty();
+  editorRender();
+}
+function commitEdit(){pushUndo();markDirty()}
 
 /* ── Mode toggle ── */
 function enterEditMode(){
+  stopPlayback();
   document.body.classList.add('edit-mode');
   state.editMode=true;
   editorRender();
   scaleEditDeck();
+  updateEditorStatus();
 }
 function enterPresentMode(){
   document.body.classList.remove('edit-mode');
@@ -768,7 +1505,7 @@ function scaleEditDeck(){
 }
 
 /* ── Editor render ── */
-function editorRender(){
+function refreshEditCanvas(){
   const s=slides[state.currentSlide];
   if(!s)return;
   editRoot.innerHTML=renderSlide(s);
@@ -778,96 +1515,67 @@ function editorRender(){
   renderThumbnails();
   scaleEditDeck();
 }
+function editorRender(){
+  refreshEditCanvas();
+  renderInspector();
+  updateEditorStatus();
+}
 
 /* ── Make text elements editable ── */
 function makeEditable(){
   const slide=slides[state.currentSlide];
   if(!slide)return;
 
-  // Title
-  editRoot.querySelectorAll('.title,.hero-text').forEach(el=>{
+  editRoot.querySelectorAll('[data-bind]').forEach(el=>{
     el.setAttribute('contenteditable','true');
-    el.setAttribute('data-editable','title');
-    el.addEventListener('blur',function(){
-      pushUndo();
-      slide.title=this.textContent.trim();
-      renderThumbnails();
-    },{once:true});
-  });
-
-  // Body text / key message
-  editRoot.querySelectorAll('.body,.body-text').forEach(el=>{
-    el.setAttribute('contenteditable','true');
-    el.setAttribute('data-editable','keyMessage');
-    el.addEventListener('blur',function(){
-      pushUndo();
-      slide.keyMessage=this.textContent.trim();
-    },{once:true});
-  });
-
-  // Subtitle
-  editRoot.querySelectorAll('.cover-subtitle').forEach(el=>{
-    el.setAttribute('contenteditable','true');
-    el.setAttribute('data-editable','subtitle');
-    el.addEventListener('blur',function(){
-      pushUndo();
-      slide.subtitle=this.textContent.trim();
-    },{once:true});
+    el.setAttribute('data-editable','');
+    el.setAttribute('spellcheck','true');
+    el.addEventListener('focus',()=>{
+      if(editSnapshot!==el){pushUndo();editSnapshot=el;}
+    });
+    el.addEventListener('input',()=>{
+      let value=el.textContent.trim();
+      if(el.classList.contains('quote-attr'))value=value.replace(/^[-–—]\s*/,'');
+      setByPath(slide,el.dataset.bind,value);
+      markDirty();
+      if(el.dataset.bind==="title"||el.dataset.bind.endsWith(".content"))renderThumbnails();
+    });
+    el.addEventListener('keydown',e=>{
+      if(e.key==='Enter'&&!e.shiftKey&&!el.closest('.body-text,.callout-box,.quote-block')){
+        e.preventDefault();
+        el.blur();
+      }
+    });
+    el.addEventListener('blur',()=>{editSnapshot=null;renderInspector();});
   });
 
   // Bullets
   editRoot.querySelectorAll('.bullet').forEach((el,i)=>{
-    const textSpan=el.querySelector('span:last-child')||el;
-    textSpan.setAttribute('contenteditable','true');
-    textSpan.setAttribute('data-editable','bullet');
-    textSpan.addEventListener('blur',function(){
-      if(!slide.bullets)return;
-      pushUndo();
-      if(typeof slide.bullets[i]==='string')slide.bullets[i]=this.textContent.trim();
-      else if(slide.bullets[i])slide.bullets[i].text=this.textContent.trim();
-    },{once:true});
-
-    // Add bullet button
+    const textSpan=el.querySelector('[data-bind]');
+    const bindPath=textSpan?.dataset.bind||"bullets."+i;
+    const listPath=bindPath.replace(/\.\d+(?:\.text)?$/,'');
+    const itemIndex=Number((bindPath.match(/\.(\d+)(?:\.text)?$/)||[])[1]||i);
     const addBtn=document.createElement('button');
     addBtn.className='bullet-add';addBtn.textContent='+';addBtn.title='Add bullet after';
     addBtn.addEventListener('click',()=>{
-      pushUndo();
-      if(!slide.bullets)slide.bullets=[];
-      slide.bullets.splice(i+1,0,'New bullet point');
+      commitEdit();
+      const list=getByPath(slide,listPath)||[];
+      if(!Array.isArray(list))return;
+      list.splice(itemIndex+1,0,'New bullet point');
       editorRender();
     });
     el.appendChild(addBtn);
 
-    // Delete bullet button
     const delBtn=document.createElement('button');
     delBtn.className='bullet-del';delBtn.textContent='×';delBtn.title='Delete bullet';
     delBtn.addEventListener('click',()=>{
-      pushUndo();
-      if(slide.bullets)slide.bullets.splice(i,1);
+      commitEdit();
+      const list=getByPath(slide,listPath)||[];
+      if(Array.isArray(list))list.splice(itemIndex,1);
       editorRender();
     });
     el.appendChild(delBtn);
   });
-
-  // ContentBlocks editing
-  if(slide.contentBlocks){
-    editRoot.querySelectorAll('.callout-box').forEach((el,i)=>{
-      el.setAttribute('contenteditable','true');
-      el.setAttribute('data-editable','callout');
-      el.addEventListener('blur',function(){
-        const blk=slide.contentBlocks.filter(b=>b.type==='callout')[i];
-        if(blk){pushUndo();blk.content=this.textContent.trim();}
-      },{once:true});
-    });
-    editRoot.querySelectorAll('.metric-label').forEach(el=>{
-      el.setAttribute('contenteditable','true');
-      el.setAttribute('data-editable','metric-label');
-    });
-    editRoot.querySelectorAll('.metric-value').forEach(el=>{
-      el.setAttribute('contenteditable','true');
-      el.setAttribute('data-editable','metric-value');
-    });
-  }
 }
 
 /* ── Thumbnails ── */
@@ -901,10 +1609,10 @@ function renderThumbnails(){
       btn.addEventListener('click',(e)=>{
         e.stopPropagation();
         const action=btn.dataset.action;
-        pushUndo();
+        commitEdit();
         if(action==='up'&&i>0){[slides[i-1],slides[i]]=[slides[i],slides[i-1]];state.currentSlide=i-1;}
         else if(action==='down'&&i<slides.length-1){[slides[i],slides[i+1]]=[slides[i+1],slides[i]];state.currentSlide=i+1;}
-        else if(action==='dup'){slides.splice(i+1,0,JSON.parse(JSON.stringify(slides[i])));slides[i+1].id=Date.now();state.currentSlide=i+1;}
+        else if(action==='dup'){slides.splice(i+1,0,cloneData(slides[i]));slides[i+1].id=Date.now();state.currentSlide=i+1;}
         else if(action==='del'&&slides.length>1){slides.splice(i,1);if(state.currentSlide>=slides.length)state.currentSlide=slides.length-1;}
         editorRender();
       });
@@ -921,8 +1629,8 @@ function showLayoutPicker(){
     opt.className='layout-option';
     opt.innerHTML=`<div style="font-size:20px;margin-bottom:4px">${l.icon}</div>${l.label}`;
     opt.addEventListener('click',()=>{
-      pushUndo();
-      const newSlide={id:Date.now(),title:'New Slide',keyMessage:'Edit this slide content.',layout:l.id};
+      commitEdit();
+      const newSlide={id:Date.now(),title:'New Slide',keyMessage:'Edit this slide content.',layout:l.id,purpose:'Describe this slide purpose.',speakerNote:'Add speaker notes for this slide.'};
       if(l.id==='contentBlocks'){
         delete newSlide.layout;
         newSlide.contentBlocks=[
@@ -949,25 +1657,224 @@ function showLayoutPicker(){
 }
 layoutPicker.addEventListener('click',e=>{if(e.target===layoutPicker)layoutPicker.classList.remove('show')});
 
+/* ── Inspector ── */
+const BLOCK_TYPES=["label","heading","hero-text","text","bullets","figure","metric","metric-grid","table","equation","callout","quote","comparison","timeline","spacer","custom-html"];
+const CLASSIC_LAYOUTS=AVAILABLE_LAYOUTS.filter(l=>l.id!=="contentBlocks").map(l=>l.id);
+function createBlock(type){
+  switch(type){
+    case"label":return{type,content:"Section"};
+    case"heading":return{type,content:"New Slide Title"};
+    case"hero-text":return{type,content:"Main takeaway"};
+    case"bullets":return{type,content:["First point","Second point"]};
+    case"figure":return{type,content:{placeholder:"Insert figure",caption:"Paper visual",alt:"Paper visual"}};
+    case"metric":return{type,content:{label:"Metric",value:"0.0",detail:"Description",delta:"positive"}};
+    case"metric-grid":return{type,content:[{label:"Metric",value:"0.0",detail:"Description"}]};
+    case"table":return{type,content:{headers:["Method","Score"],rows:[{cells:["Baseline","81.3"]},{cells:["Ours","85.5"],best:true}],caption:"Table caption"}};
+    case"equation":return{type,content:"$$L = L_{task} + \\lambda L_{reg}$$",explanation:"Explain the terms."};
+    case"callout":return{type,content:"Important interpretation."};
+    case"quote":return{type,content:"A concise quote or claim.",attribution:"Paper"};
+    case"comparison":return{type,content:{leftLabel:"Ours",left:"Key strength",rightLabel:"Baseline",right:"Key limitation"}};
+    case"timeline":return{type,content:["Input","Model","Output"]};
+    case"spacer":return{type,size:1};
+    case"custom-html":return{type,content:"<div class=\"callout-box\">Custom HTML</div>"};
+    default:return{type:"text",content:"Click to edit this content."};
+  }
+}
+function ensureContentBlocks(slide){
+  if(slide.contentBlocks&&slide.contentBlocks.length)return;
+  slide.contentBlocks=[
+    {type:"label",content:slide.pageRole||"Section"},
+    {type:"heading",content:slide.title||"New Slide"},
+    {type:"text",content:slide.keyMessage||"Edit this content."}
+  ];
+  delete slide.layout;
+}
+function inspectorField(path,label,value,type="text",attrs=""){
+  const val=value==null?"":String(value);
+  return`<div class="field"><label>${esc(label)}</label><input type="${type}" value="${esc(val)}" data-field="${esc(path)}" ${attrs}></div>`;
+}
+function inspectorTextarea(path,label,value,cls=""){
+  const val=value==null?"":String(value);
+  return`<div class="field"><label>${esc(label)}</label><textarea class="${cls}" data-field="${esc(path)}">${esc(val)}</textarea></div>`;
+}
+function inspectorSelect(path,label,value,options){
+  return`<div class="field"><label>${esc(label)}</label><select data-field="${esc(path)}">${options.map(o=>`<option value="${esc(o)}"${o===value?" selected":""}>${esc(o)}</option>`).join("")}</select></div>`;
+}
+function renderClassicInspector(slide){
+  const bullets=Array.isArray(slide.bullets)?slide.bullets.map(b=>typeof b==="string"?b:b.text||"").join("\n"):"";
+  const metrics=Array.isArray(slide.metrics)?slide.metrics:[];
+  return`
+    <div class="inspector-section">
+      <div class="inspector-section-title">Classic content</div>
+      ${inspectorTextarea("bullets","Bullets",bullets)}
+      ${slide.layout==="objective"||slide.equation?inspectorTextarea("equation","Equation",slide.equation||"","json-area"):""}
+      ${inspectorField("figureLabel","Figure label",slide.figureLabel||"")}
+    </div>
+    <div class="inspector-section">
+      <div class="inspector-section-title">Visual</div>
+      ${inspectorField("visual.caption","Caption",slide.visual?.caption||"")}
+      ${inspectorField("visual.alt","Alt text",slide.visual?.alt||"")}
+      <div class="mini-actions"><button class="mini-btn danger" data-action="remove-visual">Remove visual</button></div>
+    </div>
+    <div class="inspector-section">
+      <div class="inspector-section-title">Metrics</div>
+      ${metrics.map((m,i)=>`
+        <div class="metric-row">
+          <div class="metric-row-head"><strong>Metric ${i+1}</strong><span class="tb-spacer"></span><button class="mini-btn danger" data-action="delete-metric" data-index="${i}">Delete</button></div>
+          ${inspectorField(`metrics.${i}.label`,"Label",m.label||"")}
+          <div class="field-row">${inspectorField(`metrics.${i}.value`,"Value",m.value||"")}${inspectorSelect(`metrics.${i}.delta`,"Delta",m.delta||"",["","positive","negative"])}</div>
+          ${inspectorTextarea(`metrics.${i}.detail`,"Detail",m.detail||"")}
+        </div>
+      `).join("")}
+      <div class="mini-actions"><button class="mini-btn" data-action="add-metric">Add metric</button></div>
+    </div>`;
+}
+function blockContentEditor(block,i){
+  const base=`contentBlocks.${i}`;
+  if(["label","heading","hero-text","text","callout","custom-html"].includes(block.type))return inspectorTextarea(`${base}.content`,"Content",block.content||"",block.type==="custom-html"?"json-area":"");
+  if(block.type==="bullets"||block.type==="timeline")return`<div class="field"><label>Lines</label><textarea data-lines="${i}">${esc((block.content||[]).join("\n"))}</textarea></div>`;
+  if(block.type==="equation")return`${inspectorTextarea(`${base}.content`,"Equation",block.content||"","json-area")}${inspectorTextarea(`${base}.explanation`,"Explanation",block.explanation||"")}`;
+  if(block.type==="spacer")return inspectorField(`${base}.size`,"Flex size",block.size||1,"number",'min="0.25" step="0.25"');
+  return`<div class="field"><label>Content JSON</label><textarea class="json-area" data-block-json="${i}">${esc(JSON.stringify(block.content??{},null,2))}</textarea><div class="mini-actions"><button class="mini-btn" data-action="apply-block-json" data-index="${i}">Apply JSON</button></div></div>`;
+}
+function renderBlocksInspector(slide){
+  const blocks=slide.contentBlocks||[];
+  return`
+    <div class="inspector-section">
+      <div class="inspector-section-title">Content blocks</div>
+      <div class="mini-actions">
+        ${["text","bullets","figure","metric","table","callout"].map(t=>`<button class="mini-btn" data-action="add-block" data-type="${t}">${t}</button>`).join("")}
+      </div>
+      <div class="inline-hint">Inline edits update visible text. Structured blocks can be revised here as JSON.</div>
+      ${blocks.map((b,i)=>`
+        <div class="block-row">
+          <div class="block-row-head">
+            <select data-action="block-type" data-index="${i}">${BLOCK_TYPES.map(t=>`<option value="${t}"${t===b.type?" selected":""}>${t}</option>`).join("")}</select>
+            <button class="mini-btn" data-action="block-up" data-index="${i}">↑</button>
+            <button class="mini-btn" data-action="block-down" data-index="${i}">↓</button>
+            <button class="mini-btn danger" data-action="block-delete" data-index="${i}">×</button>
+          </div>
+          <div class="field-row">${inspectorSelect(`contentBlocks.${i}.emphasis`,"Emphasis",b.emphasis||"",["","primary","secondary","background","dramatic"])}${inspectorSelect(`contentBlocks.${i}.style`,"Style",b.style||"",["","positive","negative","accent"])}</div>
+          ${blockContentEditor(b,i)}
+        </div>
+      `).join("")}
+    </div>`;
+}
+function renderInspector(){
+  const slide=slides[state.currentSlide];
+  if(!slide||!inspectorBody)return;
+  const mode=slide.contentBlocks?"contentBlocks":(slide.layout||"bullets");
+  inspectorSubtitle.textContent=`Slide ${state.currentSlide+1} of ${slides.length}`;
+  inspectorBody.innerHTML=`
+    <div class="inspector-section">
+      <div class="inspector-section-title">Slide</div>
+      ${inspectorSelect("layout","Mode",mode,[...CLASSIC_LAYOUTS,"contentBlocks"])}
+      ${inspectorField("title","Title",slide.title||"")}
+      ${inspectorField("subtitle","Subtitle",slide.subtitle||"")}
+      ${inspectorTextarea("keyMessage","Key message",slide.keyMessage||"")}
+      <div class="field-row">${inspectorSelect("atmosphere","Atmosphere",slide.atmosphere||"",["","editorial","warm","cool","dramatic","minimal"])}${inspectorField("id","ID",slide.id||Date.now(),"number")}</div>
+      <label class="check-row"><input type="checkbox" data-field="appendix"${slide.appendix?" checked":""}> Appendix slide</label>
+    </div>
+    <div class="inspector-section">
+      <div class="inspector-section-title">Presenter</div>
+      ${inspectorTextarea("speakerNote","Speaker note",slide.speakerNote||"")}
+      ${inspectorTextarea("purpose","Purpose",slide.purpose||"")}
+      ${inspectorTextarea("evidenceNote","Evidence note",slide.evidenceNote||"")}
+      ${inspectorField("__playSeconds","Play seconds",state.playSeconds,"number",'min="2" step="1"')}
+    </div>
+    ${slide.contentBlocks?renderBlocksInspector(slide):renderClassicInspector(slide)}
+    <div class="inspector-section">
+      <div class="inspector-section-title">Raw slide JSON</div>
+      <textarea class="json-area" id="raw-slide-json">${esc(JSON.stringify(slide,null,2))}</textarea>
+      <div class="mini-actions"><button class="mini-btn" data-action="apply-slide-json">Apply JSON</button></div>
+    </div>`;
+  bindInspectorEvents();
+}
+function bindInspectorEvents(){
+  const slide=slides[state.currentSlide];
+  inspectorBody.querySelectorAll('[data-field]').forEach(el=>{
+    el.addEventListener('focus',()=>{if(editSnapshot!==el){pushUndo();editSnapshot=el;}});
+    const eventName=el.tagName==="SELECT"||el.type==="checkbox"?"change":"input";
+    el.addEventListener(eventName,()=>{
+      const path=el.dataset.field;
+      if(path==="__playSeconds"){state.playSeconds=Math.max(2,Number(el.value)||12);return}
+      if(path==="layout"){
+        commitEdit();
+        if(el.value==="contentBlocks")ensureContentBlocks(slide);
+        else{delete slide.contentBlocks;slide.layout=el.value;}
+        editorRender();
+        return;
+      }
+      const value=el.type==="checkbox"?el.checked:el.value;
+      if(path==="bullets")slide.bullets=String(value).split("\n").map(x=>x.trim()).filter(Boolean);
+      else setByPath(slide,path,value);
+      markDirty();
+      refreshEditCanvas();
+    });
+    el.addEventListener('blur',()=>{editSnapshot=null});
+  });
+  inspectorBody.querySelectorAll('[data-lines]').forEach(el=>{
+    el.addEventListener('focus',()=>{pushUndo();});
+    el.addEventListener('input',()=>{
+      const i=Number(el.dataset.lines);
+      slide.contentBlocks[i].content=el.value.split("\n").map(x=>x.trim()).filter(Boolean);
+      markDirty();refreshEditCanvas();
+    });
+  });
+  inspectorBody.querySelectorAll('[data-action]').forEach(el=>{
+    if(el.dataset.bound)return;
+    el.dataset.bound="1";
+    el.addEventListener('click',()=>{
+      const action=el.dataset.action;
+      const i=Number(el.dataset.index);
+      if(action==="apply-slide-json"){
+        try{commitEdit();slides[state.currentSlide]=JSON.parse(document.getElementById('raw-slide-json').value);markDirty();editorRender();}catch(e){alert("Invalid slide JSON: "+e.message)}
+      }else if(action==="apply-block-json"){
+        try{commitEdit();slide.contentBlocks[i].content=JSON.parse(inspectorBody.querySelector(`[data-block-json="${i}"]`).value);markDirty();editorRender();}catch(e){alert("Invalid block JSON: "+e.message)}
+      }else if(action==="add-block"){
+        commitEdit();ensureContentBlocks(slide);slide.contentBlocks.push(createBlock(el.dataset.type||"text"));editorRender();
+      }else if(action==="block-delete"){
+        commitEdit();slide.contentBlocks.splice(i,1);editorRender();
+      }else if(action==="block-up"&&i>0){
+        commitEdit();[slide.contentBlocks[i-1],slide.contentBlocks[i]]=[slide.contentBlocks[i],slide.contentBlocks[i-1]];editorRender();
+      }else if(action==="block-down"&&i<slide.contentBlocks.length-1){
+        commitEdit();[slide.contentBlocks[i],slide.contentBlocks[i+1]]=[slide.contentBlocks[i+1],slide.contentBlocks[i]];editorRender();
+      }else if(action==="add-metric"){
+        commitEdit();if(!slide.metrics)slide.metrics=[];slide.metrics.push({label:"Metric",value:"0.0",detail:"Description"});editorRender();
+      }else if(action==="delete-metric"){
+        commitEdit();slide.metrics.splice(i,1);editorRender();
+      }else if(action==="remove-visual"){
+        commitEdit();delete slide.visual;editorRender();
+      }
+    });
+    if(el.dataset.action==="block-type"){
+      el.addEventListener('change',()=>{
+        commitEdit();
+        slide.contentBlocks[Number(el.dataset.index)]=createBlock(el.value);
+        editorRender();
+      });
+    }
+  });
+}
+function addDefaultBlock(){
+  const slide=slides[state.currentSlide];
+  commitEdit();ensureContentBlocks(slide);slide.contentBlocks.push(createBlock("text"));editorRender();
+}
+
 /* ── Export ── */
 function exportHTML(){
   const templateHTML=document.documentElement.outerHTML;
   /* Encode slide data to UTF-8 base64 to ensure pristine transport of LaTeX equations without escape collisions */
   const slideJSON=JSON.stringify(slides);
-  // UTF-8 safe base64 encoding in browser
-  const b64Data=btoa(unescape(encodeURIComponent(slideJSON)));
+  const b64Data=encodeB64Utf8(slideJSON);
   let html=templateHTML;
   /* Replace both primary (B64) and legacy (RAW) transport markers */
-  html=html.replace(
-    /const SLIDE_DATA_B64\s*=\s*"[^"]*"\s*;\s*\/\/\s*@render-slide-data-b64/,
-    'const SLIDE_DATA_B64 = "'+b64Data+'"; // @render-slide-data-b64'
-  );
-  html=html.replace(
-    /const SLIDE_DATA_RAW\s*=\s*String\.raw`[\s\S]*?`\s*;\s*\/\/\s*@render-slide-data/,
-    'const SLIDE_DATA_RAW = String.raw``; // @render-slide-data'
-  );
+  const b64Marker='@'+'render-slide-data-b64';
+  const rawMarker='@'+'render-slide-data';
+  html=html.replace(new RegExp('const SLIDE_DATA_B64\\s*=\\s*"[^"]*"\\s*;(?:\\s*//\\s*'+b64Marker+')?'),'const SLIDE_DATA_B64 = "'+b64Data+'";');
+  html=html.replace(new RegExp('const SLIDE_DATA_RAW\\s*=\\s*String\\.raw`[\\s\\S]*?`\\s*;(?:\\s*//\\s*'+rawMarker+')?'),'const SLIDE_DATA_RAW = String.raw``;');
   // Remove edit-mode class from body
-  html=html.replace('class="edit-mode"','');
+  html=html.replace(/<body([^>]*)class="([^"]*)\bedit-mode\b([^"]*)"([^>]*)>/,'<body$1class="$2$3"$4>');
   const blob=new Blob([html],{type:'text/html'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -975,19 +1882,70 @@ function exportHTML(){
   a.click();
   URL.revokeObjectURL(a.href);
 }
+function downloadText(filename,text,type="application/json"){
+  const blob=new Blob([text],{type});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportJSON(){downloadText('slide-data.json',JSON.stringify({slideData:slides},null,2))}
+function replaceSlideDeck(nextSlides){
+  slides.length=0;slides.push(...nextSlides);
+  state.currentSlide=0;
+  markDirty();
+  editorRender();
+}
+function importJSONText(text){
+  const parsed=JSON.parse(text);
+  const next=Array.isArray(parsed)?parsed:parsed.slideData;
+  if(!Array.isArray(next))throw new Error('JSON must be an array or an object with slideData');
+  commitEdit();
+  replaceSlideDeck(next);
+}
+function saveDraft(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify({slides,theme:getCurrentColors(),savedAt:new Date().toISOString()}));
+  state.dirty=false;
+  updateEditorStatus('Saved draft');
+}
+function loadDraft(){
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw){updateEditorStatus('No saved draft');return}
+  const draft=JSON.parse(raw);
+  if(!Array.isArray(draft.slides))throw new Error('Saved draft is invalid');
+  commitEdit();
+  replaceSlideDeck(draft.slides);
+  if(draft.theme)applyColors(draft.theme);
+  state.dirty=false;
+  updateEditorStatus('Loaded draft');
+}
 
 /* ── Wire up toolbar buttons ── */
 document.getElementById('tb-present').addEventListener('click',enterPresentMode);
 document.getElementById('tb-export').addEventListener('click',exportHTML);
 document.getElementById('tb-undo').addEventListener('click',popUndo);
+document.getElementById('tb-redo').addEventListener('click',popRedo);
 document.getElementById('tb-add-slide').addEventListener('click',showLayoutPicker);
+document.getElementById('tb-add-block').addEventListener('click',addDefaultBlock);
 document.getElementById('sidebar-add-slide').addEventListener('click',showLayoutPicker);
 document.getElementById('tb-del-slide').addEventListener('click',()=>{
   if(slides.length<=1)return;
-  pushUndo();
+  commitEdit();
   slides.splice(state.currentSlide,1);
   if(state.currentSlide>=slides.length)state.currentSlide=slides.length-1;
   editorRender();
+});
+document.getElementById('tb-save-draft').addEventListener('click',saveDraft);
+document.getElementById('tb-load-draft').addEventListener('click',()=>{try{loadDraft()}catch(e){alert(e.message)}});
+document.getElementById('tb-json-export').addEventListener('click',exportJSON);
+document.getElementById('tb-json-import').addEventListener('click',()=>jsonFileInput.click());
+jsonFileInput.addEventListener('change',e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{try{importJSONText(ev.target.result)}catch(err){alert('Import failed: '+err.message)}};
+  reader.readAsText(file);
+  jsonFileInput.value='';
 });
 
 /* ── Slide Gallery Overview ── */
@@ -1035,7 +1993,7 @@ imgFileInput.addEventListener('change',e=>{
   const reader=new FileReader();
   reader.onload=function(ev){
     const dataUrl=ev.target.result;
-    pushUndo();
+    commitEdit();
     const slide=slides[state.currentSlide];
     if(slide.contentBlocks){
       // Insert as a figure content block
@@ -1126,7 +2084,9 @@ function renderPaletteGrid(){
     `;
     card.addEventListener('click',()=>{
       activePalette=i;
+      commitEdit();
       applyColors(p);
+      markDirty();
       renderPaletteGrid();
       renderCustomColors();
       if(state.editMode)editorRender();
@@ -1144,13 +2104,16 @@ function renderCustomColors(){
     field.innerHTML=`<label>${f.label}</label><input type="color" value="${current[f.key]}" data-key="${f.key}">`;
     const input=field.querySelector('input');
     input.addEventListener('input',e=>{
+      if(editSnapshot!==input){pushUndo();editSnapshot=input;}
       const r=document.documentElement.style;
       r.setProperty('--'+f.key,e.target.value);
       if(f.key==='accent')r.setProperty('--accent-bg',hexToRgba(e.target.value,.07));
       if(editDeck&&f.key==='frame')editDeck.style.background=e.target.value;
       activePalette=-1;
+      markDirty();
       renderPaletteGrid();
     });
+    input.addEventListener('blur',()=>{editSnapshot=null});
     customColorsEl.appendChild(field);
   });
 }
@@ -1171,7 +2134,15 @@ window.addEventListener('keydown',e=>{
   if(e.key==='e'&&!e.ctrlKey&&!e.metaKey&&!state.editMode&&!e.target.closest('[contenteditable]')){
     enterEditMode();
   }
+  if(state.editMode&&(e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){
+    e.preventDefault();
+    if(e.shiftKey)popRedo();else popUndo();
+  }
+  if(state.editMode&&(e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='y'){
+    e.preventDefault();popRedo();
+  }
   if(e.key==='Escape'&&state.editMode){
+    if(e.target.closest('[contenteditable],input,textarea,select'))return;
     if(themePanel.classList.contains('show')){themePanel.classList.remove('show');return;}
     if(layoutPicker.classList.contains('show')){layoutPicker.classList.remove('show');return;}
     enterPresentMode();

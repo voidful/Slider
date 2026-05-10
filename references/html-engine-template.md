@@ -11,11 +11,11 @@ The canonical template (`paper-presentation.html`) already contains:
 - embedded JavaScript with both classic renderer and contentBlocks composer,
 - a `slides` array placeholder at `// @render-slide-data`,
 - theme and venue config objects at `// @render-theme` and `// @render-venue`,
-- keyboard and control bindings,
-- editor module (toolbar, sidebar, layout picker, theme panel, image upload),
+- keyboard and control bindings, including play/pause auto-advance and SnapShare-style phone remote pairing with the bundled controller URL and multi-collaborator identity,
+- editor module (toolbar, sidebar, slide inspector, layout picker, theme panel, image upload, JSON import/export),
 - correct fullscreen scaling via `scaleDeck()`,
 - density guard via `fitRenderedSlide()`,
-- gallery overview, laser pointer, and export function,
+- gallery overview, laser pointer, annotation canvas, collaborator roster, shared note overlay, draft save/load, and self-contained export function,
 - template identity marker: `<meta name="generator" content="slider/paper-presentation-v1"/>`.
 
 **To render a deck:** inject the `slides` JSON array at the `// @render-slide-data` marker. Do not rewrite any other part of the template.

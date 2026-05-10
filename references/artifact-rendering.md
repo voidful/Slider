@@ -14,7 +14,7 @@ This is the last implementation step. Do not skip the slide data layer.
 4. **Render by injecting slide data into the canonical template** (`assets/html-slideshow-starter/paper-presentation.html`). Use `render_slideshow_artifact.py` if script execution is available. Otherwise, inject the `slides` JSON at the `// @render-slide-data` marker manually.
 5. Verify the artifact opens correctly in a browser.
 
-**⚠️ Never generate HTML from scratch.** The canonical template provides navigation, editor, density guard, fullscreen, gallery, export, and keyboard shortcuts. Rewriting any of this code is prohibited.
+**⚠️ Never generate HTML from scratch.** The canonical template provides navigation, auto-play, SnapShare-style phone remote, multi-collaborator roster, shared annotations/notes, editor, inspector, import/export, density guard, fullscreen, gallery, export, and keyboard shortcuts. Rewriting any of this code is prohibited.
 
 ## Default output: built HTML
 
@@ -22,7 +22,9 @@ The default artifact is a single self-contained HTML file **produced from the ca
 - All CSS and JavaScript come from the template — not rewritten by the LM.
 - The `slides` array is injected at `// @render-slide-data`.
 - Contains `<meta name="generator" content="slider/paper-presentation-v1"/>`.
-- Opens directly in Chrome, Firefox, Safari without any server.
+- Opens directly in Chrome, Firefox, Safari without any server for presentation/editing.
+- Opens with presenter controls and can switch into edit mode via the Edit button or `E`.
+- The phone remote uses the controller bundled in the same HTML by default: the QR URL is the deck URL plus `?token=...`. For real phone pairing, serve the HTML over an `http`/`https` URL the phone can reach, or set `data-remote-controller-url` on `<html>` to your own static controller/deck URL. No custom control backend is required, but PeerJS signaling/STUN network access is still required.
 
 ## LM creative freedom
 

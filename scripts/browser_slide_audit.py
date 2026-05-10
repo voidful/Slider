@@ -381,28 +381,31 @@ def run_browser_slide_audit(
         handle.write(probe_html)
 
     try:
-        chrome_args = [
+        with tempfile.TemporaryDirectory(
+            prefix=".codex-browser-profile-",
+            dir=html_path.parent,
+        ) as profile_dir:
+            chrome_args = [
                 browser,
                 "--headless",
+                "--no-sandbox",
                 "--disable-gpu",
+                "--disable-dev-shm-usage",
                 "--allow-file-access-from-files",
                 "--run-all-compositor-stages-before-draw",
+                f"--user-data-dir={profile_dir}",
                 f"--window-size={window_size[0]},{window_size[1]}",
                 f"--virtual-time-budget={budget_ms}",
                 "--dump-dom",
+                probe_path.as_uri(),
             ]
-        # Container / root environment compatibility
-        import os
-        if os.getuid() == 0:
-            chrome_args.insert(1, "--no-sandbox")
-        chrome_args.append(probe_path.as_uri())
-        proc = subprocess.run(
-            chrome_args,
-            capture_output=True,
-            text=True,
-            timeout=timeout_s,
-            check=False,
-        )
+            proc = subprocess.run(
+                chrome_args,
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+                check=False,
+            )
     except subprocess.TimeoutExpired as exc:
         return BrowserAuditReport(
             ok=False,

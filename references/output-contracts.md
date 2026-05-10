@@ -4,7 +4,7 @@
 
 The default output is a single `.html` file **built from the canonical template** (`assets/html-slideshow-starter/paper-presentation.html`). Never generate HTML from scratch.
 
-The canonical template already provides all CSS, JS, DOM structure, navigation, editor, and presenter controls. The LM only needs to:
+The canonical template already provides all CSS, JS, DOM structure, navigation, playback, full editor, and presenter controls. The LM only needs to:
 1. Read the template file.
 2. Inject the `slides` JSON array at `// @render-slide-data`.
 3. Update `<title>`, `themePreset`, and `venuePreset` at their respective markers.
@@ -17,7 +17,10 @@ Use `render_slideshow_artifact.py` when script execution is available.
 - Structured `slides` array with the expanded research schema.
 - Previous/next navigation, arrow keys, space for next (from the template).
 - Slide counter and progress bar (from the template).
-- Notes toggle, overview mode, presenter mode, fullscreen toggle (from the template).
+- Play/pause auto-advance, overview mode, fullscreen toggle, laser pointer, and editor mode (from the template).
+- Phone remote pairing via the bundled controller URL (`?token=...`), with slide navigation, fullscreen/play control, annotations, highlights, note sync, and link sending (from the template). The default QR must not depend on a third-party controller domain; use `data-remote-controller-url` only when the user provides their own static controller/deck URL.
+- Multi-collaborator mode over the same remote link: every connected phone gets a name/color identity, appears in the collaborator roster, and contributes author-labeled ink and notes.
+- Edit mode must preserve inline text editing, slide inspector editing, image insertion, theme editing, draft save/load, JSON import/export, and self-contained HTML export.
 - Number-key jump, home/end (from the template).
 - All evidence policy, visual inclusion, and design system rules apply.
 

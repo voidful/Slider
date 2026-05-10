@@ -103,6 +103,17 @@ def line_count_warnings() -> list[str]:
             warnings.append(f'Concision warning: {rel} has {lines} lines, above target {limit}')
     return warnings
 
+def decode_rendered_html_slide_payload(html_text: str) -> str:
+    match = re.search(r'const SLIDE_DATA_B64\s*=\s*"([^"]+)"', html_text)
+    if not match:
+        return ''
+    try:
+        decoded = base64.b64decode(match.group(1)).decode('utf-8')
+        parsed = json.loads(decoded)
+        return json.dumps(parsed, ensure_ascii=False)
+    except Exception:
+        return ''
+
 def build_fake_exports(scored_visuals: dict[str, object], exports_path: Path, assets_dir: Path) -> None:
     assets_dir.mkdir(parents=True, exist_ok=True)
     exports = []
@@ -149,12 +160,13 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
         failures.extend(ts_failures)
         warnings.extend(ts_warnings)
         bound_plan = bound_json.read_text(encoding='utf-8'); html_text = html_out.read_text(encoding='utf-8'); react_text = react_out.read_text(encoding='utf-8')
+        html_payload_text = decode_rendered_html_slide_payload(html_text)
         project_app = (project_dir/'src/App.tsx').read_text(encoding='utf-8'); project_slide_data = (project_dir/'src/data/slideData.ts').read_text(encoding='utf-8')
         if '@render-' in html_text or '@render-' in react_text or '@render-' in project_slide_data:
             warnings.append('Template markers remain in rendered artifacts')
         if '"bindingScore"' not in bound_plan or '"fallbackStrategy"' not in bound_plan:
             failures.append('Visual binding output is missing calibrated confidence metadata')
-        if 'visual-1.png' not in html_text or 'visual-1.png' not in project_slide_data:
+        if ('visual-1.png' not in html_text and 'visual-1.png' not in html_payload_text) or 'visual-1.png' not in project_slide_data:
             failures.append('Rendered artifacts do not appear to carry bound visual asset paths')
         if '<img src=' not in html_text:
             failures.append('Rendered HTML artifact is not using bound visuals in image tags')
