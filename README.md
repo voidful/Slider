@@ -30,7 +30,7 @@ Slider can generate or scaffold:
 
 ## Example Product Surface
 
-The bundled React project starter includes a fixed-stage deck shell, keyboard navigation, progress, overview, speaker notes, fullscreen controls, and product-quality CSS without relying on implicit global styling.
+The bundled React project starter includes a fixed-stage deck shell, keyboard navigation, progress, overview, speaker notes, fullscreen controls, a linked presenter window, blackout controls, and product-quality CSS without relying on implicit global styling.
 
 ```bash
 cd assets/react-project-starter
@@ -43,7 +43,14 @@ Then open the local Vite URL and use:
 - `Left` / `Right` or `Space` for slide navigation.
 - `O` for overview.
 - `N` for speaker notes.
+- `C` for review comments.
+- `V` for paper visual asset manager.
+- `D` for deck design lock.
 - `F` for fullscreen.
+- `P` for presenter window.
+- `L` for laser pointer.
+- `B` / `W` for black or white screen.
+- Swipe or wheel for slide navigation.
 - `?` for keyboard help.
 
 ## Pipeline
@@ -82,8 +89,25 @@ Render a React project:
 ```bash
 python3 scripts/render_slideshow_artifact.py \
   --slide-data slide-plan.json \
+  --deck-design deck_design.json \
   --mode react-project \
   --output deck-project
+```
+
+Inside a rendered React project:
+
+```bash
+npm run export:static
+npm run export:pdf
+```
+
+Review visual binding coverage:
+
+```bash
+python3 scripts/visual_asset_report.py \
+  --slide-data bound-slide-plan.json \
+  --visuals scored-visuals.json \
+  --exports export-manifest.json
 ```
 
 Validate platform exports:
@@ -129,6 +153,7 @@ agents/                          Platform-specific agent configs
 | `generate_slide_data.py` | Create structured slide data. |
 | `export_pdf_visuals.py` | Crop visual assets from PDFs. |
 | `bind_visual_assets.py` | Attach exported visuals to slides. |
+| `visual_asset_report.py` | Report visual binding coverage, missing required figures, and export/candidate counts. |
 | `compile_deck_design.py` | Compile deck-level design policy. |
 | `render_slideshow_artifact.py` | Render HTML, React, or React project output. |
 | `audit_research_slides.py` | Check evidence fidelity and visual policy. |

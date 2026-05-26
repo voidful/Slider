@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
-import { X } from "lucide-react";
-import { SlideRenderer } from "./components/SlideRenderer";
-import { ControlDock } from "./components/ControlDock";
+import type { CSSProperties, MouseEvent } from "react";
+import { AudienceDeck } from "./components/AudienceDeck";
+import { PresenterPanel } from "./components/PresenterPanel";
 import { slideData } from "./data/slideData";
-import { deckTitle, themePreset, venuePreset } from "./lib/presentationConfig";
-import { themeClassNames, themeLabels, venueLabels } from "./lib/presets";
+import { deckTitle, runtimeThemePreset as themePreset, semanticPalette, venuePreset } from "./lib/presentationConfig";
+import { themeClassNames } from "./lib/presets";
+import { createPresenterChannel, isPresenterWindow, openPresenterWindow, readPresenterSnapshot, type BlackoutMode, type PresenterCommand, type PresenterSnapshot } from "./lib/presenterWindow";
+import { usePresentationKeyboard, useTouchSwipe, useWheelPageNavigation } from "./lib/usePresentationInput";
+import { useReviewComments } from "./lib/reviewComments";
 
 const STAGE_WIDTH = 1200;
 const STAGE_HEIGHT = 675;
 const MIN_SCALE = 0.34;
-
-function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
-}
 
 function calculateStageScale() {
   const fullscreen = Boolean(document.fullscreenElement);
@@ -25,64 +22,137 @@ function calculateStageScale() {
   return Math.max(MIN_SCALE, Math.min(availableWidth / STAGE_WIDTH, availableHeight / STAGE_HEIGHT));
 }
 
-function OverviewPanel({
-  current,
-  onSelect,
-}: {
-  current: number;
-  onSelect: (index: number) => void;
-}) {
-  return (
-    <div className="floating-panel overview-panel" role="dialog" aria-label="Slide overview">
-      <div className="panel-grid">
-        {slideData.map((slide, index) => (
-          <button
-            className="overview-card"
-            data-current={index === current}
-            key={slide.id}
-            type="button"
-            onClick={() => onSelect(index)}
-          >
-            <span className="overview-number">{String(index + 1).padStart(2, "0")}</span>
-            <span className="overview-title">{slide.title}</span>
-            <span className="overview-cue">{slide.keyMessage}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function NotesPanel({ current }: { current: number }) {
-  const slide = slideData[current];
-  return (
-    <aside className="floating-panel notes-panel" aria-label="Speaker notes">
-      <p className="panel-kicker">Slide {current + 1}</p>
-      <h2>{slide.title}</h2>
-      <p>{slide.speakerNote}</p>
-      {slide.evidenceNote ? <p className="evidence-note">{slide.evidenceNote}</p> : null}
-    </aside>
-  );
-}
-
 export default function App() {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [presenterMode] = useState(() => isPresenterWindow());
+  const [initialPresenterState] = useState<PresenterSnapshot | null>(() => (presenterMode ? readPresenterSnapshot() : null));
+  const [presenterConnected, setPresenterConnected] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(() => Math.max(0, Math.min(initialPresenterState?.index ?? 0, slideData.length - 1)));
+  const [startedAt, setStartedAt] = useState(() => initialPresenterState?.startedAt ?? Date.now());
+  const [blackout, setBlackout] = useState<BlackoutMode>(() => initialPresenterState?.blackout ?? null);
   const [showHelp, setShowHelp] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [showOverview, setShowOverview] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [showVisualAssets, setShowVisualAssets] = useState(false);
+  const [showDesignLock, setShowDesignLock] = useState(false);
+  const [laserEnabled, setLaserEnabled] = useState(false);
   const [stageScale, setStageScale] = useState(calculateStageScale);
-  const deckWrapperRef = useRef<HTMLDivElement | null>(null);
+  const deckWrapperRef = useRef<HTMLDivElement>(null);
+  const presenterChannelRef = useRef<ReturnType<typeof createPresenterChannel> | null>(null);
+  const currentSlideRef = useRef(currentSlide);
+  const startedAtRef = useRef(startedAt);
+  const blackoutRef = useRef<BlackoutMode>(blackout);
   const progress = useMemo(() => ((currentSlide + 1) / slideData.length) * 100, [currentSlide]);
   const slide = slideData[currentSlide];
-  const goTo = useCallback((index: number) => {
+  const themeClass = themeClassNames[themePreset];
+  const shellStyle = {
+    "--deck-scale": stageScale.toFixed(4),
+    ...(semanticPalette?.accent ? { "--accent": semanticPalette.accent } : {}),
+    ...(semanticPalette?.negative ? { "--warning": semanticPalette.negative } : {}),
+    ...(semanticPalette?.neutral ? { "--muted": semanticPalette.neutral } : {}),
+  } as CSSProperties;
+  const inputEnabled = !presenterMode && !showHelp && !showNotes && !showOverview && !showReview && !showVisualAssets && !showDesignLock;
+  const review = useReviewComments(slideData, currentSlide);
+
+  const setClampedSlide = useCallback((index: number) => {
     setCurrentSlide(Math.max(0, Math.min(index, slideData.length - 1)));
   }, []);
-  const themeClass = themeClassNames[themePreset];
-  const shellStyle = { "--deck-scale": stageScale.toFixed(4) } as CSSProperties;
+
+  const applyPresenterCommand = useCallback((command: PresenterCommand) => {
+    if (command.type === "prev") setCurrentSlide((value) => Math.max(value - 1, 0));
+    if (command.type === "next") setCurrentSlide((value) => Math.min(value + 1, slideData.length - 1));
+    if (command.type === "goto") setClampedSlide(command.index);
+    if (command.type === "blackout") setBlackout(command.mode);
+    if (command.type === "reset-timer") setStartedAt(Date.now());
+  }, [setClampedSlide]);
+
+  const requestPresenterCommand = useCallback((command: PresenterCommand) => {
+    if (presenterMode) {
+      presenterChannelRef.current?.post({ type: "command", command });
+      if (!presenterConnected) applyPresenterCommand(command);
+      return;
+    }
+    applyPresenterCommand(command);
+  }, [applyPresenterCommand, presenterConnected, presenterMode]);
+
+  const goTo = useCallback((index: number) => {
+    requestPresenterCommand({ type: "goto", index });
+  }, [requestPresenterCommand]);
+
+  const goPrev = useCallback(() => {
+    requestPresenterCommand({ type: "prev" });
+  }, [requestPresenterCommand]);
+
+  const goNext = useCallback(() => {
+    requestPresenterCommand({ type: "next" });
+  }, [requestPresenterCommand]);
+
+  const clearBlackout = useCallback((mode: BlackoutMode) => {
+    requestPresenterCommand({ type: "blackout", mode });
+  }, [requestPresenterCommand]);
+
+  const closeOverlays = useCallback(() => {
+    setShowHelp(false);
+    setShowNotes(false);
+    setShowOverview(false);
+    setShowReview(false);
+    setShowVisualAssets(false);
+    setShowDesignLock(false);
+  }, []);
+
+  const handleDeckClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (!showReview) return;
+    const element = event.target instanceof Element ? event.target : null;
+    if (element?.closest(".floating-panel, .control-dock")) return;
+    review.selectTargetFromElement(element);
+  }, [review, showReview]);
+
+  const publishPresenterState = useCallback(() => {
+    presenterChannelRef.current?.post({
+      type: "state",
+      state: {
+        index: currentSlideRef.current,
+        count: slideData.length,
+        startedAt: startedAtRef.current,
+        deckTitle,
+        blackout: blackoutRef.current,
+      },
+    });
+  }, []);
 
   useEffect(() => {
-    document.title = deckTitle;
-  }, []);
+    document.title = presenterMode ? `${deckTitle} Presenter` : deckTitle;
+  }, [presenterMode]);
+
+  useEffect(() => {
+    currentSlideRef.current = currentSlide;
+    startedAtRef.current = startedAt;
+    blackoutRef.current = blackout;
+  }, [blackout, currentSlide, startedAt]);
+
+  useEffect(() => {
+    const channel = createPresenterChannel((message) => {
+      if (message.type === "request-state" && !presenterMode) publishPresenterState();
+      if (message.type === "command" && !presenterMode) applyPresenterCommand(message.command);
+      if (message.type === "state" && presenterMode) {
+        setPresenterConnected(true);
+        setClampedSlide(message.state.index);
+        setStartedAt(message.state.startedAt);
+        setBlackout(message.state.blackout);
+      }
+    });
+    presenterChannelRef.current = channel;
+    if (presenterMode) channel.post({ type: "request-state" });
+    if (!presenterMode) publishPresenterState();
+    return () => {
+      channel.close();
+      presenterChannelRef.current = null;
+    };
+  }, [applyPresenterCommand, presenterMode, publishPresenterState, setClampedSlide]);
+
+  useEffect(() => {
+    if (!presenterMode) publishPresenterState();
+  }, [blackout, currentSlide, presenterMode, publishPresenterState, startedAt]);
 
   useEffect(() => {
     const syncScale = () => setStageScale(calculateStageScale());
@@ -97,86 +167,94 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (isEditableTarget(event.target)) return;
-      const key = event.key.toLowerCase();
-      if (["arrowright", "arrowleft", " ", "home", "end"].includes(key)) event.preventDefault();
-      if (key === "arrowright" || key === " ") setCurrentSlide((value) => Math.min(value + 1, slideData.length - 1));
-      if (key === "arrowleft") setCurrentSlide((value) => Math.max(value - 1, 0));
-      if (key === "home") setCurrentSlide(0);
-      if (key === "end") setCurrentSlide(slideData.length - 1);
-      if (key === "f") deckWrapperRef.current?.requestFullscreen?.();
-      if (key === "o") setShowOverview((value) => !value);
-      if (key === "n") setShowNotes((value) => !value);
-      if (key === "escape") {
-        setShowHelp(false);
-        setShowNotes(false);
-        setShowOverview(false);
-      }
-      if (/^[1-9]$/.test(key)) {
-        const nextIndex = Number(key) - 1;
-        if (nextIndex < slideData.length) setCurrentSlide(nextIndex);
-      }
-      if (key === "?") setShowHelp((value) => !value);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  usePresentationKeyboard({
+    blackout,
+    slideCount: slideData.length,
+    presenterMode,
+    onPrev: goPrev,
+    onNext: goNext,
+    onGoTo: goTo,
+    onFullscreen: () => deckWrapperRef.current?.requestFullscreen?.(),
+    onPresenter: openPresenterWindow,
+    onLaser: () => setLaserEnabled((value) => !value),
+    onBlackout: clearBlackout,
+    onToggleHelp: () => setShowHelp((value) => !value),
+    onToggleNotes: () => setShowNotes((value) => !value),
+    onToggleOverview: () => setShowOverview((value) => !value),
+    onToggleReview: () => setShowReview((value) => !value),
+    onToggleVisualAssets: () => setShowVisualAssets((value) => !value),
+    onToggleDesignLock: () => setShowDesignLock((value) => !value),
+    onCloseOverlays: closeOverlays,
+  });
+
+  useWheelPageNavigation({
+    ref: deckWrapperRef,
+    enabled: inputEnabled,
+    canPrev: currentSlide > 0,
+    canNext: currentSlide < slideData.length - 1,
+    onPrev: goPrev,
+    onNext: goNext,
+  });
+
+  useTouchSwipe({
+    ref: deckWrapperRef,
+    enabled: inputEnabled,
+    onPrev: goPrev,
+    onNext: goNext,
+  });
+
+  if (presenterMode) {
+    return (
+      <main className={`app-shell ${themeClass} presenter-app-shell`}>
+        <PresenterPanel
+          slides={slideData}
+          theme={themePreset}
+          state={{ index: currentSlide, count: slideData.length, startedAt, deckTitle, blackout }}
+          connected={presenterConnected}
+          onPrev={() => requestPresenterCommand({ type: "prev" })}
+          onNext={() => requestPresenterCommand({ type: "next" })}
+          onGoTo={(index) => requestPresenterCommand({ type: "goto", index })}
+          onBlackout={(mode) => requestPresenterCommand({ type: "blackout", mode })}
+          onResetTimer={() => requestPresenterCommand({ type: "reset-timer" })}
+        />
+      </main>
+    );
+  }
 
   return (
     <main className={`app-shell ${themeClass}`} style={shellStyle}>
-      <div ref={deckWrapperRef} className="deck-viewport">
-        <div className="deck-frame" role="region" aria-label={deckTitle}>
-          <div className="progress-track" aria-hidden="true">
-            <div className="progress-bar" style={{ width: `${progress}%` }} />
-          </div>
-
-          <div className="deck-meta" aria-label="Deck metadata">
-            <span>{venueLabels[venuePreset]}</span>
-            <span>{themeLabels[themePreset]}</span>
-            {slide.appendix ? <span>Appendix</span> : null}
-          </div>
-
-          <div className={`slide-stage ${showNotes ? "slide-stage-notes" : ""}`} key={currentSlide}>
-            <SlideRenderer slide={slide} theme={themePreset} />
-          </div>
-
-          {showHelp ? (
-            <div className="floating-panel help-panel" role="dialog" aria-label="Keyboard shortcuts">
-              <div className="panel-header">
-                <p>Keyboard</p>
-                <button type="button" className="icon-button" onClick={() => setShowHelp(false)} aria-label="Close keyboard help">
-                  <X aria-hidden="true" />
-                </button>
-              </div>
-              <dl>
-                <div><dt>Left / Right</dt><dd>Slide navigation</dd></div>
-                <div><dt>Space</dt><dd>Next slide</dd></div>
-                <div><dt>1-9</dt><dd>Jump</dd></div>
-                <div><dt>O / N / F</dt><dd>Overview, notes, fullscreen</dd></div>
-              </dl>
-            </div>
-          ) : null}
-
-          {showOverview ? <OverviewPanel current={currentSlide} onSelect={(index) => { goTo(index); setShowOverview(false); }} /> : null}
-          {showNotes ? <NotesPanel current={currentSlide} /> : null}
-
-          <ControlDock
-            count={slideData.length}
-            current={currentSlide}
-            notesOpen={showNotes}
-            overviewOpen={showOverview}
-            helpOpen={showHelp}
-            onPrev={() => goTo(currentSlide - 1)}
-            onNext={() => goTo(currentSlide + 1)}
-            onFullscreen={() => deckWrapperRef.current?.requestFullscreen?.()}
-            onHelp={() => setShowHelp((value) => !value)}
-            onNotes={() => setShowNotes((value) => !value)}
-            onOverview={() => setShowOverview((value) => !value)}
-          />
-        </div>
-      </div>
+      <AudienceDeck
+        slides={slideData}
+        slide={slide}
+        currentSlide={currentSlide}
+        progress={progress}
+        deckTitle={deckTitle}
+        theme={themePreset}
+        venue={venuePreset}
+        deckWrapperRef={deckWrapperRef}
+        blackout={blackout}
+        laserEnabled={laserEnabled}
+        showHelp={showHelp}
+        showNotes={showNotes}
+        showOverview={showOverview}
+        showReview={showReview}
+        showVisualAssets={showVisualAssets}
+        showDesignLock={showDesignLock}
+        review={review}
+        onDeckClick={handleDeckClick}
+        onPrev={goPrev}
+        onNext={goNext}
+        onGoTo={goTo}
+        onFullscreen={() => deckWrapperRef.current?.requestFullscreen?.()}
+        onToggleHelp={() => setShowHelp((value) => !value)}
+        onToggleNotes={() => setShowNotes((value) => !value)}
+        onToggleOverview={() => setShowOverview((value) => !value)}
+        onToggleReview={() => setShowReview((value) => !value)}
+        onToggleVisualAssets={() => setShowVisualAssets((value) => !value)}
+        onToggleDesignLock={() => setShowDesignLock((value) => !value)}
+        onToggleLaser={() => setLaserEnabled((value) => !value)}
+        onBlackout={(mode) => requestPresenterCommand({ type: "blackout", mode: blackout === mode ? null : mode })}
+      />
     </main>
   );
 }

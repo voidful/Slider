@@ -19,7 +19,11 @@ Also support when practical:
 - number-key jump (1-9),
 - home and end for first and last slide,
 - escape to close overlays or exit fullscreen,
-- help hint or key legend.
+- help hint or key legend,
+- a presenter window with current slide, next slide, notes, timer, and jump control,
+- black and white blackout controls for stage pauses,
+- laser pointer toggle for pointing at figures or tables,
+- wheel and single-finger horizontal swipe navigation for trackpads and tablets.
 
 
 
@@ -132,6 +136,26 @@ The speaker window listens for `slideIndexChanged` messages and updates:
 - Next slide preview and key message
 - Timer and progress state
 
+## React presenter window protocol
+
+For the multi-file React starter, presenter mode should open the same app with `?presenter=1`.
+The projection window is the source of truth and publishes slide index, blackout state, deck title, and timer start over `BroadcastChannel`, with `localStorage` as a fallback for browser contexts where a channel is unavailable.
+
+Presenter controls send commands back to the projection:
+- previous / next / goto,
+- black screen / white screen / clear blackout,
+- reset timer.
+
+If no projection window responds, the presenter view may run as a local preview rather than failing blank.
+
+## Projection input enhancements
+
+The projection view should support:
+- `L` to toggle a soft laser pointer that follows the cursor,
+- vertical wheel or trackpad scroll to move between slides, with cooldown to avoid accidental multi-slide jumps,
+- single-finger horizontal swipe for tablet navigation,
+- disabled wheel/swipe navigation while overlays, notes, or overview are open.
+
 ### Notes authoring rules
 
 - Speaker notes should be conversational delivery scripts, not slide summaries.
@@ -148,4 +172,3 @@ The template supports a live tweaks panel for post-generation design customizati
 - **Persistence:** Values save to `localStorage` and can be exported as `deck_tweaks.json`
 
 See [live-tweaks-protocol.md](live-tweaks-protocol.md) for the full specification.
-

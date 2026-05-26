@@ -44,6 +44,12 @@ Use when the user wants a reusable project, multi-file codebase, or stronger pre
 ### Requirements
 - Directory-based React app.
 - Separate slide data, components, and config modules.
+- Linked presenter window for current/next preview, notes, timer, jump control, and blackout commands.
+- Projection controls for laser pointer, wheel navigation, and touch swipe navigation.
+- Review comments that can be exported as JSON for agent follow-up.
+- Paper visual asset manager for bound/missing visual review.
+- Design lock panel backed by `deck_design.json` rather than ad-hoc per-slide styling.
+- Static and PDF export scripts.
 - Same evidence and design rules.
 
 ## Shared requirements across all modes

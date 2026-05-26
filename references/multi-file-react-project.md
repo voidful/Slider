@@ -12,10 +12,14 @@ A sensible structure is:
 - `src/App.tsx` for the app shell,
 - `src/data/slideData.ts` for content,
 - `src/lib/presentationConfig.ts` for theme and venue presets,
+- `src/lib/deckDesign.ts` for compiled `deck_design.json` design locks,
 - `src/components/SlideRenderer.tsx` for layout rendering,
+- `src/components/AudienceDeck.tsx` for projection-facing controls and overlays,
 - `src/components/ControlDock.tsx` for controls,
 - `src/components/PresenterPanel.tsx` for speaker-facing state.
 - `src/lib/presenterWindow.ts` for the dedicated speaker window helper when needed.
+- `src/lib/usePresentationInput.ts` for keyboard, wheel, and touch navigation.
+- `src/lib/reviewComments.ts` for local review comments and export.
 
 ## Rules
 
@@ -32,4 +36,6 @@ Prefer a multi-file React project when the user wants:
 - deployment,
 - a codebase another engineer can extend,
 - stronger presenter features,
+- review comments and visual asset triage,
+- deck-design-locked theming,
 - more than one presentation variant.

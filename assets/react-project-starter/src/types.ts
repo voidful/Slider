@@ -19,6 +19,21 @@ export type VisualAsset = {
   confidence?: "high" | "medium" | "low";
 };
 
+export type ReviewTarget = {
+  id: string;
+  label: string;
+};
+
+export type ReviewComment = {
+  id: string;
+  slideIndex: number;
+  slideTitle: string;
+  targetId: string;
+  targetLabel: string;
+  text: string;
+  createdAt: string;
+};
+
 export type Slide = {
   id: number;
   title: string;

@@ -119,6 +119,12 @@ Support:
 - help toggle,
 - number-key jump,
 - home and end,
+- `L` laser pointer toggle,
+- `C` review comments,
+- `V` visual asset manager,
+- `D` deck design lock panel,
+- wheel navigation with a short cooldown,
+- single-finger horizontal swipe navigation,
 - fullscreen toggle targeting the deck `div` ref (NOT `document.documentElement`).
 
 Clamp slide indices safely.
@@ -146,7 +152,7 @@ Clamp slide indices safely.
 Use an `aspect-video` presentation container (1200×675 reference).
 
 Fullscreen must target the deck `div` ref — never `document.documentElement`.
-Add `:fullscreen` CSS rules switching all typography to `vh`/`vw` units.
+Add `:fullscreen` CSS rules that scale the fixed stage without reflowing slide typography.
 
 Preserve generous margins and projector-safe layout.
 
@@ -186,6 +192,12 @@ When presenter mode is supported:
 - show the next slide preview,
 - show the current note and evidence note,
 - show an elapsed timer,
+- support presenter-window commands back to the projection window,
+- support black/white blackout controls,
+- support laser pointer toggle on the projection window,
+- support exportable review comments,
+- surface missing/bound visual assets,
+- surface `deck_design.json` design locks without ad-hoc style editing,
 - avoid shrinking the audience slide excessively.
 
 ## Figure placeholders

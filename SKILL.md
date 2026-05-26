@@ -114,6 +114,7 @@ The deck uses a **fixed 1200×675 coordinate system** (stage model). This contra
 - slide-data generator: [scripts/generate_slide_data.py](scripts/generate_slide_data.py)
 - pdf visual exporter: [scripts/export_pdf_visuals.py](scripts/export_pdf_visuals.py)
 - visual asset binder: [scripts/bind_visual_assets.py](scripts/bind_visual_assets.py)
+- visual asset report: [scripts/visual_asset_report.py](scripts/visual_asset_report.py)
 - slideshow renderer: [scripts/render_slideshow_artifact.py](scripts/render_slideshow_artifact.py)
 - browser slide audit: [scripts/browser_slide_audit.py](scripts/browser_slide_audit.py)
 - research slide audit: [scripts/audit_research_slides.py](scripts/audit_research_slides.py)

@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "export:static": "node scripts/export-static.mjs",
+    "export:pdf": "node scripts/export-static.mjs --pdf"
   },
   "dependencies": {
     "lucide-react": "^0.469.0",

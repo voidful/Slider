@@ -162,7 +162,23 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
         subprocess.run([sys.executable, str(SCRIPTS_DIR/'render_slideshow_artifact.py'), '--slide-data', str(bound_json), '--mode', 'react-project', '--output', str(project_dir)], check=True, capture_output=True, text=True)
         if (project_dir / 'node_modules').exists() or (project_dir / 'dist').exists() or (project_dir / 'build').exists():
             failures.append('React project renderer copied generated dependency/build directories into the output')
-        ts_files = [react_out, project_dir/'src/App.tsx', project_dir/'src/components/SlideRenderer.tsx', project_dir/'src/components/PresenterPanel.tsx', project_dir/'src/data/slideData.ts', project_dir/'src/lib/presentationConfig.ts', project_dir/'src/lib/presenterWindow.ts']
+        ts_files = [
+            react_out,
+            project_dir/'src/App.tsx',
+            project_dir/'src/components/AudienceDeck.tsx',
+            project_dir/'src/components/SlideRenderer.tsx',
+            project_dir/'src/components/PresenterPanel.tsx',
+            project_dir/'src/components/ReviewPanel.tsx',
+            project_dir/'src/components/VisualAssetPanel.tsx',
+            project_dir/'src/components/DesignLockPanel.tsx',
+            project_dir/'src/components/LaserPointer.tsx',
+            project_dir/'src/data/slideData.ts',
+            project_dir/'src/lib/presentationConfig.ts',
+            project_dir/'src/lib/presenterWindow.ts',
+            project_dir/'src/lib/usePresentationInput.ts',
+            project_dir/'src/lib/reviewComments.ts',
+            project_dir/'src/lib/deckDesign.ts',
+        ]
         ts_files = [path for path in ts_files if path.exists()]
         ts_failures, ts_warnings = validate_typescript_files(ts_files)
         failures.extend(ts_failures)
@@ -190,6 +206,16 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
             or not any(token in control_dock_text for token in ('aria-label="Fullscreen"', 'label="Fullscreen"'))
         ):
             failures.append('Fullscreen controls were not found in one or more rendered artifacts')
+        for token, label in [
+            ('Presenter window', 'presenter window control'),
+            ('Laser pointer', 'laser pointer control'),
+            ('Review comments', 'review comments control'),
+            ('Visual assets', 'visual asset manager control'),
+            ('Design lock', 'design lock control'),
+        ]:
+            if token not in control_dock_text:
+                failures.append(f'React project starter is missing {label}')
+        subprocess.run([sys.executable, str(SCRIPTS_DIR/'visual_asset_report.py'), '--slide-data', str(bound_json), '--visuals', str(scored_json), '--exports', str(exports_json)], check=True, capture_output=True, text=True)
         if fitz is None:
             warnings.append('PyMuPDF (fitz) is unavailable; skipped PDF export roundtrip checks')
         else:

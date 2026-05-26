@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added linked presenter-window support to the React project starter, with current/next previews, notes, timer, jump control, and black/white blackout commands inspired by open-slide's presenter workflow.
+- Added projection-side laser pointer, wheel navigation, and touch swipe navigation to the React project starter.
+- Added React starter review comments, visual asset manager, deck design lock panel, and static/PDF export scripts.
+- Added `visual_asset_report.py` for paper visual binding coverage reports.
 - Upgraded the canonical HTML base webpage with play/pause auto-advance, elapsed timer display, and stronger presenter controls.
 - Expanded edit mode with a slide inspector, block editing, metrics editing, image insertion, theme editing, draft save/load, JSON import/export, and self-contained HTML export.
 - Added bundled demo slide data so the base template opens as a usable presentation without a generation step.

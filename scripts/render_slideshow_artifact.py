@@ -203,7 +203,29 @@ def to_ts_module(slides: list[dict[str, Any]]) -> str:
     return 'import type { Slide } from "../types";\n\nexport const slideData: Slide[] = ' + rendered + ';\n'
 
 
-def render_react_project(slides: list[dict[str, Any]], theme: str, venue: str, title: str | None, output_dir: Path) -> list[Path]:
+def to_deck_design_module(deck_design: dict[str, Any] | None) -> str:
+    if not deck_design:
+        return (REACT_PROJECT_TEMPLATE / "src" / "lib" / "deckDesign.ts").read_text(encoding="utf-8")
+    rendered = json.dumps(deck_design, indent=2, ensure_ascii=False)
+    return (
+        'import type { Theme } from "../types";\n\n'
+        'export type DeckDesign = {\n'
+        '  version?: string;\n'
+        '  deck_mood_family?: string;\n'
+        '  theme_preset?: string;\n'
+        '  semantic_palette?: { accent?: string; positive?: string; negative?: string; neutral?: string };\n'
+        '  motion_policy?: { mode?: string; transition_ms?: number; respect_reduced_motion?: boolean };\n'
+        '};\n\n'
+        f"export const deckDesign: DeckDesign | null = {rendered};\n\n"
+        'export function resolveThemePreset(fallback: Theme): Theme {\n'
+        '  const preset = deckDesign?.theme_preset;\n'
+        '  if (preset === "deep-navy-academic" || preset === "monochrome-impeccable" || preset === "zinc-editorial") return preset;\n'
+        '  return fallback;\n'
+        '}\n'
+    )
+
+
+def render_react_project(slides: list[dict[str, Any]], theme: str, venue: str, title: str | None, output_dir: Path, deck_design: dict[str, Any] | None = None) -> list[Path]:
     if output_dir.exists() and output_dir.is_file():
         raise ValueError("react-project output must be a directory path")
     shutil.copytree(
@@ -215,6 +237,9 @@ def render_react_project(slides: list[dict[str, Any]], theme: str, venue: str, t
 
     slide_data_path = output_dir / "src" / "data" / "slideData.ts"
     slide_data_path.write_text(to_ts_module(slides), encoding="utf-8")
+
+    deck_design_path = output_dir / "src" / "lib" / "deckDesign.ts"
+    deck_design_path.write_text(strip_render_markers(to_deck_design_module(deck_design)), encoding="utf-8")
 
     config_path = output_dir / "src" / "lib" / "presentationConfig.ts"
     config_text = config_path.read_text(encoding="utf-8")
@@ -241,7 +266,7 @@ def render_react_project(slides: list[dict[str, Any]], theme: str, venue: str, t
     index_text = replace_regex(index_text, r"<title>.*?</title>", f"<title>{safe_title}</title>")
     index_path.write_text(strip_render_markers(index_text), encoding="utf-8")
 
-    return [slide_data_path, config_path, index_path]
+    return [slide_data_path, deck_design_path, config_path, index_path]
 
 
 def main() -> None:
@@ -251,6 +276,7 @@ def main() -> None:
     parser.add_argument("--theme", help="Override theme preset")
     parser.add_argument("--venue", help="Override venue preset")
     parser.add_argument("--title", help="Override title for HTML or project output")
+    parser.add_argument("--deck-design", type=Path, help="Optional deck_design.json to embed in React project output")
     parser.add_argument("--output", type=Path, required=True, help="Output file path for react/html or output directory for react-project")
     args = parser.parse_args()
 
@@ -259,6 +285,13 @@ def main() -> None:
     theme = args.theme or meta.get("themePreset") or "zinc-editorial"
     venue = args.venue or meta.get("venuePreset") or "iclr"
     title = args.title or meta.get("title")
+    deck_design = None
+    if args.deck_design:
+        deck_design = json.loads(args.deck_design.read_text(encoding="utf-8"))
+    elif isinstance(meta.get("deckDesign"), dict):
+        deck_design = meta["deckDesign"]
+    elif isinstance(meta.get("deck_design"), dict):
+        deck_design = meta["deck_design"]
 
     if args.mode == "react":
         rendered = render_react(slide_data, theme=theme, venue=venue)
@@ -467,7 +500,7 @@ def main() -> None:
         print(str(args.output))
         return
 
-    touched = render_react_project(slide_data, theme=theme, venue=venue, title=title, output_dir=args.output)
+    touched = render_react_project(slide_data, theme=theme, venue=venue, title=title, output_dir=args.output, deck_design=deck_design)
     print(json.dumps({"output_dir": str(args.output), "files": [str(path) for path in touched]}, ensure_ascii=False, indent=2))
 
 
