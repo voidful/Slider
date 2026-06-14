@@ -1,5 +1,6 @@
 import { Image as ImageIcon } from "lucide-react";
 import type { Slide } from "../types";
+import { useModalDialog } from "../lib/useModalDialog";
 
 function visualStatus(slide: Slide) {
   if (slide.visual?.src) return "bound";
@@ -12,20 +13,23 @@ export function VisualAssetPanel({
   slides,
   current,
   onSelect,
+  onClose,
 }: {
   slides: Slide[];
   current: number;
   onSelect: (index: number) => void;
+  onClose: () => void;
 }) {
+  const { containerRef, titleId } = useModalDialog<HTMLElement>(onClose, { modal: false });
   const visualSlides = slides
     .map((slide, index) => ({ slide, index, status: visualStatus(slide) }))
     .filter((item) => item.status !== "none");
 
   return (
-    <aside className="floating-panel visual-assets-panel" aria-label="Visual asset manager" data-wheel-nav-ignore>
+    <aside ref={containerRef} className="floating-panel visual-assets-panel" role="dialog" aria-labelledby={titleId} data-wheel-nav-ignore>
       <div className="panel-header">
         <div>
-          <p>Visual Assets</p>
+          <p id={titleId}>Visual Assets</p>
           <span className="panel-subtitle">{visualSlides.length} slide-level bindings</span>
         </div>
         <ImageIcon aria-hidden="true" />

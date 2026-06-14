@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### React workbench UI/UX pass
+
+- Accessibility: added `:focus-visible` rings to every control, a reusable `useModalDialog` hook (focus trap + restore + component-local Escape) applied to the Help and Overview modals, non-modal dialog semantics for the Review/Visual/Design/Tweaks side panels, full keyboard navigation in the overview grid (arrows/Home/End/Enter), and a polite screen-reader live region announcing each slide change.
+- Input correctness: multi-digit slide jump for decks with 10+ slides (type "1" then "2" → slide 12), a stricter `contenteditable` guard, hierarchical Escape (one action per keystroke), and a laser pointer that now tracks the cursor accurately at any zoom and in fullscreen (it was offset because it ignored the stage scale).
+- Added a runtime theme switcher + Live Tweaks panel (`T` / wrench): preset themes, accent/positive/negative color pickers, text-size and transition sliders, a progress-bar toggle, reset, and `deck_tweaks.json` export — all persisted to `localStorage`.
+- Added the `table-focus` layout (semantic comparison table with theme-aware header, highlighted best row, and review targets), closing a documented layout gap, plus a metrics→table fallback.
+- Robustness: empty-deck / out-of-bounds guards in the renderer, presenter panel, and review-comment add path.
+- Visual polish: per-element entrance stagger on bullets/metrics/table, a slide-stage crossfade tied to the transition tweak, AA-legible blackout overlays, semantic `--positive` / `--negative` tokens, a tidier grouped control dock, and small-screen `.app-shell` / stage-scale adaptation.
+
 - Added linked presenter-window support to the React project starter, with current/next previews, notes, timer, jump control, and black/white blackout commands inspired by open-slide's presenter workflow.
 - Added projection-side laser pointer, wheel navigation, and touch swipe navigation to the React project starter.
 - Added React starter review comments, visual asset manager, deck design lock panel, and static/PDF export scripts.

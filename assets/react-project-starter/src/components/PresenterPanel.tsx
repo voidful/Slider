@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, RotateCcw, Square, Sun } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { SlideRenderer } from "./SlideRenderer";
 import type { BlackoutMode, PresenterSnapshot } from "../lib/presenterWindow";
 import type { Slide, Theme } from "../types";
@@ -81,10 +81,10 @@ export function PresenterPanel({
 }: PresenterPanelProps) {
   const [now, setNow] = useState(() => Date.now());
   const [jumpValue, setJumpValue] = useState("");
-  const current = Math.max(0, Math.min(state.index, slides.length - 1));
+  const current = slides.length ? Math.max(0, Math.min(state.index, slides.length - 1)) : 0;
   const slide = slides[current];
   const nextSlide = slides[current + 1];
-  const progress = useMemo(() => ((current + 1) / slides.length) * 100, [current, slides.length]);
+  const progress = slides.length ? ((current + 1) / slides.length) * 100 : 0;
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 1000);
@@ -125,9 +125,9 @@ export function PresenterPanel({
 
           <div className="presenter-notes">
             <p className="presenter-section-label">Speaker notes</p>
-            <h2>{slide.title}</h2>
-            <p>{slide.speakerNote || "No speaker notes for this slide."}</p>
-            {slide.evidenceNote ? <p className="presenter-evidence-note">{slide.evidenceNote}</p> : null}
+            <h2>{slide?.title ?? "End of deck"}</h2>
+            <p>{slide?.speakerNote || "No speaker notes for this slide."}</p>
+            {slide?.evidenceNote ? <p className="presenter-evidence-note">{slide.evidenceNote}</p> : null}
           </div>
 
           <form

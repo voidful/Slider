@@ -1,4 +1,4 @@
-export type Layout = "cover" | "split" | "bullets" | "metrics" | "limitations" | "diagram";
+export type Layout = "cover" | "split" | "bullets" | "metrics" | "limitations" | "diagram" | "table-focus";
 export type Venue = "neurips" | "iclr" | "acl" | "cvpr";
 export type Theme = "zinc-editorial" | "deep-navy-academic" | "monochrome-impeccable";
 
@@ -6,6 +6,14 @@ export type Metric = {
   label: string;
   value: string;
   detail: string;
+};
+
+export type SlideTable = {
+  headers: string[];
+  rows: string[][];
+  caption?: string;
+  /** 0-based index of the row to highlight as the best/result row. */
+  highlightRow?: number;
 };
 
 export type VisualAsset = {
@@ -44,6 +52,7 @@ export type Slide = {
   subtitle?: string;
   bullets?: string[];
   metrics?: Metric[];
+  table?: SlideTable;
   figureLabel?: string;
   visualBinding?: { label?: string; pageNumber?: number; caption?: string; storyRole?: string; recommendedDeck?: string; score?: number };
   visual?: VisualAsset;

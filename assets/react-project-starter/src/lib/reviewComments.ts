@@ -45,6 +45,7 @@ export function useReviewComments(slides: Slide[], current: number) {
     const text = draft.trim();
     if (!text) return;
     const slide = slides[current];
+    if (!slide) return;
     setComments((items) => [
       ...items,
       {

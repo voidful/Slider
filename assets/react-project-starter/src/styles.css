@@ -26,6 +26,46 @@ button {
   font: inherit;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Keyboard focus is always visible; pointer focus stays quiet. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.overview-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.panel-primary-button:focus-visible,
+.dock-button[aria-pressed="true"]:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.click-nav-zone:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
+.presenter-button:focus-visible,
+.presenter-jump input:focus-visible {
+  outline: 2px solid #f2d06b;
+  outline-offset: 2px;
+}
+
 .app-shell {
   --bg: #f1f0ec;
   --frame: #fffdf8;
@@ -37,7 +77,11 @@ button {
   --accent: #111111;
   --accent-text: #ffffff;
   --warning: #9d2c2c;
+  --negative: var(--warning);
+  --positive: #0f7a52;
   --deck-scale: 1;
+  --type-scale: 1;
+  --deck-transition: 320ms;
   min-height: 100vh;
   display: grid;
   place-items: center;
@@ -133,7 +177,7 @@ button {
 .progress-bar {
   height: 100%;
   background: var(--accent);
-  transition: width 300ms ease;
+  transition: width var(--deck-transition) ease;
 }
 
 .deck-meta {
@@ -167,6 +211,16 @@ button {
   inset: 0;
   padding: 76px 64px 82px;
   transition: padding 220ms ease;
+  animation: slide-enter var(--deck-transition) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slide-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .slide-stage-notes {
@@ -256,20 +310,20 @@ button {
 
 .cover-title {
   max-width: 960px;
-  font-size: 58px;
+  font-size: calc(58px * var(--type-scale));
   font-weight: 850;
 }
 
 .slide-title {
   max-width: 820px;
-  font-size: 46px;
+  font-size: calc(46px * var(--type-scale));
   font-weight: 820;
 }
 
 .subtitle {
   margin: 22px 0 0;
   color: var(--muted);
-  font-size: 20px;
+  font-size: calc(20px * var(--type-scale));
   line-height: 1.35;
 }
 
@@ -277,13 +331,13 @@ button {
   max-width: 760px;
   margin: 22px 0 0;
   color: var(--muted);
-  font-size: 21px;
+  font-size: calc(21px * var(--type-scale));
   line-height: 1.44;
 }
 
 .cover-message {
   max-width: 800px;
-  font-size: 23px;
+  font-size: calc(23px * var(--type-scale));
 }
 
 .bullet-list {
@@ -293,7 +347,7 @@ button {
   margin: 32px 0 0;
   padding: 0;
   list-style: none;
-  font-size: 20px;
+  font-size: calc(20px * var(--type-scale));
   line-height: 1.42;
 }
 
@@ -405,7 +459,7 @@ button {
 .metric-value {
   margin: 14px 0 0;
   color: var(--text);
-  font-size: 47px;
+  font-size: calc(47px * var(--type-scale));
   line-height: 1;
   font-weight: 850;
 }
@@ -424,6 +478,82 @@ button {
   line-height: 1.35;
 }
 
+.table-focus-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.data-table-frame {
+  min-width: 0;
+  margin: 28px 0 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--frame);
+  overflow: hidden;
+}
+
+.data-table-scroll {
+  max-height: 408px;
+  overflow: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 18px;
+  text-align: left;
+  font-size: 18px;
+  line-height: 1.3;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: break-word;
+}
+
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--accent) 10%, var(--frame));
+  color: var(--text);
+  font-weight: 700;
+  border-bottom: 2px solid var(--accent);
+}
+
+.data-table th:not(:first-child),
+.data-table td:not(:first-child) {
+  text-align: right;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table tbody tr[data-best="true"] {
+  background: color-mix(in srgb, var(--positive) 13%, var(--frame));
+}
+
+.data-table tbody tr[data-best="true"] td {
+  color: var(--text);
+  font-weight: 720;
+}
+
+.data-table-frame figcaption {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.data-table-empty {
+  margin-top: 28px;
+}
+
 .limitation-panel {
   max-width: 900px;
   margin-top: 32px;
@@ -440,7 +570,7 @@ button {
   z-index: 35;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   transform: translateX(-50%);
   padding: 8px;
   border: 1px solid var(--border);
@@ -450,13 +580,20 @@ button {
   backdrop-filter: blur(14px);
 }
 
+.dock-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
 .blackout-overlay {
   position: absolute;
   inset: 0;
   z-index: 34;
   display: grid;
   place-items: center;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 780;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -464,26 +601,25 @@ button {
 
 .blackout-black {
   background: #050505;
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .blackout-white {
   background: #ffffff;
-  color: rgba(0, 0, 0, 0.34);
+  color: rgba(0, 0, 0, 0.72);
 }
 
 .laser-pointer {
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: absolute;
   z-index: 60;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   pointer-events: none;
   border-radius: 50%;
+  transform: translate(-50%, -50%);
   background: radial-gradient(circle, rgba(246, 58, 58, 0.96) 30%, rgba(246, 58, 58, 0) 72%);
   box-shadow: 0 0 18px 5px rgba(246, 58, 58, 0.54);
-  will-change: transform;
+  will-change: left, top;
 }
 
 .dock-button,
@@ -585,6 +721,15 @@ button {
 .help-panel dt {
   color: var(--text);
   font-weight: 740;
+}
+
+.panel-footnote {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .overview-panel {
@@ -854,6 +999,183 @@ button {
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 11px;
+}
+
+.tweaks-panel {
+  top: auto;
+  right: 24px;
+  bottom: 24px;
+  width: min(300px, calc(100% - 48px));
+  max-height: calc(100% - 120px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tweaks-panel .panel-header p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tweaks-panel .panel-header p svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tweak-section {
+  display: grid;
+  gap: 9px;
+}
+
+.tweak-section-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tweak-theme-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.tweak-theme-button {
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--frame) 82%, var(--panel));
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  padding: 0 12px;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.tweak-theme-button:hover {
+  border-color: var(--accent);
+}
+
+.tweak-theme-button[data-active="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--panel-strong) 78%, var(--frame));
+}
+
+.tweak-row {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.tweak-row > label {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 640;
+}
+
+.tweak-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.tweak-row-toggle {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.tweak-row-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.tweak-value {
+  min-width: 44px;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tweak-color {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  grid-column: 2 / 4;
+}
+
+.tweak-color input[type="color"] {
+  width: 40px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--frame);
+  cursor: pointer;
+}
+
+.tweak-clear {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+}
+
+.tweak-clear:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.tweak-auto {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.tweak-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tweak-action {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--frame) 82%, var(--panel));
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tweak-action:hover {
+  border-color: var(--accent);
+}
+
+.tweak-action svg {
+  width: 15px;
+  height: 15px;
 }
 
 .review-mode [data-review-target] {
@@ -1249,6 +1571,15 @@ button {
 
   .click-nav-zone {
     display: block;
+  }
+}
+
+/* On phones, shrink the outer chrome so the scaled stage keeps as much room
+   as possible. Panels and dock live inside the scaled stage, so they are not
+   resized here — only the viewport-relative shell padding is. */
+@media (max-width: 480px) {
+  .app-shell {
+    padding: 8px;
   }
 }
 

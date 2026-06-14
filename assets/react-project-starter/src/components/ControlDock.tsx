@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Crosshair, Grid2X2, HelpCircle, Image, Maximize, MessageSquare, Monitor, Palette, Square, StickyNote, Sun } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, Grid2X2, HelpCircle, Image, Maximize, MessageSquare, Monitor, Palette, SlidersHorizontal, Square, StickyNote, Sun } from "lucide-react";
 import type { BlackoutMode } from "../lib/presenterWindow";
 
 type ControlDockProps = {
@@ -11,6 +11,7 @@ type ControlDockProps = {
   reviewOpen: boolean;
   visualAssetsOpen: boolean;
   designLockOpen: boolean;
+  tweaksOpen: boolean;
   laserOn: boolean;
   onPrev: () => void;
   onNext: () => void;
@@ -21,6 +22,7 @@ type ControlDockProps = {
   onReview: () => void;
   onVisualAssets: () => void;
   onDesignLock: () => void;
+  onTweaks: () => void;
   onPresenter: () => void;
   onLaser: () => void;
   onBlackout: (mode: Exclude<BlackoutMode, null>) => void;
@@ -60,6 +62,7 @@ export function ControlDock({
   reviewOpen,
   visualAssetsOpen,
   designLockOpen,
+  tweaksOpen,
   laserOn,
   onPrev,
   onNext,
@@ -70,6 +73,7 @@ export function ControlDock({
   onReview,
   onVisualAssets,
   onDesignLock,
+  onTweaks,
   onPresenter,
   onLaser,
   onBlackout,
@@ -82,9 +86,10 @@ export function ControlDock({
       <DockButton label="Next slide" onClick={onNext} disabled={current >= count - 1}>
         <ChevronRight aria-hidden="true" />
       </DockButton>
-      <div className="slide-counter" aria-live="polite">
+      <div className="slide-counter" aria-hidden="true">
         {current + 1} / {count}
       </div>
+      <span className="dock-divider" aria-hidden="true" />
       <DockButton label="Slide overview" onClick={onOverview} pressed={overviewOpen}>
         <Grid2X2 aria-hidden="true" />
       </DockButton>
@@ -100,6 +105,10 @@ export function ControlDock({
       <DockButton label="Design lock" onClick={onDesignLock} pressed={designLockOpen}>
         <Palette aria-hidden="true" />
       </DockButton>
+      <DockButton label="Live tweaks" onClick={onTweaks} pressed={tweaksOpen}>
+        <SlidersHorizontal aria-hidden="true" />
+      </DockButton>
+      <span className="dock-divider" aria-hidden="true" />
       <DockButton label="Presenter window" onClick={onPresenter}>
         <Monitor aria-hidden="true" />
       </DockButton>

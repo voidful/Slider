@@ -1,5 +1,6 @@
 import { Download, Trash2 } from "lucide-react";
 import type { ReviewComment, ReviewTarget } from "../types";
+import { useModalDialog } from "../lib/useModalDialog";
 
 export function ReviewPanel({
   comments,
@@ -10,6 +11,7 @@ export function ReviewPanel({
   onAdd,
   onDelete,
   onExport,
+  onClose,
 }: {
   comments: ReviewComment[];
   current: number;
@@ -19,13 +21,15 @@ export function ReviewPanel({
   onAdd: () => void;
   onDelete: (id: string) => void;
   onExport: () => void;
+  onClose: () => void;
 }) {
+  const { containerRef, titleId } = useModalDialog<HTMLElement>(onClose, { modal: false });
   const slideComments = comments.filter((comment) => comment.slideIndex === current);
   return (
-    <aside className="floating-panel review-panel" aria-label="Review comments" data-wheel-nav-ignore>
+    <aside ref={containerRef} className="floating-panel review-panel" role="dialog" aria-labelledby={titleId} data-wheel-nav-ignore>
       <div className="panel-header">
         <div>
-          <p>Review</p>
+          <p id={titleId}>Review</p>
           <span className="panel-subtitle">Slide {current + 1} · {target.label}</span>
         </div>
         <button className="icon-button" type="button" aria-label="Export review comments" title="Export review comments" onClick={onExport}>

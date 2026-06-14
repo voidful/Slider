@@ -8,8 +8,12 @@ const WHEEL_GESTURE_IDLE_MS = 90;
 
 function shouldIgnoreInputTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
-  return Boolean(target.closest("input, textarea, select, [contenteditable='true'], [data-wheel-nav-ignore]"));
+  return Boolean(
+    target.closest("input, textarea, select, [contenteditable]:not([contenteditable='false']), [data-wheel-nav-ignore]"),
+  );
 }
+
+const DIGIT_CHORD_MS = 900;
 
 function normalizeWheelDelta(delta: number, deltaMode: number) {
   if (deltaMode === WheelEvent.DOM_DELTA_LINE) return delta * 16;
@@ -145,6 +149,7 @@ export function usePresentationKeyboard({
   blackout,
   slideCount,
   presenterMode,
+  anyOverlayOpen,
   onPrev,
   onNext,
   onGoTo,
@@ -158,11 +163,13 @@ export function usePresentationKeyboard({
   onToggleReview,
   onToggleVisualAssets,
   onToggleDesignLock,
+  onToggleTweaks,
   onCloseOverlays,
 }: {
   blackout: "black" | "white" | null;
   slideCount: number;
   presenterMode: boolean;
+  anyOverlayOpen: boolean;
   onPrev: () => void;
   onNext: () => void;
   onGoTo: (index: number) => void;
@@ -176,12 +183,44 @@ export function usePresentationKeyboard({
   onToggleReview: () => void;
   onToggleVisualAssets: () => void;
   onToggleDesignLock: () => void;
+  onToggleTweaks: () => void;
   onCloseOverlays: () => void;
 }) {
+  const digitBufferRef = useRef("");
+  const digitTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
+    const clearDigitTimer = () => {
+      if (digitTimerRef.current !== null) {
+        window.clearTimeout(digitTimerRef.current);
+        digitTimerRef.current = null;
+      }
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (shouldIgnoreInputTarget(event.target)) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
       const key = event.key.toLowerCase();
+
+      // Multi-digit slide jump: buffer keystrokes so decks with 10+ slides
+      // are reachable (e.g. "1" then "2" -> slide 12). Commit early when no
+      // longer slide number could start with the current buffer.
+      if (/^[0-9]$/.test(event.key)) {
+        const buffer = digitBufferRef.current + event.key;
+        digitBufferRef.current = buffer;
+        clearDigitTimer();
+        const commit = () => {
+          const value = Number(digitBufferRef.current);
+          digitBufferRef.current = "";
+          digitTimerRef.current = null;
+          if (Number.isFinite(value) && value >= 1 && value <= slideCount) onGoTo(value - 1);
+        };
+        const maxDigits = String(slideCount).length;
+        if (buffer.length >= maxDigits || Number(`${buffer}0`) > slideCount) commit();
+        else digitTimerRef.current = window.setTimeout(commit, DIGIT_CHORD_MS);
+        return;
+      }
+
       if (["arrowright", "arrowleft", " ", "home", "end", "pagedown", "pageup"].includes(key)) event.preventDefault();
       if (key === "arrowright" || key === " " || key === "pagedown") onNext();
       if (key === "arrowleft" || key === "pageup") onPrev();
@@ -195,21 +234,24 @@ export function usePresentationKeyboard({
       if (key === "c" && !presenterMode) onToggleReview();
       if (key === "v" && !presenterMode) onToggleVisualAssets();
       if (key === "d" && !presenterMode) onToggleDesignLock();
+      if (key === "t" && !presenterMode) onToggleTweaks();
       if (key === "o") onToggleOverview();
       if (key === "n") onToggleNotes();
+      // One action per Escape: dismiss an open overlay first, then blackout.
+      // (Focused modal panels handle their own Escape and stop propagation.)
       if (key === "escape") {
-        if (blackout) onBlackout(null);
-        onCloseOverlays();
-      }
-      if (/^[1-9]$/.test(key)) {
-        const nextIndex = Number(key) - 1;
-        if (nextIndex < slideCount) onGoTo(nextIndex);
+        if (anyOverlayOpen) onCloseOverlays();
+        else if (blackout) onBlackout(null);
       }
       if (key === "?") onToggleHelp();
     };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      clearDigitTimer();
+    };
   }, [
+    anyOverlayOpen,
     blackout,
     onBlackout,
     onCloseOverlays,
@@ -225,6 +267,7 @@ export function usePresentationKeyboard({
     onToggleReview,
     onToggleVisualAssets,
     onToggleDesignLock,
+    onToggleTweaks,
     presenterMode,
     slideCount,
   ]);

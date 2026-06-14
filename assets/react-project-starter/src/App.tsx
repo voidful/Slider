@@ -8,16 +8,20 @@ import { themeClassNames } from "./lib/presets";
 import { createPresenterChannel, isPresenterWindow, openPresenterWindow, readPresenterSnapshot, type BlackoutMode, type PresenterCommand, type PresenterSnapshot } from "./lib/presenterWindow";
 import { usePresentationKeyboard, useTouchSwipe, useWheelPageNavigation } from "./lib/usePresentationInput";
 import { useReviewComments } from "./lib/reviewComments";
+import { useTweaks } from "./lib/useTweaks";
 
 const STAGE_WIDTH = 1200;
 const STAGE_HEIGHT = 675;
-const MIN_SCALE = 0.34;
+const MIN_SCALE = 0.28;
 
 function calculateStageScale() {
   const fullscreen = Boolean(document.fullscreenElement);
-  const horizontalChrome = fullscreen ? 32 : 64;
-  const verticalChrome = fullscreen ? 32 : 96;
-  const availableWidth = Math.max(320, window.innerWidth - horizontalChrome);
+  // Match the responsive .app-shell padding so the stage claims the room the
+  // shell actually frees up on small screens (8 / 14 / 32 px breakpoints).
+  const shellPadding = window.innerWidth <= 480 ? 8 : window.innerWidth <= 780 ? 14 : 32;
+  const horizontalChrome = fullscreen ? 32 : shellPadding * 2;
+  const verticalChrome = fullscreen ? 32 : shellPadding * 2 + 32;
+  const availableWidth = Math.max(280, window.innerWidth - horizontalChrome);
   const availableHeight = Math.max(240, window.innerHeight - verticalChrome);
   return Math.max(MIN_SCALE, Math.min(availableWidth / STAGE_WIDTH, availableHeight / STAGE_HEIGHT));
 }
@@ -35,7 +39,9 @@ export default function App() {
   const [showReview, setShowReview] = useState(false);
   const [showVisualAssets, setShowVisualAssets] = useState(false);
   const [showDesignLock, setShowDesignLock] = useState(false);
+  const [showTweaks, setShowTweaks] = useState(false);
   const [laserEnabled, setLaserEnabled] = useState(false);
+  const tweaks = useTweaks(themePreset);
   const [stageScale, setStageScale] = useState(calculateStageScale);
   const deckWrapperRef = useRef<HTMLDivElement>(null);
   const presenterChannelRef = useRef<ReturnType<typeof createPresenterChannel> | null>(null);
@@ -44,14 +50,17 @@ export default function App() {
   const blackoutRef = useRef<BlackoutMode>(blackout);
   const progress = useMemo(() => ((currentSlide + 1) / slideData.length) * 100, [currentSlide]);
   const slide = slideData[currentSlide];
-  const themeClass = themeClassNames[themePreset];
+  const themeClass = themeClassNames[tweaks.tweaks.themePreset];
   const shellStyle = {
     "--deck-scale": stageScale.toFixed(4),
     ...(semanticPalette?.accent ? { "--accent": semanticPalette.accent } : {}),
-    ...(semanticPalette?.negative ? { "--warning": semanticPalette.negative } : {}),
+    ...(semanticPalette?.positive ? { "--positive": semanticPalette.positive } : {}),
+    ...(semanticPalette?.negative ? { "--warning": semanticPalette.negative, "--negative": semanticPalette.negative } : {}),
     ...(semanticPalette?.neutral ? { "--muted": semanticPalette.neutral } : {}),
+    ...tweaks.style,
   } as CSSProperties;
-  const inputEnabled = !presenterMode && !showHelp && !showNotes && !showOverview && !showReview && !showVisualAssets && !showDesignLock;
+  const anyOverlayOpen = showHelp || showNotes || showOverview || showReview || showVisualAssets || showDesignLock || showTweaks;
+  const inputEnabled = !presenterMode && !anyOverlayOpen;
   const review = useReviewComments(slideData, currentSlide);
 
   const setClampedSlide = useCallback((index: number) => {
@@ -98,6 +107,7 @@ export default function App() {
     setShowReview(false);
     setShowVisualAssets(false);
     setShowDesignLock(false);
+    setShowTweaks(false);
   }, []);
 
   const handleDeckClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
@@ -171,6 +181,7 @@ export default function App() {
     blackout,
     slideCount: slideData.length,
     presenterMode,
+    anyOverlayOpen,
     onPrev: goPrev,
     onNext: goNext,
     onGoTo: goTo,
@@ -184,6 +195,7 @@ export default function App() {
     onToggleReview: () => setShowReview((value) => !value),
     onToggleVisualAssets: () => setShowVisualAssets((value) => !value),
     onToggleDesignLock: () => setShowDesignLock((value) => !value),
+    onToggleTweaks: () => setShowTweaks((value) => !value),
     onCloseOverlays: closeOverlays,
   });
 
@@ -208,7 +220,7 @@ export default function App() {
       <main className={`app-shell ${themeClass} presenter-app-shell`}>
         <PresenterPanel
           slides={slideData}
-          theme={themePreset}
+          theme={tweaks.tweaks.themePreset}
           state={{ index: currentSlide, count: slideData.length, startedAt, deckTitle, blackout }}
           connected={presenterConnected}
           onPrev={() => requestPresenterCommand({ type: "prev" })}
@@ -229,7 +241,7 @@ export default function App() {
         currentSlide={currentSlide}
         progress={progress}
         deckTitle={deckTitle}
-        theme={themePreset}
+        theme={tweaks.tweaks.themePreset}
         venue={venuePreset}
         deckWrapperRef={deckWrapperRef}
         blackout={blackout}
@@ -240,6 +252,12 @@ export default function App() {
         showReview={showReview}
         showVisualAssets={showVisualAssets}
         showDesignLock={showDesignLock}
+        showTweaks={showTweaks}
+        showProgressBar={tweaks.tweaks.showProgressBar}
+        tweaks={tweaks.tweaks}
+        setTweak={tweaks.setTweak}
+        resetTweaks={tweaks.reset}
+        exportTweaks={tweaks.exportTweaks}
         review={review}
         onDeckClick={handleDeckClick}
         onPrev={goPrev}
@@ -252,6 +270,7 @@ export default function App() {
         onToggleReview={() => setShowReview((value) => !value)}
         onToggleVisualAssets={() => setShowVisualAssets((value) => !value)}
         onToggleDesignLock={() => setShowDesignLock((value) => !value)}
+        onToggleTweaks={() => setShowTweaks((value) => !value)}
         onToggleLaser={() => setLaserEnabled((value) => !value)}
         onBlackout={(mode) => requestPresenterCommand({ type: "blackout", mode: blackout === mode ? null : mode })}
       />

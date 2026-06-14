@@ -38,5 +38,24 @@ export const slideData: Slide[] = [
       { label: "Ours", value: "85.5", detail: "Proposed method" }
     ],
     evidenceNote: "Every displayed number should map to a precise dataset, metric, and comparison target.",
+  },
+  {
+    id: 4,
+    title: "Where the method stands against prior work",
+    layout: "table-focus",
+    purpose: "Compare against baselines on a shared benchmark.",
+    keyMessage: "The method leads on the headline metric while staying competitive on cost.",
+    speakerNote: "Walk down the column that matters most, then point to the highlighted row as the takeaway.",
+    table: {
+      headers: ["Method", "Accuracy", "Params", "Latency"],
+      rows: [
+        ["Prior baseline", "81.3", "120M", "42 ms"],
+        ["Strong baseline", "83.1", "210M", "58 ms"],
+        ["Ours", "85.5", "118M", "40 ms"],
+      ],
+      highlightRow: 2,
+      caption: "Table 2 — Accuracy and efficiency on Dataset X (test split).",
+    },
+    evidenceNote: "Every row should map to a real comparison in the paper's results table.",
   }
 ]; // @render-slide-data

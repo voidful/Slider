@@ -1,13 +1,15 @@
 import { Palette } from "lucide-react";
 import type { DeckDesign } from "../lib/deckDesign";
+import { useModalDialog } from "../lib/useModalDialog";
 
-export function DesignLockPanel({ design }: { design: DeckDesign | null }) {
+export function DesignLockPanel({ design, onClose }: { design: DeckDesign | null; onClose: () => void }) {
+  const { containerRef, titleId } = useModalDialog<HTMLElement>(onClose, { modal: false });
   const palette = design?.semantic_palette;
   return (
-    <aside className="floating-panel design-lock-panel" aria-label="Deck design lock" data-wheel-nav-ignore>
+    <aside ref={containerRef} className="floating-panel design-lock-panel" role="dialog" aria-labelledby={titleId} data-wheel-nav-ignore>
       <div className="panel-header">
         <div>
-          <p>Design Lock</p>
+          <p id={titleId}>Design Lock</p>
           <span className="panel-subtitle">{design?.deck_mood_family || "Template defaults"}</span>
         </div>
         <Palette aria-hidden="true" />
