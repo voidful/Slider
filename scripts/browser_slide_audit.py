@@ -201,6 +201,37 @@ PROBE_SCRIPT = f"""
     if(teardown)await teardown();
     return modeReport;
   }}
+  async function auditProgressiveBuilds(report){{
+    const slidesData=readSlides();
+    const getRevealOrder=readFunction('getRevealOrder');
+    const goTo=readFunction('goTo');
+    const advance=readFunction('advance');
+    const retreat=readFunction('retreat');
+    const root=readRoot();
+    if(!getRevealOrder||!goTo||!advance||!retreat){{
+      report.failures.push('Progressive-build navigation hooks are unavailable');
+      return;
+    }}
+    const index=slidesData.findIndex(slide=>getRevealOrder(slide).length>0);
+    if(index<0){{
+      report.warnings.push('No progressive-build slide was available for browser validation');
+      return;
+    }}
+    const count=getRevealOrder(slidesData[index]).length;
+    goTo(index,'forward');await settle(root);
+    const pendingAtEntry=root.querySelectorAll('[data-build-state="pending"]').length;
+    if(pendingAtEntry!==count)report.failures.push(`Progressive build starts with ${{pendingAtEntry}} pending target(s), expected ${{count}}`);
+    advance();await settle(root);
+    const pendingAfterAdvance=root.querySelectorAll('[data-build-state="pending"]').length;
+    if(pendingAfterAdvance!==Math.max(0,count-1))report.failures.push(`Progressive build did not consume exactly one target on advance`);
+    retreat();await settle(root);
+    const pendingAfterRetreat=root.querySelectorAll('[data-build-state="pending"]').length;
+    if(pendingAfterRetreat!==count)report.failures.push(`Progressive build did not restore one target on retreat`);
+    goTo(index);await settle(root);
+    const pendingAfterJump=root.querySelectorAll('[data-build-state="pending"]').length;
+    if(pendingAfterJump!==0)report.failures.push(`Direct jump did not show the final progressive-build state`);
+    report.meta.buildAudit={{slideNumber:index+1,count,pendingAtEntry,pendingAfterAdvance,pendingAfterRetreat,pendingAfterJump}};
+  }}
   function summarize(report){{
     for(const mode of report.modes){{
       if(mode.deck.viewportOverflowX>TOLERANCE||mode.deck.viewportOverflowY>TOLERANCE){{
@@ -283,6 +314,7 @@ PROBE_SCRIPT = f"""
           if(syncFSBody)syncFSBody();
         }}
       ));
+      await auditProgressiveBuilds(report);
       const goTo=readFunction('goTo');
       const render=readFunction('render');
       if(goTo)goTo(originalIndex);

@@ -63,11 +63,18 @@
 
 ## Post-render capabilities
 
+### Structured editor
+The built HTML target includes a Google Slides-style filmstrip and inspector around the fixed stage. It supports inline and structured content editing, layouts and blocks, slide reordering and clipboard actions, undo/redo, themes, browser drafts, and JSON or self-contained HTML interchange. Editor chrome may collapse or adapt to the viewport; slide content never reflows.
+
 ### Live tweaks
 The rendered HTML includes a customization panel (`references/live-tweaks-protocol.md`) for post-generation adjustments to accent colors, font sizes, mood family, and transition speed. Values persist via `localStorage` and can be exported as `deck_tweaks.json`.
 
 ### Speaker notes protocol
 Speaker notes are stored as a structured JSON `<script>` block. The template emits `postMessage({slideIndexChanged})` on every slide change for external tool integration.
+
+### Progressive builds
+
+Slides may declare semantic `revealOrder` targets. Navigation consumes pending builds before changing slides, keeps layout geometry fixed, mirrors the current build to presenter and phone views, and renders direct jumps in their complete state. See `references/progressive-builds.md`.
 
 ## Data contracts
 
@@ -81,7 +88,7 @@ Captions, page numbers, roles, priority tier (A/B/C), multi-panel hints, scores.
 Compiled design decisions: paper type, mood family, theme preset, semantic palette, type scale, spacing scale, motion policy, content handling, cohesion rules, page-role bindings, anti-patterns enforced, comfort targets.
 
 ### Slide data (expanded v24)
-Structured slide plan with: id, title, contentBlocks/layout, claim, evidenceType, evidenceSource, mustIncludeVisual, visualBinding, visualRequirement, visualSourceType, visualFallbackStrategy, densityBudget, audienceGoal, pageRole, whyThisVisual, whyNow, appendixCandidate, fidelityRisk.
+Structured slide plan with: id, title, contentBlocks/layout, claim, evidenceType, evidenceSource, mustIncludeVisual, visualBinding, visualRequirement, visualSourceType, visualFallbackStrategy, densityBudget, audienceGoal, pageRole, whyThisVisual, whyNow, appendixCandidate, fidelityRisk, and optional revealOrder.
 
 ## Render targets
 

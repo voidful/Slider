@@ -98,6 +98,7 @@ Each item in `contentBlocks[]`:
 | `fidelityRisk` | string | Any risk of misrepresenting the paper |
 | `whyNow` | string | Why this slide appears at this position |
 | `whyThisVisual` | string | Why this particular visual was chosen |
+| `revealOrder` | string[] | Optional semantic targets revealed one presenter beat at a time; use only when order improves comprehension. See [progressive builds](progressive-builds.md). |
 
 ### Optional content fields (classic mode)
 | Field | Type | Description |

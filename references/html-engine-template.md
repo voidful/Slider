@@ -12,7 +12,7 @@ The canonical template (`paper-presentation.html`) already contains:
 - a `slides` array placeholder at `// @render-slide-data`,
 - theme and venue config objects at `// @render-theme` and `// @render-venue`,
 - keyboard and control bindings, including play/pause auto-advance and SnapShare-style phone remote pairing with the bundled controller URL and multi-collaborator identity,
-- editor module (toolbar, sidebar, slide inspector, layout picker, theme panel, image upload, JSON import/export),
+- editor module (compact toolbar, faithful filmstrip, slide context actions, drag/keyboard reordering, slide clipboard, undo/redo, collapsible inspector, layout picker, theme panel, image upload, drafts, and JSON/HTML import/export),
 - correct fullscreen scaling via `scaleDeck()`,
 - density guard via `fitRenderedSlide()`,
 - gallery overview, laser pointer, annotation canvas, collaborator roster, shared note overlay, draft save/load, and self-contained export function,

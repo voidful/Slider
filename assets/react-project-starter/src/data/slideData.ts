@@ -22,6 +22,7 @@ export const slideData: Slide[] = [
       "Pain point sentence that states the real bottleneck.",
       "Impact sentence that explains why the bottleneck matters.",
     ],
+    revealOrder: ["bullets.0", "bullets.1", "bullets.2"],
     figureLabel: "Insert Figure: motivating comparison or task framing",
     evidenceNote: "Motivation should map to the paper introduction or motivating example.",
   },

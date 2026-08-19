@@ -6,6 +6,7 @@ import { slideData } from "./data/slideData";
 import { deckTitle, runtimeThemePreset as themePreset, semanticPalette, venuePreset } from "./lib/presentationConfig";
 import { themeClassNames } from "./lib/presets";
 import { createPresenterChannel, isPresenterWindow, openPresenterWindow, readPresenterSnapshot, type BlackoutMode, type PresenterCommand, type PresenterSnapshot } from "./lib/presenterWindow";
+import { clampRevealed, getBuildCount } from "./lib/presentationBuilds";
 import { usePresentationKeyboard, useTouchSwipe, useWheelPageNavigation } from "./lib/usePresentationInput";
 import { useReviewComments } from "./lib/reviewComments";
 import { useTweaks } from "./lib/useTweaks";
@@ -30,7 +31,13 @@ export default function App() {
   const [presenterMode] = useState(() => isPresenterWindow());
   const [initialPresenterState] = useState<PresenterSnapshot | null>(() => (presenterMode ? readPresenterSnapshot() : null));
   const [presenterConnected, setPresenterConnected] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(() => Math.max(0, Math.min(initialPresenterState?.index ?? 0, slideData.length - 1)));
+  const [position, setPosition] = useState(() => {
+    const index = Math.max(0, Math.min(initialPresenterState?.index ?? 0, slideData.length - 1));
+    const revealed = presenterMode
+      ? clampRevealed(slideData[index], initialPresenterState?.revealed ?? getBuildCount(slideData[index]))
+      : 0;
+    return { index, revealed };
+  });
   const [startedAt, setStartedAt] = useState(() => initialPresenterState?.startedAt ?? Date.now());
   const [blackout, setBlackout] = useState<BlackoutMode>(() => initialPresenterState?.blackout ?? null);
   const [showHelp, setShowHelp] = useState(false);
@@ -45,11 +52,16 @@ export default function App() {
   const [stageScale, setStageScale] = useState(calculateStageScale);
   const deckWrapperRef = useRef<HTMLDivElement>(null);
   const presenterChannelRef = useRef<ReturnType<typeof createPresenterChannel> | null>(null);
-  const currentSlideRef = useRef(currentSlide);
+  const positionRef = useRef(position);
   const startedAtRef = useRef(startedAt);
   const blackoutRef = useRef<BlackoutMode>(blackout);
-  const progress = useMemo(() => ((currentSlide + 1) / slideData.length) * 100, [currentSlide]);
+  const currentSlide = position.index;
+  const revealedBuilds = position.revealed;
   const slide = slideData[currentSlide];
+  const buildCount = getBuildCount(slide);
+  const canPrev = currentSlide > 0 || revealedBuilds > 0;
+  const canNext = currentSlide < slideData.length - 1 || revealedBuilds < buildCount;
+  const progress = useMemo(() => ((currentSlide + 1) / slideData.length) * 100, [currentSlide]);
   const themeClass = themeClassNames[tweaks.tweaks.themePreset];
   const shellStyle = {
     "--deck-scale": stageScale.toFixed(4),
@@ -63,17 +75,37 @@ export default function App() {
   const inputEnabled = !presenterMode && !anyOverlayOpen;
   const review = useReviewComments(slideData, currentSlide);
 
-  const setClampedSlide = useCallback((index: number) => {
-    setCurrentSlide(Math.max(0, Math.min(index, slideData.length - 1)));
+  const setSyncedPosition = useCallback((index: number, revealed: number) => {
+    const clampedIndex = Math.max(0, Math.min(index, slideData.length - 1));
+    setPosition({ index: clampedIndex, revealed: clampRevealed(slideData[clampedIndex], revealed) });
   }, []);
 
   const applyPresenterCommand = useCallback((command: PresenterCommand) => {
-    if (command.type === "prev") setCurrentSlide((value) => Math.max(value - 1, 0));
-    if (command.type === "next") setCurrentSlide((value) => Math.min(value + 1, slideData.length - 1));
-    if (command.type === "goto") setClampedSlide(command.index);
+    if (command.type === "prev") {
+      setPosition((value) => {
+        const revealed = clampRevealed(slideData[value.index], value.revealed);
+        if (revealed > 0) return { ...value, revealed: revealed - 1 };
+        if (value.index <= 0) return value;
+        const index = value.index - 1;
+        return { index, revealed: getBuildCount(slideData[index]) };
+      });
+    }
+    if (command.type === "next") {
+      setPosition((value) => {
+        const count = getBuildCount(slideData[value.index]);
+        const revealed = clampRevealed(slideData[value.index], value.revealed);
+        if (revealed < count) return { ...value, revealed: revealed + 1 };
+        if (value.index >= slideData.length - 1) return value;
+        return { index: value.index + 1, revealed: 0 };
+      });
+    }
+    if (command.type === "goto") {
+      const index = Math.max(0, Math.min(command.index, slideData.length - 1));
+      setPosition({ index, revealed: getBuildCount(slideData[index]) });
+    }
     if (command.type === "blackout") setBlackout(command.mode);
     if (command.type === "reset-timer") setStartedAt(Date.now());
-  }, [setClampedSlide]);
+  }, []);
 
   const requestPresenterCommand = useCallback((command: PresenterCommand) => {
     if (presenterMode) {
@@ -121,8 +153,10 @@ export default function App() {
     presenterChannelRef.current?.post({
       type: "state",
       state: {
-        index: currentSlideRef.current,
+        index: positionRef.current.index,
         count: slideData.length,
+        revealed: positionRef.current.revealed,
+        buildCount: getBuildCount(slideData[positionRef.current.index]),
         startedAt: startedAtRef.current,
         deckTitle,
         blackout: blackoutRef.current,
@@ -135,10 +169,10 @@ export default function App() {
   }, [presenterMode]);
 
   useEffect(() => {
-    currentSlideRef.current = currentSlide;
+    positionRef.current = position;
     startedAtRef.current = startedAt;
     blackoutRef.current = blackout;
-  }, [blackout, currentSlide, startedAt]);
+  }, [blackout, position, startedAt]);
 
   useEffect(() => {
     const channel = createPresenterChannel((message) => {
@@ -146,7 +180,7 @@ export default function App() {
       if (message.type === "command" && !presenterMode) applyPresenterCommand(message.command);
       if (message.type === "state" && presenterMode) {
         setPresenterConnected(true);
-        setClampedSlide(message.state.index);
+        setSyncedPosition(message.state.index, message.state.revealed ?? getBuildCount(slideData[message.state.index]));
         setStartedAt(message.state.startedAt);
         setBlackout(message.state.blackout);
       }
@@ -158,11 +192,11 @@ export default function App() {
       channel.close();
       presenterChannelRef.current = null;
     };
-  }, [applyPresenterCommand, presenterMode, publishPresenterState, setClampedSlide]);
+  }, [applyPresenterCommand, presenterMode, publishPresenterState, setSyncedPosition]);
 
   useEffect(() => {
     if (!presenterMode) publishPresenterState();
-  }, [blackout, currentSlide, presenterMode, publishPresenterState, startedAt]);
+  }, [blackout, currentSlide, presenterMode, publishPresenterState, revealedBuilds, startedAt]);
 
   useEffect(() => {
     const syncScale = () => setStageScale(calculateStageScale());
@@ -202,8 +236,8 @@ export default function App() {
   useWheelPageNavigation({
     ref: deckWrapperRef,
     enabled: inputEnabled,
-    canPrev: currentSlide > 0,
-    canNext: currentSlide < slideData.length - 1,
+    canPrev,
+    canNext,
     onPrev: goPrev,
     onNext: goNext,
   });
@@ -221,7 +255,7 @@ export default function App() {
         <PresenterPanel
           slides={slideData}
           theme={tweaks.tweaks.themePreset}
-          state={{ index: currentSlide, count: slideData.length, startedAt, deckTitle, blackout }}
+          state={{ index: currentSlide, count: slideData.length, revealed: revealedBuilds, buildCount, startedAt, deckTitle, blackout }}
           connected={presenterConnected}
           onPrev={() => requestPresenterCommand({ type: "prev" })}
           onNext={() => requestPresenterCommand({ type: "next" })}
@@ -239,6 +273,10 @@ export default function App() {
         slides={slideData}
         slide={slide}
         currentSlide={currentSlide}
+        revealedBuilds={revealedBuilds}
+        buildCount={buildCount}
+        canPrev={canPrev}
+        canNext={canNext}
         progress={progress}
         deckTitle={deckTitle}
         theme={tweaks.tweaks.themePreset}

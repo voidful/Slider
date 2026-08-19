@@ -79,6 +79,12 @@ button {
   --warning: #9d2c2c;
   --negative: var(--warning);
   --positive: #0f7a52;
+  --dock-bg: #ffffff;
+  --dock-text: #111111;
+  --dock-muted: #5f5f59;
+  --dock-border: rgba(17, 17, 17, 0.16);
+  --dock-divider: rgba(17, 17, 17, 0.16);
+  --dock-shadow: 0 14px 32px rgba(20, 18, 14, 0.14);
   --deck-scale: 1;
   --type-scale: 1;
   --deck-transition: 320ms;
@@ -103,6 +109,12 @@ button {
   --panel-strong: #dce7e6;
   --accent: #0f5d66;
   --accent-text: #f7fbfb;
+  --dock-bg: #000000;
+  --dock-text: #ffffff;
+  --dock-muted: #cbd5e1;
+  --dock-border: rgba(255, 255, 255, 0.2);
+  --dock-divider: rgba(255, 255, 255, 0.22);
+  --dock-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
 }
 
 .theme-monochrome-impeccable {
@@ -212,6 +224,21 @@ button {
   padding: 76px 64px 82px;
   transition: padding 220ms ease;
   animation: slide-enter var(--deck-transition) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+[data-build-target] {
+  transition: opacity 180ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+[data-build-state="pending"] {
+  opacity: 0 !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+[data-build-state="revealed"] {
+  opacity: 1;
+  visibility: visible;
 }
 
 @keyframes slide-enter {
@@ -573,18 +600,20 @@ button {
   gap: 6px;
   transform: translateX(-50%);
   padding: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--dock-border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--frame) 88%, transparent);
-  box-shadow: 0 14px 32px rgba(20, 18, 14, 0.11);
+  background: var(--dock-bg);
+  color: var(--dock-text);
+  box-shadow: var(--dock-shadow);
   backdrop-filter: blur(14px);
+  transition: background-color 240ms ease, border-color 240ms ease, color 240ms ease, opacity 160ms ease;
 }
 
 .dock-divider {
   width: 1px;
   height: 20px;
   margin: 0 2px;
-  background: color-mix(in srgb, var(--border) 80%, transparent);
+  background: var(--dock-divider);
 }
 
 .blackout-overlay {
@@ -636,6 +665,10 @@ button {
   transition: background 150ms ease, color 150ms ease, opacity 150ms ease;
 }
 
+.control-dock .dock-button {
+  color: var(--dock-text);
+}
+
 .dock-button svg,
 .icon-button svg {
   width: 18px;
@@ -657,12 +690,12 @@ button {
 
 .dock-button:disabled:hover {
   background: transparent;
-  color: var(--text);
+  color: var(--dock-text);
 }
 
 .slide-counter {
   min-width: 56px;
-  color: var(--muted);
+  color: var(--dock-muted);
   font-size: 14px;
   font-weight: 700;
   text-align: center;

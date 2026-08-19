@@ -25,7 +25,7 @@ function formatElapsed(startedAt: number, now: number) {
   return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
-function PresenterPreview({ slide, theme, large = false }: { slide?: Slide; theme: Theme; large?: boolean }) {
+function PresenterPreview({ slide, theme, large = false, revealedBuilds }: { slide?: Slide; theme: Theme; large?: boolean; revealedBuilds?: number }) {
   if (!slide) {
     return <div className="presenter-empty-preview">End of deck</div>;
   }
@@ -33,7 +33,7 @@ function PresenterPreview({ slide, theme, large = false }: { slide?: Slide; them
     <div className={large ? "presenter-preview presenter-preview-large" : "presenter-preview"}>
       <div className="presenter-preview-stage">
         <div className="slide-stage presenter-preview-slide">
-          <SlideRenderer slide={slide} theme={theme} />
+          <SlideRenderer slide={slide} theme={theme} revealedBuilds={revealedBuilds} />
         </div>
       </div>
     </div>
@@ -85,6 +85,8 @@ export function PresenterPanel({
   const slide = slides[current];
   const nextSlide = slides[current + 1];
   const progress = slides.length ? ((current + 1) / slides.length) * 100 : 0;
+  const canPrev = current > 0 || state.revealed > 0;
+  const canNext = current < slides.length - 1 || state.revealed < state.buildCount;
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 1000);
@@ -103,6 +105,7 @@ export function PresenterPanel({
           <time>{new Date(now).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>
           <strong>{formatElapsed(state.startedAt, now)}</strong>
           <span>{String(current + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}</span>
+          {state.buildCount ? <span>Build {state.revealed} / {state.buildCount}</span> : null}
         </div>
       </header>
 
@@ -113,7 +116,7 @@ export function PresenterPanel({
       <div className="presenter-grid">
         <main className="presenter-current">
           <p className="presenter-section-label">Now showing</p>
-          <PresenterPreview slide={slide} theme={theme} large />
+          <PresenterPreview slide={slide} theme={theme} large revealedBuilds={state.revealed} />
           {state.blackout ? <div className={`presenter-blackout presenter-blackout-${state.blackout}`}>{state.blackout} screen</div> : null}
         </main>
 
@@ -158,10 +161,10 @@ export function PresenterPanel({
 
       <footer className="presenter-bottombar">
         <div className="presenter-button-row">
-          <PresenterButton title="Previous slide" disabled={current === 0} onClick={onPrev}>
+          <PresenterButton title="Previous presenter beat" disabled={!canPrev} onClick={onPrev}>
             <ChevronLeft aria-hidden="true" /> Previous
           </PresenterButton>
-          <PresenterButton title="Next slide" disabled={current >= slides.length - 1} onClick={onNext}>
+          <PresenterButton title="Next presenter beat" disabled={!canNext} onClick={onNext}>
             Next <ChevronRight aria-hidden="true" />
           </PresenterButton>
         </div>

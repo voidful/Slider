@@ -69,6 +69,36 @@ def assert_skill_references() -> list[str]:
 def assert_release_docs() -> list[str]:
     return [f'Missing release document: {name}' for name in REQUIRED_RELEASE_DOCS if not (ROOT / name).exists()]
 
+def assert_theme_adaptive_toolbars() -> list[str]:
+    requirements = {
+        'assets/html-slideshow-starter/paper-presentation.html': ['--toolbar-bg', 'syncToolbarTheme', 'toolbar:"dark"'],
+        'assets/react-slideshow-starter/App.tsx': ['toolbarTone: "light" | "dark"', '--toolbar-bg', 'toolbarPalettes'],
+        'assets/react-project-starter/src/styles.css': ['--dock-bg', '.theme-deep-navy-academic', 'background: var(--dock-bg)'],
+    }
+    failures = []
+    for rel, tokens in requirements.items():
+        text = (ROOT / rel).read_text(encoding='utf-8')
+        missing = [token for token in tokens if token not in text]
+        if missing:
+            failures.append(f'Theme-adaptive toolbar contract is incomplete in {rel}: missing {missing}')
+    return failures
+
+def assert_editor_contract() -> list[str]:
+    template = (ROOT / 'assets/html-slideshow-starter/paper-presentation.html').read_text(encoding='utf-8')
+    requirements = {
+        'responsive editor canvas': ['position:fixed;top:48px;bottom:0;left:200px;right:340px', 'editor-inspector-closed'],
+        'visual filmstrip and reordering': ['thumb-stage', "item.addEventListener('dragstart'", 'function moveSlide(from,to)'],
+        'slide clipboard': ['function copyCurrentSlide', 'function pasteSlide', 'data-editor-action="paste"'],
+        'history snapshots': ['function captureEditorSnapshot', 'function restoreEditorSnapshot'],
+        'Google Slides-style shortcuts': ["e.ctrlKey&&!e.metaKey&&key==='m'", "modifier&&key==='d'", "modifier&&key==='z'"],
+    }
+    failures = []
+    for label, tokens in requirements.items():
+        missing = [token for token in tokens if token not in template]
+        if missing:
+            failures.append(f'HTML editor contract is missing {label}: {missing}')
+    return failures
+
 def validate_typescript_files(paths: list[Path]) -> tuple[list[str], list[str]]:
     node = shutil.which('node')
     if node is None:
@@ -175,6 +205,7 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
             project_dir/'src/data/slideData.ts',
             project_dir/'src/lib/presentationConfig.ts',
             project_dir/'src/lib/presenterWindow.ts',
+            project_dir/'src/lib/presentationBuilds.ts',
             project_dir/'src/lib/usePresentationInput.ts',
             project_dir/'src/lib/reviewComments.ts',
             project_dir/'src/lib/deckDesign.ts',
@@ -274,6 +305,10 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
             failures.append('Scored visuals are missing venue-specific appendix policy metadata')
         if 'A cleaner benchmark comparison' not in plan_json.read_text(encoding='utf-8') and 'Qualitative evidence of the gain' not in plan_json.read_text(encoding='utf-8') and 'One ablation that explains the mechanism' not in plan_json.read_text(encoding='utf-8'):
             failures.append('Score-aware slide insertion did not add any venue-aware evidence slide')
+        if '"revealOrder"' not in plan_json.read_text(encoding='utf-8'):
+            failures.append('Generated plan is missing the progressive-build contract')
+        if 'getRevealOrder' not in html_text or 'advance()' not in html_text:
+            failures.append('Rendered HTML is missing beat-aware progressive navigation')
         plan = json.loads(plan_json.read_text(encoding='utf-8'))
         main_slides = [slide for slide in plan.get('slideData', []) if not slide.get('appendix')]
         if len(main_slides) < 15:
@@ -291,7 +326,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='Run health checks for the slider skill')
     parser.add_argument('--strict', action='store_true')
     args = parser.parse_args()
-    failures = assert_python_syntax() + assert_skill_references() + assert_release_docs()
+    failures = assert_python_syntax() + assert_skill_references() + assert_release_docs() + assert_theme_adaptive_toolbars() + assert_editor_contract()
     try:
         roundtrip_failures, roundtrip_warnings = run_roundtrip()
     except subprocess.CalledProcessError as exc:

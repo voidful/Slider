@@ -59,4 +59,6 @@ export type Slide = {
   visualBindingStatus?: { status?: "bound" | "placeholder"; confidence?: "high" | "medium" | "low"; reason?: string; candidateScore?: number; exportScore?: number; bindingScore?: number; policy?: string; fallbackStrategy?: string };
   appendix?: boolean;
   evidenceNote?: string;
+  /** Semantic targets revealed one presenter beat at a time. */
+  revealOrder?: string[];
 };

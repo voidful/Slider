@@ -4,6 +4,11 @@
 
 ### React workbench UI/UX pass
 
+- Added data-driven progressive builds inspired by open-slide's `Steps`/`Step`: `revealOrder` works in the canonical HTML and React project, consumes navigation before slide changes, preserves layout geometry, honors reduced motion, and synchronizes presenter and phone previews.
+- Deduplicated presenter packets delivered through both `BroadcastChannel` and the local-storage fallback, so one presenter action always advances or retreats exactly one beat.
+- Recorded the reviewed open-slide commit, adopted ideas, and deliberate non-adoptions so future updates preserve Slider's evidence-first and self-contained boundaries.
+- Reworked the canonical HTML editor around a Google Slides-style core workflow: faithful filmstrip thumbnails, drag/keyboard reordering, slide cut/copy/paste, context actions, history snapshots that include theme state, accessible inspector labels, collapsible panels, compact file actions, and centered responsive editor geometry without changing the fixed slide stage.
+
 - Accessibility: added `:focus-visible` rings to every control, a reusable `useModalDialog` hook (focus trap + restore + component-local Escape) applied to the Help and Overview modals, non-modal dialog semantics for the Review/Visual/Design/Tweaks side panels, full keyboard navigation in the overview grid (arrows/Home/End/Enter), and a polite screen-reader live region announcing each slide change.
 - Input correctness: multi-digit slide jump for decks with 10+ slides (type "1" then "2" → slide 12), a stricter `contenteditable` guard, hierarchical Escape (one action per keystroke), and a laser pointer that now tracks the cursor accurately at any zoom and in fullscreen (it was offset because it ignored the stage scale).
 - Added a runtime theme switcher + Live Tweaks panel (`T` / wrench): preset themes, accent/positive/negative color pickers, text-size and transition sliders, a progress-bar toggle, reset, and `deck_tweaks.json` export — all persisted to `localStorage`.

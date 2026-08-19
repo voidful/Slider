@@ -48,6 +48,7 @@ type Slide = {
   comparisonRight?: { label: string; items: string[] };
   appendix?: boolean;
   evidenceNote?: string;
+  revealOrder?: string[];
 };
 
 /* ────────────────────────── Pro-Max Mood Definitions ────────────────────────── */
@@ -81,6 +82,7 @@ type MoodStyle = {
   limitationBorder: string;
   pseudoBefore?: CSSProperties;
   noiseOverlay?: boolean;
+  toolbarTone: "light" | "dark";
 };
 
 const moodStyles: Record<Mood, MoodStyle> = {
@@ -112,6 +114,7 @@ const moodStyles: Record<Mood, MoodStyle> = {
     bulletDotColor: "#00d4ff",
     limitationBg: "rgba(220,38,38,0.1)",
     limitationBorder: "#ef4444",
+    toolbarTone: "dark",
   },
   editorial: {
     background: "#fafaf8",
@@ -138,6 +141,7 @@ const moodStyles: Record<Mood, MoodStyle> = {
     bulletDotColor: "#2563eb",
     limitationBg: "rgba(220,38,38,0.05)",
     limitationBorder: "#dc2626",
+    toolbarTone: "light",
   },
   "gradient-mesh": {
     background: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)",
@@ -166,6 +170,7 @@ const moodStyles: Record<Mood, MoodStyle> = {
     bulletDotColor: "#fde68a",
     limitationBg: "rgba(255,255,255,0.12)",
     limitationBorder: "rgba(255,255,255,0.5)",
+    toolbarTone: "dark",
   },
   glass: {
     background: "linear-gradient(160deg, #e0f2fe 0%, #f0fdf4 100%)",
@@ -193,6 +198,7 @@ const moodStyles: Record<Mood, MoodStyle> = {
     bulletDotColor: "#10b981",
     limitationBg: "rgba(220,38,38,0.05)",
     limitationBorder: "#dc2626",
+    toolbarTone: "light",
   },
   warm: {
     background: "linear-gradient(135deg, #fef3c7 0%, #fce7f3 100%)",
@@ -220,6 +226,7 @@ const moodStyles: Record<Mood, MoodStyle> = {
     bulletDotColor: "#b45309",
     limitationBg: "rgba(220,38,38,0.05)",
     limitationBorder: "#dc2626",
+    toolbarTone: "light",
   },
   navy: {
     background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
@@ -248,6 +255,7 @@ const moodStyles: Record<Mood, MoodStyle> = {
     bulletDotColor: "#2dd4bf",
     limitationBg: "rgba(220,38,38,0.1)",
     limitationBorder: "#ef4444",
+    toolbarTone: "dark",
   },
   minimal: {
     background: "#ffffff",
@@ -274,6 +282,7 @@ const moodStyles: Record<Mood, MoodStyle> = {
     bulletDotColor: "#ef4444",
     limitationBg: "rgba(220,38,38,0.04)",
     limitationBorder: "#ef4444",
+    toolbarTone: "light",
   },
   celebration: {
     background: "linear-gradient(135deg, #059669 0%, #2563eb 50%, #7c3aed 100%)",
@@ -303,10 +312,30 @@ const moodStyles: Record<Mood, MoodStyle> = {
     bulletDotColor: "#fde68a",
     limitationBg: "rgba(255,255,255,0.12)",
     limitationBorder: "rgba(255,255,255,0.5)",
+    toolbarTone: "dark",
   },
 };
 
 const defaultMood: Mood = "editorial";
+
+const toolbarPalettes = {
+  light: {
+    background: "#ffffff",
+    text: "#111111",
+    muted: "#52525b",
+    border: "rgba(17,17,17,0.16)",
+    hover: "rgba(17,17,17,0.08)",
+    shadow: "0 12px 30px rgba(0,0,0,0.14)",
+  },
+  dark: {
+    background: "#000000",
+    text: "#ffffff",
+    muted: "#d4d4d8",
+    border: "rgba(255,255,255,0.2)",
+    hover: "rgba(255,255,255,0.14)",
+    shadow: "0 12px 30px rgba(0,0,0,0.3)",
+  },
+} as const;
 
 /* ────────────────────────── Venue config ────────────────────────── */
 
@@ -317,7 +346,7 @@ const venueLabels: Record<Venue, string> = { neurips: "NeurIPS", iclr: "ICLR", a
 
 const slideData: Slide[] = [
   { id: 1, title: "Paper Title Goes Here", layout: "cover", mood: "cinematic", purpose: "Introduce the paper.", keyMessage: "One-sentence TL;DR.", speakerNote: "Open with the problem.", subtitle: "Authors · Venue · Year" },
-  { id: 2, title: "Why this problem matters", layout: "split", mood: "editorial", purpose: "Frame the motivation.", keyMessage: "Current methods fail in an important regime.", speakerNote: "Spend one sentence on context.", bullets: ["Context sentence.", "Pain point sentence.", "Impact sentence."], figureLabel: "Insert Figure: motivating comparison" },
+  { id: 2, title: "Why this problem matters", layout: "split", mood: "editorial", purpose: "Frame the motivation.", keyMessage: "Current methods fail in an important regime.", speakerNote: "Spend one sentence on context.", bullets: ["Context sentence.", "Pain point sentence.", "Impact sentence."], revealOrder: ["bullets.0", "bullets.1", "bullets.2"], figureLabel: "Insert Figure: motivating comparison" },
   { id: 3, title: "The gap in prior work", layout: "bullets", mood: "editorial", purpose: "Show limitations of existing approaches.", keyMessage: "Prior methods miss a key opportunity.", speakerNote: "Name 2-3 concrete prior-work gaps.", bullets: ["Prior approach A limitation.", "Prior approach B limitation.", "Opportunity for improvement."] },
   { id: 4, title: "What came before", layout: "comparison", mood: "editorial", purpose: "Compare prior work.", keyMessage: "Existing solutions have clear tradeoffs.", speakerNote: "Use a concrete comparison.", comparisonLeft: { label: "Prior Work", items: ["Approach A", "Approach B"] }, comparisonRight: { label: "This Paper", items: ["Our approach", "Key difference"] } },
   { id: 5, title: "The core idea in one slide", layout: "diagram", mood: "glass", purpose: "Explain the conceptual leap.", keyMessage: "The paper changes the framing.", speakerNote: "Keep it conceptual.", bullets: ["Prior assumption.", "New mechanism.", "Consequence."], figureLabel: "Insert Figure: core idea diagram" },
@@ -681,21 +710,28 @@ body {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
+  border: 1px solid var(--toolbar-border);
   border-radius: 999px;
+  background: var(--toolbar-bg);
+  box-shadow: var(--toolbar-shadow);
   backdrop-filter: blur(12px);
   z-index: 20;
   font-size: 13px;
   opacity: 0.18;
-  transition: opacity 160ms ease;
+  transition: opacity 160ms ease, background-color 240ms ease, border-color 240ms ease, color 240ms ease;
 }
 
 .control-button {
   border: none;
   background: transparent;
   cursor: pointer;
-  color: var(--deck-text, #111827);
+  color: var(--toolbar-text, #111111);
   padding: 6px 8px;
   border-radius: 999px;
+}
+
+.control-button:hover {
+  background: var(--toolbar-hover);
 }
 
 .control-counter {
@@ -703,7 +739,7 @@ body {
   text-align: center;
   font-size: 13px;
   font-weight: 600;
-  color: var(--deck-muted, #6b7280);
+  color: var(--toolbar-muted, #52525b);
 }
 
 .deck-container { position: relative; width: 1200px; height: 675px; overflow: hidden; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.1); transform-origin: center center; }
@@ -714,15 +750,18 @@ body {
 .deck-wrapper::backdrop { background: #000; }
 
 /* Fullscreen controls: auto-hide */
-.deck-wrapper:fullscreen .controls-bar, .deck-wrapper:-webkit-full-screen .controls-bar { opacity: 0; transition: opacity 200ms; }
+.deck-wrapper:fullscreen .controls-bar, .deck-wrapper:-webkit-full-screen .controls-bar { opacity: 0; transition: opacity 200ms, background-color 240ms ease, border-color 240ms ease, color 240ms ease; }
 .deck-wrapper:fullscreen .controls-bar:hover, .deck-wrapper:-webkit-full-screen .controls-bar:hover,
 .deck-wrapper:fullscreen .controls-bar:focus-within, .deck-wrapper:-webkit-full-screen .controls-bar:focus-within { opacity: 1; }
 .deck-container:hover .controls-bar, .deck-container:focus-within .controls-bar { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
   .slide-enter, .stagger-1, .stagger-2, .stagger-3, .stagger-4 { animation: none; }
-  .metric-card-anim, .timeline-step-anim { transition: none; }
+  .metric-card-anim, .timeline-step-anim, [data-build-target] { transition: none; }
 }
+[data-build-target] { transition: opacity 180ms cubic-bezier(0, 0, 0.2, 1); }
+[data-build-state="pending"] { opacity: 0 !important; visibility: hidden; pointer-events: none; }
+[data-build-state="revealed"] { opacity: 1; visibility: visible; }
 @media (max-width: 900px) {
   .deck-container { border-radius: 0; }
 }
@@ -734,12 +773,37 @@ function getMood(slide: Slide): MoodStyle {
   return moodStyles[slide.mood || defaultMood];
 }
 
+function getRevealOrder(slide: Slide) {
+  const available = new Set<string>();
+  if (slide.keyMessage) available.add("keyMessage");
+  slide.bullets?.forEach((_, index) => available.add(`bullets.${index}`));
+  slide.metrics?.forEach((_, index) => available.add(`metrics.${index}`));
+  slide.tableRows?.forEach((_, index) => available.add(`table.rows.${index}`));
+  if (slide.visual?.src || slide.figureLabel) available.add("visual");
+  const seen = new Set<string>();
+  return (slide.revealOrder || []).filter((target) => {
+    if (!available.has(target) || seen.has(target)) return false;
+    seen.add(target);
+    return true;
+  });
+}
+
+function buildProps(slide: Slide, target: string, revealed?: number) {
+  const index = getRevealOrder(slide).indexOf(target);
+  const visible = revealed === undefined || index < 0 || index < revealed;
+  return {
+    "data-build-target": target,
+    "data-build-state": visible ? "revealed" : "pending",
+    "aria-hidden": visible ? undefined : true,
+  } as const;
+}
+
 /* ────────────────────────── Sub-components ────────────────────────── */
 
-function FigureFrame({ label, visual, mood }: { label?: string; visual?: VisualAsset; mood: MoodStyle }) {
+function FigureFrame({ slide, label, visual, mood, revealed }: { slide: Slide; label?: string; visual?: VisualAsset; mood: MoodStyle; revealed?: number }) {
   if (visual?.src) {
     return (
-      <figure style={{ overflow: "hidden", borderRadius: 12, border: `1px solid ${mood.cardBorder}`, background: mood.cardBg, backdropFilter: "blur(16px)" }}>
+      <figure {...buildProps(slide, "visual", revealed)} style={{ overflow: "hidden", borderRadius: 12, border: `1px solid ${mood.cardBorder}`, background: mood.cardBg, backdropFilter: "blur(16px)" }}>
         <img src={visual.src} alt={visual.alt || label || "Paper visual"} style={{ display: "block", width: "100%", height: "auto", maxHeight: 480, objectFit: "contain", background: "transparent" }} />
         <figcaption className="figure-caption fs-caption">
           {visual.caption || label || "Paper visual"}{visual.confidence ? ` · ${visual.confidence} confidence` : ""}
@@ -748,19 +812,19 @@ function FigureFrame({ label, visual, mood }: { label?: string; visual?: VisualA
     );
   }
   return (
-    <div className="figure-placeholder" style={{ minHeight: 240, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, borderRadius: 12, border: `2px dashed ${mood.cardBorder}`, background: mood.cardBg, padding: 24, textAlign: "center", backdropFilter: "blur(8px)" }}>
+    <div {...buildProps(slide, "visual", revealed)} className="figure-placeholder" style={{ minHeight: 240, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, borderRadius: 12, border: `2px dashed ${mood.cardBorder}`, background: mood.cardBg, padding: 24, textAlign: "center", backdropFilter: "blur(8px)" }}>
       <ImageIcon style={{ width: 40, height: 40 }} />
       <span className="placeholder-label fs-placeholder">{label || "Insert paper figure"}</span>
     </div>
   );
 }
 
-function BulletList({ bullets, mood, staggerBase = 1 }: { bullets?: string[]; mood: MoodStyle; staggerBase?: number }) {
+function BulletList({ slide, bullets, mood, staggerBase = 1, revealed }: { slide: Slide; bullets?: string[]; mood: MoodStyle; staggerBase?: number; revealed?: number }) {
   if (!bullets?.length) return null;
   return (
     <ul className="bullet-list" style={{ ["--bullet-dot-color" as any]: mood.bulletDotColor }}>
       {bullets.map((bullet, i) => (
-        <li key={i} className={`bullet-item stagger-${Math.min(staggerBase + i, 4)} fs-bullet`}>
+        <li key={i} {...buildProps(slide, `bullets.${i}`, revealed)} className={`bullet-item stagger-${Math.min(staggerBase + i, 4)} fs-bullet`}>
           <span className="bullet-dot" />
           <span>{bullet}</span>
         </li>
@@ -779,11 +843,11 @@ function CalloutBox({ text, style, mood }: { text: string; style?: "accent" | "p
   );
 }
 
-function MetricGrid({ metrics, mood }: { metrics: Metric[]; mood: MoodStyle }) {
+function MetricGrid({ slide, metrics, mood, revealed }: { slide: Slide; metrics: Metric[]; mood: MoodStyle; revealed?: number }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(150px, 1fr))`, gap: 14, marginTop: 14 }}>
       {metrics.map((m, i) => (
-        <div key={i} className={`metric-card-anim stagger-${Math.min(i + 1, 4)} fs-metric-label`} style={{ border: `1px solid ${mood.cardBorder}`, borderRadius: 12, padding: 16, background: mood.cardBg, backdropFilter: "blur(12px)", boxShadow: "0 4px 16px rgba(0,0,0,0.03)" }}>
+        <div key={i} {...buildProps(slide, `metrics.${i}`, revealed)} className={`metric-card-anim stagger-${Math.min(i + 1, 4)} fs-metric-label`} style={{ border: `1px solid ${mood.cardBorder}`, borderRadius: 12, padding: 16, background: mood.cardBg, backdropFilter: "blur(12px)", boxShadow: "0 4px 16px rgba(0,0,0,0.03)" }}>
           <p className="metric-label">{m.label}</p>
           <p className="metric-value fs-metric-value">{m.value}</p>
           <p className="metric-detail fs-metric-detail">{m.detail}</p>
@@ -808,7 +872,7 @@ function TimelineFlow({ steps, mood }: { steps: string[]; mood: MoodStyle }) {
   );
 }
 
-function ResultTable({ headers, rows, mood }: { headers: string[]; rows: TableRow[]; mood: MoodStyle }) {
+function ResultTable({ slide, headers, rows, mood, revealed }: { slide: Slide; headers: string[]; rows: TableRow[]; mood: MoodStyle; revealed?: number }) {
   return (
     <div style={{ overflowX: "auto", marginTop: 14 }}>
       <table className="fs-table result-table-base">
@@ -821,7 +885,7 @@ function ResultTable({ headers, rows, mood }: { headers: string[]; rows: TableRo
         </thead>
         <tbody>
           {rows.map((row, ri) => (
-            <tr key={ri} style={{ background: row.best ? mood.tableBestBg : "transparent", fontWeight: row.best ? 700 : 400 }}>
+            <tr key={ri} {...buildProps(slide, `table.rows.${ri}`, revealed)} style={{ background: row.best ? mood.tableBestBg : "transparent", fontWeight: row.best ? 700 : 400 }}>
               {row.cells.map((cell, ci) => (
                 <td
                   key={ci}
@@ -857,7 +921,7 @@ function ComparisonPanel({ left, right, mood }: { left: { label: string; items: 
 
 /* ────────────────────────── Slide Renderer ────────────────────────── */
 
-function SlideRenderer({ slide }: { slide: Slide }) {
+function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number }) {
   const m = getMood(slide);
 
   switch (slide.layout) {
@@ -867,7 +931,7 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           <p className="stagger-1 fs-label slide-label">{venueLabels[venuePreset]}</p>
           <h1 className="stagger-2 fs-hero slide-title slide-title-hero">{slide.title}</h1>
           {slide.subtitle && <p className="stagger-3 fs-body slide-body slide-body-wide slide-body-center" style={{ marginTop: 16 }}>{slide.subtitle}</p>}
-          <p className="stagger-4 fs-body slide-body slide-body-wide slide-body-center" style={{ marginTop: 20 }}>{slide.keyMessage}</p>
+          <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-4 fs-body slide-body slide-body-wide slide-body-center" style={{ marginTop: 20 }}>{slide.keyMessage}</p>
         </div>
       );
 
@@ -877,7 +941,7 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           <p className="stagger-1 fs-label slide-label">Result</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
           {slide.metrics?.length && (
-            <p className="stagger-3 fs-hero-number slide-hero-number">
+            <p {...buildProps(slide, "metrics.0", revealed)} className="stagger-3 fs-hero-number slide-hero-number">
               {slide.metrics[0].value}
             </p>
           )}
@@ -894,12 +958,12 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           <div style={{ flex: "0 1 40%", minWidth: 0 }}>
             <p className="stagger-1 fs-label slide-label">Key point</p>
             <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
-            <p className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
-            <BulletList bullets={slide.bullets} mood={m} />
+            <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
+            <BulletList slide={slide} bullets={slide.bullets} mood={m} revealed={revealed} />
             {slide.callout && <CalloutBox text={slide.callout} style={slide.calloutStyle} mood={m} />}
           </div>
           <div style={{ flex: "1 1 65%", minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <FigureFrame label={slide.figureLabel} visual={slide.visual} mood={m} />
+            <FigureFrame slide={slide} label={slide.figureLabel} visual={slide.visual} mood={m} revealed={revealed} />
           </div>
         </div>
       );
@@ -909,8 +973,8 @@ function SlideRenderer({ slide }: { slide: Slide }) {
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
           <p className="stagger-1 fs-label slide-label">Main result</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
-          <p className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
-          {slide.metrics && <MetricGrid metrics={slide.metrics} mood={m} />}
+          <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
+          {slide.metrics && <MetricGrid slide={slide} metrics={slide.metrics} mood={m} revealed={revealed} />}
         </div>
       );
 
@@ -919,8 +983,8 @@ function SlideRenderer({ slide }: { slide: Slide }) {
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
           <p className="stagger-1 fs-label slide-label">Data</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
-          <p className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
-          {slide.tableHeaders && slide.tableRows && <div className="stagger-4"><ResultTable headers={slide.tableHeaders} rows={slide.tableRows} mood={m} /></div>}
+          <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
+          {slide.tableHeaders && slide.tableRows && <div className="stagger-4"><ResultTable slide={slide} headers={slide.tableHeaders} rows={slide.tableRows} mood={m} revealed={revealed} /></div>}
         </div>
       );
 
@@ -929,7 +993,7 @@ function SlideRenderer({ slide }: { slide: Slide }) {
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
           <p className="stagger-1 fs-label slide-label">Comparison</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
-          <p className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
+          <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
           {slide.comparisonLeft && slide.comparisonRight && <ComparisonPanel left={slide.comparisonLeft} right={slide.comparisonRight} mood={m} />}
         </div>
       );
@@ -939,7 +1003,7 @@ function SlideRenderer({ slide }: { slide: Slide }) {
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
           <p className="stagger-1 fs-label slide-label">Pipeline</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
-          <p className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
+          <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
           {slide.timelineSteps && <div className="stagger-4"><TimelineFlow steps={slide.timelineSteps} mood={m} /></div>}
           {slide.callout && <CalloutBox text={slide.callout} style={slide.calloutStyle} mood={m} />}
         </div>
@@ -951,8 +1015,8 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           <p className="stagger-1 fs-label slide-label slide-label-negative">Limitations</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
           <div className="stagger-3" style={{ marginTop: 14, borderLeft: `4px solid ${m.limitationBorder}`, background: m.limitationBg, backdropFilter: "blur(12px)", borderRadius: "0 12px 12px 0", padding: "20px 24px" }}>
-            <p className="fs-body slide-body">{slide.keyMessage}</p>
-            <BulletList bullets={slide.bullets} mood={{ ...m, bulletDotColor: m.limitationBorder }} staggerBase={3} />
+            <p {...buildProps(slide, "keyMessage", revealed)} className="fs-body slide-body">{slide.keyMessage}</p>
+            <BulletList slide={slide} bullets={slide.bullets} mood={{ ...m, bulletDotColor: m.limitationBorder }} staggerBase={3} revealed={revealed} />
           </div>
         </div>
       );
@@ -963,8 +1027,8 @@ function SlideRenderer({ slide }: { slide: Slide }) {
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
           <p className="stagger-1 fs-label slide-label">{slide.appendix ? "Appendix" : "Core idea"}</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
-          <p className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
-          <BulletList bullets={slide.bullets} mood={m} />
+          <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
+          <BulletList slide={slide} bullets={slide.bullets} mood={m} revealed={revealed} />
           {slide.equation && (
             <div className="stagger-4 fs-equation equation-block" style={{ background: m.calloutBg, borderRadius: 12, backdropFilter: "blur(12px)" }}>
               {slide.equation}
@@ -981,14 +1045,33 @@ function SlideRenderer({ slide }: { slide: Slide }) {
 
 export default function PaperSlideshowProMax() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [revealed, setRevealed] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
   const deckRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const progress = useMemo(() => ((currentSlide + 1) / slideData.length) * 100, [currentSlide]);
   const slide = slideData[currentSlide];
+  const buildCount = getRevealOrder(slide).length;
   const mood = getMood(slide);
-  const goTo = (index: number) => setCurrentSlide(Math.max(0, Math.min(index, slideData.length - 1)));
+  const toolbar = toolbarPalettes[mood.toolbarTone];
+  const goTo = (index: number) => {
+    const clamped = Math.max(0, Math.min(index, slideData.length - 1));
+    setCurrentSlide(clamped);
+    setRevealed(getRevealOrder(slideData[clamped]).length);
+  };
+  const advance = () => {
+    if (revealed < buildCount) { setRevealed(revealed + 1); return; }
+    if (currentSlide < slideData.length - 1) { setCurrentSlide(currentSlide + 1); setRevealed(0); }
+  };
+  const retreat = () => {
+    if (revealed > 0) { setRevealed(revealed - 1); return; }
+    if (currentSlide > 0) {
+      const previous = currentSlide - 1;
+      setCurrentSlide(previous);
+      setRevealed(getRevealOrder(slideData[previous]).length);
+    }
+  };
   const deckThemeVars: CSSProperties = {
     ["--accent" as any]: mood.accent,
     ["--deck-accent" as any]: mood.accent,
@@ -1008,6 +1091,12 @@ export default function PaperSlideshowProMax() {
     ["--deck-timeline-arrow-color" as any]: mood.timelineArrowColor,
     ["--deck-bullet-dot" as any]: mood.bulletDotColor,
     ["--deck-best-value" as any]: mood.bestValueColor,
+    ["--toolbar-bg" as any]: toolbar.background,
+    ["--toolbar-text" as any]: toolbar.text,
+    ["--toolbar-muted" as any]: toolbar.muted,
+    ["--toolbar-border" as any]: toolbar.border,
+    ["--toolbar-hover" as any]: toolbar.hover,
+    ["--toolbar-shadow" as any]: toolbar.shadow,
   };
 
   const toggleFullscreen = () => {
@@ -1046,8 +1135,8 @@ export default function PaperSlideshowProMax() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
-      if (key === "arrowright" || key === " ") { event.preventDefault(); goTo(currentSlide + 1); }
-      if (key === "arrowleft") goTo(currentSlide - 1);
+      if (key === "arrowright" || key === " ") { event.preventDefault(); advance(); }
+      if (key === "arrowleft") retreat();
       if (key === "home") goTo(0);
       if (key === "end") goTo(slideData.length - 1);
       if (key === "f") toggleFullscreen();
@@ -1057,7 +1146,7 @@ export default function PaperSlideshowProMax() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [currentSlide]);
+  }, [currentSlide, revealed]);
 
   return (
     <>
@@ -1070,7 +1159,7 @@ export default function PaperSlideshowProMax() {
 
           {/* Slide content */}
           <div key={currentSlide} className="slide-enter fs-slide-padding" style={{ width: "100%", height: "100%", padding: "52px 56px 64px", overflow: "hidden", position: "relative", zIndex: 1 }}>
-            <SlideRenderer slide={slide} />
+            <SlideRenderer slide={slide} revealed={revealed} />
           </div>
 
           {/* Help overlay */}
@@ -1092,10 +1181,10 @@ export default function PaperSlideshowProMax() {
           )}
 
           {/* Controls */}
-          <div className="controls-bar" style={{ border: `1px solid ${mood.cardBorder}`, background: mood.cardBg }}>
-            <button className="control-button" onClick={() => goTo(currentSlide - 1)} aria-label="Previous"><ChevronLeft style={{ width: 16, height: 16 }} /></button>
-            <button className="control-button" onClick={() => goTo(currentSlide + 1)} aria-label="Next"><ChevronRight style={{ width: 16, height: 16 }} /></button>
-            <span className="control-counter">{currentSlide + 1} / {slideData.length}</span>
+          <div className="controls-bar">
+            <button className="control-button" onClick={retreat} aria-label="Previous presenter beat" disabled={currentSlide === 0 && revealed === 0}><ChevronLeft style={{ width: 16, height: 16 }} /></button>
+            <button className="control-button" onClick={advance} aria-label="Next presenter beat" disabled={currentSlide === slideData.length - 1 && revealed >= buildCount}><ChevronRight style={{ width: 16, height: 16 }} /></button>
+            <span className="control-counter">{currentSlide + 1} / {slideData.length}{buildCount ? ` · ${revealed}/${buildCount}` : ""}</span>
             <button className="control-button" onClick={toggleFullscreen} aria-label="Fullscreen"><Maximize style={{ width: 16, height: 16 }} /></button>
             <button className="control-button" onClick={() => setShowHelp(v => !v)} aria-label="Help"><HelpCircle style={{ width: 16, height: 16 }} /></button>
           </div>

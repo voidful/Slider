@@ -98,13 +98,13 @@ export function NotesPanel({ current, slide, onClose }: { current: number; slide
 }
 
 export function ClickNavZones({
-  current,
-  count,
+  canPrev,
+  canNext,
   onPrev,
   onNext,
 }: {
-  current: number;
-  count: number;
+  canPrev: boolean;
+  canNext: boolean;
   onPrev: () => void;
   onNext: () => void;
 }) {
@@ -115,7 +115,7 @@ export function ClickNavZones({
         type="button"
         aria-label="Previous slide"
         tabIndex={-1}
-        disabled={current === 0}
+        disabled={!canPrev}
         onClick={onPrev}
       />
       <button
@@ -123,7 +123,7 @@ export function ClickNavZones({
         type="button"
         aria-label="Next slide"
         tabIndex={-1}
-        disabled={current >= count - 1}
+        disabled={!canNext}
         onClick={onNext}
       />
     </>
@@ -141,8 +141,8 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <dl>
-        <div><dt>← / →</dt><dd>Previous / next slide</dd></div>
-        <div><dt>Space</dt><dd>Next slide</dd></div>
+        <div><dt>← / →</dt><dd>Previous / next presenter beat</dd></div>
+        <div><dt>Space</dt><dd>Reveal next build or advance</dd></div>
         <div><dt>Type number</dt><dd>Jump to slide (e.g. 1 2 → slide 12)</dd></div>
         <div><dt>Home / End</dt><dd>First / last slide</dd></div>
         <div><dt>O / N</dt><dd>Overview, speaker notes</dd></div>
@@ -152,7 +152,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
         <div><dt>B / W</dt><dd>Black screen, white screen</dd></div>
         <div><dt>Esc</dt><dd>Close panel / clear blackout</dd></div>
         <div><dt>? </dt><dd>This help</dd></div>
-        <div><dt>Swipe / Wheel</dt><dd>Slide navigation</dd></div>
+        <div><dt>Swipe / Wheel</dt><dd>Beat-aware navigation</dd></div>
       </dl>
       <p className="panel-footnote">P · L · F · C · V · D · T are projection-side; B · W · O · N work everywhere.</p>
     </div>

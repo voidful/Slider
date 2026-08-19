@@ -405,6 +405,25 @@ def annotate_slide_metadata(slides: list[dict[str, Any]]) -> list[dict[str, Any]
         slide.setdefault("mustIncludeVisual", bool(has_visual and page_role in {"problem", "contribution", "method-overview", "main-result", "secondary-result", "ablation", "qualitative"}))
     return slides
 
+def add_progressive_builds(slides: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Add sparse, comprehension-led builds without hiding headline evidence."""
+    for slide in slides:
+        if slide.get("revealOrder") or slide.get("pageRole") not in {"method-overview", "method-detail"}:
+            continue
+        targets: list[str] = []
+        blocks = slide.get("contentBlocks")
+        if isinstance(blocks, list):
+            targets = [
+                f"contentBlocks.{index}"
+                for index, block in enumerate(blocks)
+                if isinstance(block, dict) and block.get("type") in {"bullets", "callout"}
+            ]
+        elif isinstance(slide.get("bullets"), list):
+            targets = [f"bullets.{index}" for index, _ in enumerate(slide["bullets"])]
+        if len(targets) >= 2:
+            slide["revealOrder"] = targets
+    return slides
+
 def maybe_insert_evidence_slides(slides: list[dict[str, Any]], candidates: list[dict[str, Any]], venue_policy: dict[str, Any]) -> list[dict[str, Any]]:
     thresholds = dict(venue_policy.get("insertion_thresholds") or {})
     picks = [
@@ -838,7 +857,7 @@ def build_slide_data(bundle: dict[str, Any], visuals: dict[str, Any] | None, ven
             })
             next_id += 1
 
-    slides = annotate_slide_metadata(slides)
+    slides = add_progressive_builds(annotate_slide_metadata(slides))
 
     return {
         "meta": {

@@ -68,6 +68,7 @@ The deck uses a **fixed 1200×675 coordinate system** (stage model). This contra
 ### UI and interaction
 - UI pattern mapping: [references/ui-patterns.md](references/ui-patterns.md)
 - presenter UX: [references/presenter-ux.md](references/presenter-ux.md)
+- progressive builds: [references/progressive-builds.md](references/progressive-builds.md)
 - dual-screen speaker view: [references/dual-screen-speaker-view.md](references/dual-screen-speaker-view.md)
 - live tweaks protocol: [references/live-tweaks-protocol.md](references/live-tweaks-protocol.md)
 - HTML engine rules: [references/html-engine-template.md](references/html-engine-template.md)
@@ -242,6 +243,7 @@ For each slide, specify:
 - `visual` — when a paper figure is available, set `{ src: "data:image/png;base64,...", alt: "...", caption: "Figure N — ...", confidence: "high" }`
 - `densityBudget` (max words on slide face)
 - `audienceGoal` (what the audience should understand after this slide)
+- optional `revealOrder` when ordered disclosure materially improves comprehension; follow [references/progressive-builds.md](references/progressive-builds.md)
 
 Use slide patterns from [references/research-slide-patterns.md](references/research-slide-patterns.md) as inspiration, not as rigid templates.
 
@@ -718,8 +720,8 @@ When the LM generates the final HTML directly (without using `render_slideshow_a
 
 The HTML template includes both a viewer (presentation mode) and an editor (edit mode). The default state on load is **presentation mode**. The editor is activated when the user presses `E` or clicks the edit button.
 
-- The editor UI (toolbar, sidebar, layout picker, theme panel) is **expected** to be present in the output HTML. Do not strip it.
-- The editor UI is hidden by default via CSS (`display:none` on `.editor-toolbar`, `.editor-sidebar`, `.editor-main`; shown only when `body.edit-mode` is active).
+- The complete editor UI (compact toolbar, faithful filmstrip, slide context actions and clipboard, undo/redo, inspector, layout picker, and theme/file panels) is **expected** to be present in the output HTML. Do not strip it.
+- The editor UI is hidden by default via CSS (`display:none` on `.editor-toolbar`, `.editor-sidebar`, `.editor-main`, and `.editor-inspector`; shown only when `body.edit-mode` is active).
 - When generating the HTML, do NOT add `class="edit-mode"` to the `<body>` tag. The default body class must be empty so the deck loads in presentation mode.
 - Do NOT set `themePreset` to values that only make sense in edit context. Use deck-design-compiled values.
 

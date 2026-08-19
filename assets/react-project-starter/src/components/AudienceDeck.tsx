@@ -28,6 +28,10 @@ export function AudienceDeck({
   slides,
   slide,
   currentSlide,
+  revealedBuilds,
+  buildCount,
+  canPrev,
+  canNext,
   progress,
   deckTitle,
   theme,
@@ -66,6 +70,10 @@ export function AudienceDeck({
   slides: Slide[];
   slide: Slide;
   currentSlide: number;
+  revealedBuilds: number;
+  buildCount: number;
+  canPrev: boolean;
+  canNext: boolean;
   progress: number;
   deckTitle: string;
   theme: Theme;
@@ -118,14 +126,14 @@ export function AudienceDeck({
         </div>
 
         <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-          Slide {currentSlide + 1} of {slides.length}: {slide?.title}
+          Slide {currentSlide + 1} of {slides.length}: {slide?.title}{buildCount ? `, build ${revealedBuilds} of ${buildCount}` : ""}
         </div>
 
         <div className={`slide-stage ${showNotes ? "slide-stage-notes" : ""}`} key={currentSlide}>
-          <SlideRenderer slide={slide} theme={theme} />
+          <SlideRenderer slide={slide} theme={theme} revealedBuilds={revealedBuilds} />
         </div>
 
-        <ClickNavZones current={currentSlide} count={slides.length} onPrev={onPrev} onNext={onNext} />
+        <ClickNavZones canPrev={canPrev} canNext={canNext} onPrev={onPrev} onNext={onNext} />
         {showHelp ? <HelpPanel onClose={onToggleHelp} /> : null}
         {showOverview ? <OverviewPanel slides={slides} current={currentSlide} onSelect={(index) => { onGoTo(index); onToggleOverview(); }} onClose={onToggleOverview} /> : null}
         {showNotes ? <NotesPanel current={currentSlide} slide={slide} onClose={onToggleNotes} /> : null}
@@ -138,6 +146,10 @@ export function AudienceDeck({
         <ControlDock
           count={slides.length}
           current={currentSlide}
+          revealedBuilds={revealedBuilds}
+          buildCount={buildCount}
+          canPrev={canPrev}
+          canNext={canNext}
           blackout={blackout}
           notesOpen={showNotes}
           overviewOpen={showOverview}

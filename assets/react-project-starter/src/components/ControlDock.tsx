@@ -4,6 +4,10 @@ import type { BlackoutMode } from "../lib/presenterWindow";
 type ControlDockProps = {
   count: number;
   current: number;
+  revealedBuilds: number;
+  buildCount: number;
+  canPrev: boolean;
+  canNext: boolean;
   blackout: BlackoutMode;
   notesOpen: boolean;
   overviewOpen: boolean;
@@ -55,6 +59,10 @@ function DockButton({ label, pressed, disabled, onClick, children }: DockButtonP
 export function ControlDock({
   count,
   current,
+  revealedBuilds,
+  buildCount,
+  canPrev,
+  canNext,
   blackout,
   notesOpen,
   overviewOpen,
@@ -80,14 +88,14 @@ export function ControlDock({
 }: ControlDockProps) {
   return (
     <div className="control-dock" role="toolbar" aria-label="Presentation controls">
-      <DockButton label="Previous slide" onClick={onPrev} disabled={current === 0}>
+      <DockButton label="Previous presenter beat" onClick={onPrev} disabled={!canPrev}>
         <ChevronLeft aria-hidden="true" />
       </DockButton>
-      <DockButton label="Next slide" onClick={onNext} disabled={current >= count - 1}>
+      <DockButton label="Next presenter beat" onClick={onNext} disabled={!canNext}>
         <ChevronRight aria-hidden="true" />
       </DockButton>
       <div className="slide-counter" aria-hidden="true">
-        {current + 1} / {count}
+        {current + 1} / {count}{buildCount ? ` · ${revealedBuilds}/${buildCount}` : ""}
       </div>
       <span className="dock-divider" aria-hidden="true" />
       <DockButton label="Slide overview" onClick={onOverview} pressed={overviewOpen}>

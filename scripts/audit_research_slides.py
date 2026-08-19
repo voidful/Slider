@@ -556,6 +556,27 @@ def audit_acceptance_tests(slides: list[dict[str, Any]], result: AuditResult) ->
             )
 
 
+def has_responsive_stage_reflow(html: str) -> bool:
+    """Inspect each max-width block without leaking into later CSS or scripts."""
+    stage_selector = re.compile(
+        r"(?:^|[},])\s*(?:\.slide|\.split|\.metrics|\.metric-grid|\.grid-2|\.grid-3|\.comparison-panel)(?:[\s>:{,.#]|$)",
+        re.MULTILINE,
+    )
+    for match in re.finditer(r"@media\s*\(\s*max-width[^)]*\)\s*\{", html):
+        depth = 1
+        cursor = match.end()
+        while cursor < len(html) and depth:
+            if html[cursor] == "{":
+                depth += 1
+            elif html[cursor] == "}":
+                depth -= 1
+            cursor += 1
+        block = html[match.end():cursor - 1] if depth == 0 else html[match.end():]
+        if stage_selector.search(block):
+            return True
+    return False
+
+
 def audit_html_template_regressions(result: AuditResult) -> None:
     """Check the HTML template for known rendering regressions."""
     template_path = (
@@ -633,7 +654,7 @@ def audit_html_template_regressions(result: AuditResult) -> None:
             )
 
     # Responsive stage reflow is banned
-    if re.search(r"@media\s*\(\s*max-width[^)]*\).*?(?:\.slide|\.split|\.metrics|\.metric-grid|\.grid-2|\.grid-3|\.comparison-panel)", html, re.DOTALL):
+    if has_responsive_stage_reflow(html):
         result.error(
             "template",
             "STAGE DRIFT BUG: @media(max-width: ...) changes slide layout inside the fixed stage. "
@@ -896,7 +917,7 @@ def audit_rendered_html(
             )
 
     # 5. Responsive stage reflow is banned
-    if re.search(r"@media\s*\(\s*max-width[^)]*\).*?(?:\.slide|\.split|\.metrics|\.metric-grid|\.grid-2|\.grid-3|\.comparison-panel)", html, re.DOTALL):
+    if has_responsive_stage_reflow(html):
         result.error(
             "output",
             "Responsive media query changes slide content layout inside the fixed stage.",

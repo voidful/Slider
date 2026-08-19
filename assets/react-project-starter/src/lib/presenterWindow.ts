@@ -3,6 +3,8 @@ export type BlackoutMode = "black" | "white" | null;
 export type PresenterSnapshot = {
   index: number;
   count: number;
+  revealed: number;
+  buildCount: number;
   startedAt: number;
   deckTitle: string;
   blackout: BlackoutMode;
@@ -27,6 +29,7 @@ const SNAPSHOT_KEY = "paper-slide-presenter-snapshot";
 type WireMessage = PresenterMessage & {
   sender: string;
   ts: number;
+  packet?: string;
 };
 
 function senderId() {
@@ -64,10 +67,20 @@ export function readPresenterSnapshot(): PresenterSnapshot | null {
 export function createPresenterChannel(onMessage: (message: PresenterMessage) => void) {
   const id = senderId();
   const channel = "BroadcastChannel" in window ? new BroadcastChannel(CHANNEL_NAME) : null;
+  const seenPackets = new Set<string>();
+  let packetSequence = 0;
 
   const receive = (message: WireMessage) => {
     if (!message || message.sender === id) return;
+    const packet = message.packet ?? `${message.sender}:${message.ts}:${JSON.stringify(message)}`;
+    if (seenPackets.has(packet)) return;
+    seenPackets.add(packet);
+    if (seenPackets.size > 100) {
+      const oldest = seenPackets.values().next().value;
+      if (oldest) seenPackets.delete(oldest);
+    }
     const { sender: _sender, ts: _ts, ...payload } = message;
+    delete payload.packet;
     onMessage(payload);
   };
 
@@ -85,7 +98,8 @@ export function createPresenterChannel(onMessage: (message: PresenterMessage) =>
 
   return {
     post(message: PresenterMessage) {
-      const wire = { ...message, sender: id, ts: Date.now() };
+      packetSequence += 1;
+      const wire = { ...message, sender: id, ts: Date.now(), packet: `${id}:${packetSequence}` };
       if (message.type === "state") {
         writeStorage(SNAPSHOT_KEY, JSON.stringify(message.state));
       }

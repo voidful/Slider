@@ -16,6 +16,7 @@ Most paper-to-slide workflows produce generic summaries. Slider is built around 
 - **Research-grade design:** projector-safe typography, density budgets, anti-AI-slop rules, and stable fullscreen rendering.
 - **Self-contained output:** the default artifact is one HTML file that opens directly in a browser.
 - **Audit-backed delivery:** static, design, evidence, and browser overflow checks are part of the workflow.
+- **Beat-aware delivery:** optional progressive builds reveal method steps without changing slide geometry.
 
 ## What You Get
 
@@ -40,7 +41,7 @@ npm run dev
 
 Then open the local Vite URL and use:
 
-- `Left` / `Right` or `Space` for slide navigation.
+- `Left` / `Right` or `Space` for beat-aware navigation (builds first, then slides).
 - `O` for overview.
 - `N` for speaker notes.
 - `C` for review comments.
@@ -52,6 +53,8 @@ Then open the local Vite URL and use:
 - `B` / `W` for black or white screen.
 - Swipe or wheel for slide navigation.
 - `?` for keyboard help.
+
+The built HTML deck also includes a structured editor with true slide thumbnails, drag and keyboard reordering, inline text editing, layout and block insertion, slide cut/copy/paste, undo/redo, theme controls, browser drafts, and JSON/self-contained HTML import or export. Its filmstrip and inspector can collapse so the fixed 16:9 canvas stays fully visible on narrower screens.
 
 ## Pipeline
 
@@ -128,6 +131,10 @@ python3 scripts/browser_slide_audit.py deck.html
 ```
 
 The browser audit checks windowed and simulated-fullscreen rendering, fixed-stage overflow, and broken image state.
+
+## Design influence
+
+Slider selectively adapts interaction ideas from [1weiho/open-slide](https://github.com/1weiho/open-slide) while preserving its evidence-first, structured-data, self-contained-output contract. The reviewed commit and adoption boundary are recorded in [references/open-slide-adoption.md](references/open-slide-adoption.md).
 
 ## Repository Layout
 
