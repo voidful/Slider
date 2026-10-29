@@ -61,4 +61,14 @@ export type Slide = {
   evidenceNote?: string;
   /** Semantic targets revealed one presenter beat at a time. */
   revealOrder?: string[];
+  /** Narrative role from slide planning; opener, main result, limitation, and takeaway are accent slides. */
+  pageRole?: string;
+  /** Transition into this slide (see lib/motion.ts); overrides the deck default. */
+  transition?: string;
+  /** Motion preset name, or channel overrides such as { title: "scramble" }, for this slide. */
+  motion?: string | Record<string, string | number>;
+  /** Force or suppress the deck's stronger accent transition for this slide. */
+  accent?: boolean;
+  /** Morph ids by build target, e.g. { visual: "fig-2" }; the same id on the next slide flies there with the morph transition. */
+  morph?: Record<string, string>;
 };

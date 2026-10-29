@@ -1,7 +1,8 @@
-import { Download, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { Download, Play, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { useModalDialog } from "../lib/useModalDialog";
+import { MOTION_PRESET_IDS, MOTION_PRESETS, MOTION_TRANSITIONS, prefersReducedMotion } from "../lib/motion";
 import { themeClassNames, themeLabels } from "../lib/presets";
-import { TRANSITION_RANGE, TYPE_SCALE_RANGE, type Tweaks } from "../lib/useTweaks";
+import { MOTION_SPEED_RANGE, TYPE_SCALE_RANGE, type Tweaks } from "../lib/useTweaks";
 import type { Theme } from "../types";
 
 const THEME_OPTIONS = Object.keys(themeClassNames) as Theme[];
@@ -42,12 +43,14 @@ export function TweaksPanel({
   setTweak,
   reset,
   exportTweaks,
+  onReplayMotion,
   onClose,
 }: {
   tweaks: Tweaks;
   setTweak: <K extends keyof Tweaks>(key: K, value: Tweaks[K]) => void;
   reset: () => void;
   exportTweaks: () => void;
+  onReplayMotion: () => void;
   onClose: () => void;
 }) {
   const { containerRef, titleId } = useModalDialog<HTMLElement>(onClose, { modal: false });
@@ -91,7 +94,55 @@ export function TweaksPanel({
       </div>
 
       <div className="tweak-section">
-        <p className="tweak-section-title">Layout & motion</p>
+        <p className="tweak-section-title">Motion</p>
+        <div className="tweak-motion-grid" role="radiogroup" aria-label="Motion preset">
+          {MOTION_PRESET_IDS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={tweaks.motionPreset === id}
+              className="tweak-theme-button"
+              data-active={tweaks.motionPreset === id}
+              title={MOTION_PRESETS[id].note}
+              onClick={() => setTweak("motionPreset", id)}
+            >
+              {MOTION_PRESETS[id].name}
+            </button>
+          ))}
+        </div>
+        <div className="tweak-row">
+          <label htmlFor="tweak-motion-transition">Transition</label>
+          <select id="tweak-motion-transition" value={tweaks.motionTransition} onChange={(event) => setTweak("motionTransition", event.target.value)}>
+            <option value="">Preset · {MOTION_PRESETS[tweaks.motionPreset].transition}</option>
+            {MOTION_TRANSITIONS.map((id) => (
+              <option key={id} value={id}>
+                {id}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="tweak-row">
+          <label htmlFor="tweak-motion-speed">Speed</label>
+          <input
+            id="tweak-motion-speed"
+            type="range"
+            min={MOTION_SPEED_RANGE.min}
+            max={MOTION_SPEED_RANGE.max}
+            step={MOTION_SPEED_RANGE.step}
+            value={tweaks.motionSpeed}
+            onChange={(event) => setTweak("motionSpeed", Number(event.target.value))}
+          />
+          <span className="tweak-value">{tweaks.motionSpeed.toFixed(1)}×</span>
+        </div>
+        <button type="button" className="tweak-action tweak-replay" onClick={onReplayMotion}>
+          <Play aria-hidden="true" /> Replay slide
+        </button>
+        {prefersReducedMotion() ? <p className="tweak-note">This system requests reduced motion, so slides change instantly here.</p> : null}
+      </div>
+
+      <div className="tweak-section">
+        <p className="tweak-section-title">Layout</p>
         <div className="tweak-row">
           <label htmlFor="tweak-typescale">Text size</label>
           <input
@@ -104,19 +155,6 @@ export function TweaksPanel({
             onChange={(event) => setTweak("typeScale", Number(event.target.value))}
           />
           <span className="tweak-value">{Math.round(tweaks.typeScale * 100)}%</span>
-        </div>
-        <div className="tweak-row">
-          <label htmlFor="tweak-transition">Transition</label>
-          <input
-            id="tweak-transition"
-            type="range"
-            min={TRANSITION_RANGE.min}
-            max={TRANSITION_RANGE.max}
-            step={TRANSITION_RANGE.step}
-            value={tweaks.transitionMs}
-            onChange={(event) => setTweak("transitionMs", Number(event.target.value))}
-          />
-          <span className="tweak-value">{tweaks.transitionMs}ms</span>
         </div>
         <div className="tweak-row tweak-row-toggle">
           <label htmlFor="tweak-progress">Progress bar</label>

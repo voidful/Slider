@@ -1,6 +1,6 @@
 interface:
-  display_name: "ArXiv Talk Web"
-  short_description: "Turn an arXiv paper into an interactive research slideshow website."
+  display_name: "Slider"
+  short_description: "Create and revise evidence-backed paper presentations."
   icon: "presentation"
   color: "#0f172a"
 
@@ -11,6 +11,6 @@ version: "24"
 # Knowledge files are uploaded through the GPT builder UI.
 instructions_source: "system_prompt.md"
 
-# ChatGPT supports up to 20 knowledge files.
+# This bundle selects 20 knowledge files; check current host upload limits.
 # Upload these reference files in the GPT builder's Knowledge section.
 knowledge_manifest: "knowledge_manifest.json"

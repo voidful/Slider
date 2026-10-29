@@ -7,7 +7,7 @@ It is the contract between `compile_deck_design.py` (producer) and the renderer 
 
 ## Purpose
 
-The deck design is **compiled before rendering**. It captures all visual decisions in a structured format that both the renderer and audit scripts consume. This prevents ad-hoc design decisions during rendering and ensures deck-level cohesion.
+Compile a deck design when coordinated settings are useful, especially for a React project. Reuse it for local edits. React projects consume the embedded design; HTML and single-file React use theme/venue settings and do not automatically consume every field.
 
 ---
 
@@ -32,8 +32,8 @@ The deck design is **compiled before rendering**. It captures all visual decisio
   },
 
   "type_scale": {
-    "hero":    "clamp(2.5rem, 4vw, 3.5rem)",
-    "title":   "clamp(2rem, 3.5vw, 2.8rem)",
+    "hero":    "3.5rem",
+    "title":   "2.8rem",
     "subtitle": "1.35rem",
     "body":    "1.2rem",
     "caption": "0.9rem",
@@ -60,9 +60,11 @@ The deck design is **compiled before rendering**. It captures all visual decisio
 
   "motion_policy": {
     "mode": "static-first",
+    "preset": "editorial",
+    "finish_on_input": true,
     "transition_ms": 320,
     "max_transition_ms": 400,
-    "allowed_properties": ["transform", "opacity", "background-color", "color", "box-shadow", "border-color"],
+    "allowed_properties": ["transform", "opacity", "filter", "clip-path", "mask-image", "background-color", "color", "box-shadow", "border-color"],
     "forbid": ["transition: all", "bounce", "3d", "parallax", "fullscreen-only reflow"],
     "respect_reduced_motion": true
   },
@@ -138,7 +140,7 @@ The deck design is **compiled before rendering**. It captures all visual decisio
 ## Field Reference
 
 ### `paper_type`
-Classification from Step 2 of the SKILL.md workflow. Values: `theory-heavy`, `architecture-heavy`, `benchmark-heavy`, `qualitative-heavy`, `hybrid`.
+Classification of the paper for the current talk. Values: `theory-heavy`, `architecture-heavy`, `benchmark-heavy`, `qualitative-heavy`, `hybrid`.
 
 ### `deck_mood_family`
 The primary visual grammar for the deck. Determines the default feel across most slides.
@@ -169,7 +171,7 @@ Spacing values for slide padding, block gaps, and element margins.
 High-level priority ordering for clarity, concision, style, and motion.
 
 ### `motion_policy`
-Static-first motion contract, allowed properties, and reduced-motion requirements.
+Static-first motion contract, allowed properties, and reduced-motion requirements. `preset` names the deck's [motion graphics](motion-graphics.md) preset. The compiler derives it from the mood family; `--motion` overrides it. The renderer applies it when the slide plan has no `meta.motion`. `transition_ms` and `max_transition_ms` govern chrome transitions such as the progress bar. Slide motion follows its preset, settles within about 1.5 s, and finishes on input (`finish_on_input`).
 
 ### `content_handling`
 Rules for balanced titles, safe wrapping, `min-width:0`, and numeric formatting.
@@ -184,7 +186,7 @@ Binding of page roles to layout families, per [page-role-layout-families.md](pag
 Default rendering strategy for these content types.
 
 ### `fullscreen_contract`
-Always `"stage-preserve"` unless the deck has explicit opt-in reflow slides. See [fullscreen-contract.md](fullscreen-contract.md).
+The bundled renderers use `"stage-preserve"`; viewport reflow is not an implemented per-slide mode. See [fullscreen-contract.md](fullscreen-contract.md).
 
 ### `anti_patterns_enforced`
 List of anti-patterns from [research-slide-anti-patterns.md](research-slide-anti-patterns.md) that the renderer must avoid and the audit must check.
@@ -212,4 +214,4 @@ paper metadata + preferences
    comfort report
 ```
 
-The compiler runs **before** the renderer. The audit runs **after**.
+Compile new design settings before embedding them in a React project. Verify the resulting artifact; routine content edits can reuse an existing design.

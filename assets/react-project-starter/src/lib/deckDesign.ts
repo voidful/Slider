@@ -12,6 +12,7 @@ export type DeckDesign = {
   };
   motion_policy?: {
     mode?: string;
+    preset?: string;
     transition_ms?: number;
     respect_reduced_motion?: boolean;
   };

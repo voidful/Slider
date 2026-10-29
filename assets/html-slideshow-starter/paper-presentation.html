@@ -39,9 +39,8 @@ body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 
 /* ── Slide base ── */
 #slide-root{position:relative;z-index:1;display:flex;flex-direction:column;width:100%;height:100%;flex:1;min-height:0}
-.slide{width:100%;height:100%;padding:52px 56px 32px;display:flex;flex-direction:column;overflow:hidden;animation:fadeUp 400ms cubic-bezier(0.16,1,0.3,1);flex:1;min-height:0}
+.slide{width:100%;height:100%;padding:52px 56px 32px;display:flex;flex-direction:column;overflow:hidden;background-color:var(--frame);flex:1;min-height:0}
 .slide>*{min-width:0;min-height:0;flex-shrink:1;position:relative;z-index:2}
-[data-build-target]:not(.build-block),.build-block>*{transition:opacity 180ms cubic-bezier(0,0,.2,1)}
 [data-build-state="pending"]:not(.build-block),.build-block[data-build-state="pending"]>*{opacity:0!important;visibility:hidden;pointer-events:none}
 [data-build-state="revealed"]:not(.build-block),.build-block[data-build-state="revealed"]>*{opacity:1;visibility:visible}
 .build-block{display:contents}
@@ -297,6 +296,169 @@ button.active{background:rgba(220,38,38,.12);color:#dc2626}
 @keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.slide{animation:none}.progress,[data-build-target]:not(.build-block),.build-block>*{transition:none}}
 
+/* ── Motion graphics: transition layers and split-text units (driven by the motion engine) ── */
+.motion-layer{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
+.motion-under{z-index:0}
+.motion-over{z-index:3}
+.motion-probe{z-index:-1;visibility:hidden}
+.motion-layer>.slide,.motion-piece>.slide{flex:1;min-height:0;animation:none!important}
+.motion-piece{position:absolute;inset:0;display:flex;flex-direction:column}
+.mo-morph{pointer-events:none;will-change:transform,opacity}
+.mo-curtain{position:absolute;top:0;bottom:0}
+.mo-wipe-edge{position:absolute;left:0;top:-8%;bottom:-8%;width:6px;margin-left:-3px;background:var(--accent);box-shadow:0 0 22px var(--accent)}
+.mo-ring{position:absolute;left:50%;top:50%;border:4px solid var(--accent);border-radius:50%;box-shadow:0 0 24px var(--accent),inset 0 0 24px var(--accent)}
+.mo-pixels{position:absolute;inset:0}
+.mo-pixels i{position:absolute;width:calc(100% / 16 + 1px);height:calc(100% / 9 + 1px);background:var(--text)}
+.mo-pixels i.hot{background:var(--accent)}
+.mo-w,.mo-c,.mo-m{display:inline-block}
+.mo-w{white-space:nowrap}
+.mo-m{clip-path:inset(-.22em -.12em -.3em -.12em)}
+.mo-l,.mo-li,.mo-half{display:block}
+.mo-lm{clip-path:inset(-.25em -1em -.35em -1em)}
+.mo-li{transform-origin:0 100%}
+.mo-merge{position:relative}
+.mo-top{clip-path:inset(-.4em -.6em calc(50% - .5px) -.6em)}
+.mo-bottom{position:absolute;left:0;right:0;top:0;clip-path:inset(calc(50% - .5px) -.6em -.5em -.6em)}
+.mo-scr{position:relative;-webkit-text-fill-color:transparent}
+.mo-scr::after{content:attr(data-g);position:absolute;left:50%;top:0;transform:translateX(-50%);color:var(--accent);-webkit-text-fill-color:var(--accent)}
+.mo-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.mo-masking{-webkit-mask-image:linear-gradient(90deg,#000 calc(var(--mo-p,130%) - 26%),transparent var(--mo-p,130%));mask-image:linear-gradient(90deg,#000 calc(var(--mo-p,130%) - 26%),transparent var(--mo-p,130%))}
+.timeline-arrow{transform-origin:0 50%}
+
+/* Motion panel (present mode: M or ✦; editor: Motion) */
+.motion-panel{position:absolute;right:20px;bottom:72px;z-index:36;width:356px;max-height:calc(100% - 96px);overflow:auto;border:1px solid var(--toolbar-border);border-radius:12px;background:var(--toolbar-bg);color:var(--toolbar-text);box-shadow:var(--toolbar-shadow);padding:14px 16px 16px;display:none;font:13px/1.4 system-ui,-apple-system,sans-serif}
+.motion-panel.show{display:block}
+.editor-motion-panel{position:fixed;top:48px;right:16px;bottom:auto;z-index:2001;max-height:calc(100vh - 64px)}
+:root[data-toolbar-tone="dark"] .motion-panel{color-scheme:dark}
+.motion-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.motion-head h3{margin:0;font-size:15px;font-weight:800}
+.motion-panel button{color:inherit}
+.motion-close{font-size:18px;line-height:1;padding:2px 8px}
+.motion-presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.motion-chip{border:1px solid var(--toolbar-border);border-radius:8px;padding:7px 8px;text-align:left;font:750 12px/1.2 system-ui,sans-serif}
+.motion-chip small{display:block;margin-top:3px;font-weight:500;font-size:10.5px;line-height:1.25;color:var(--toolbar-muted)}
+.motion-chip[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.motion-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:12px}
+.motion-field{display:grid;gap:3px;min-width:0}
+.motion-field label,.motion-speed label{font-size:11px;font-weight:700;color:var(--toolbar-muted)}
+.motion-field select{width:100%;min-width:0;border:1px solid var(--toolbar-border);border-radius:6px;background:transparent;color:inherit;font:12px/1.3 system-ui,sans-serif;padding:5px 6px}
+.motion-speed{display:flex;align-items:center;gap:8px;margin-top:12px}
+.motion-speed input{flex:1}
+.motion-speed output{min-width:38px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.motion-actions{display:flex;gap:6px;margin-top:12px}
+.motion-actions .mini-btn{background:transparent;color:inherit;border-color:var(--toolbar-border)}
+.motion-note{margin:10px 0 0;font-size:11px;line-height:1.4;color:var(--toolbar-muted)}
+
+/* ── Presenting: blackout, notes drawer, help, chrome-off preview, toast ── */
+.blackout{position:absolute;inset:0;z-index:30;display:none}
+.blackout.black{display:block;background:#000}
+.blackout.white{display:block;background:#fff}
+.notes-drawer{position:absolute;left:24px;right:24px;bottom:72px;z-index:22;max-height:42%;overflow:auto;border:1px solid var(--toolbar-border);border-radius:12px;background:var(--toolbar-bg);color:var(--toolbar-text);box-shadow:var(--toolbar-shadow);padding:14px 18px;font:15px/1.55 system-ui,-apple-system,sans-serif;display:none}
+.notes-drawer.show{display:block}
+.notes-drawer .notes-head{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--toolbar-muted);margin-bottom:6px}
+.notes-md p{margin:0 0 8px}.notes-md ul{margin:0 0 8px;padding-left:20px}.notes-md li{margin:2px 0}.notes-md code{font:13px ui-monospace,monospace;background:rgba(127,127,127,.15);padding:0 4px;border-radius:4px}
+.notes-empty{color:var(--toolbar-muted);font-style:italic}
+body.chrome-off .controls,body.chrome-off .progress,body.chrome-off .collab-strip,body.chrome-off .remote-note{display:none!important}
+body.chrome-off .deck{border:0;border-radius:0;box-shadow:none}
+.slider-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:100001;max-width:min(560px,90vw);padding:10px 16px;border-radius:999px;background:#0f172a;color:#f8fafc;font:600 13px/1.4 system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.25);pointer-events:none}
+.tb-badge{display:inline-block;min-width:16px;margin-left:4px;padding:0 5px;border-radius:999px;background:var(--accent);color:#fff;font-size:10px;line-height:16px;text-align:center}
+.tb-badge:empty{display:none}
+
+/* ── Overview with real thumbnails ── */
+.gallery-card{position:relative;display:flex;flex-direction:column;width:100%;padding:0;font:inherit;color:inherit;text-align:left}
+.gallery-card .thumb-canvas{border-radius:0;box-shadow:none}
+.gallery-card-meta{display:flex;align-items:center;gap:6px;padding:7px 9px;font:600 11px/1.3 system-ui,sans-serif;color:#334155;background:#fff;border-top:1px solid #e2e8f0}
+.gallery-card-meta .gallery-card-title{display:block;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;font-size:12px}
+.gallery-badge{flex:0 0 auto;padding:1px 6px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:10px;font-weight:700}
+.gallery-card:focus-visible{outline:3px solid #60a5fa;outline-offset:2px}
+
+/* ── Command menu (Ctrl/⌘ K) ── */
+.command-menu{position:fixed;inset:0;z-index:100000;display:none;align-items:flex-start;justify-content:center;padding-top:12vh;background:rgba(15,23,42,.4)}
+.command-menu.show{display:flex}
+.command-box{width:min(640px,92vw);max-height:70vh;display:flex;flex-direction:column;border-radius:14px;background:#fff;color:#0f172a;box-shadow:0 30px 80px rgba(0,0,0,.35);overflow:hidden;font:14px/1.4 system-ui,-apple-system,sans-serif}
+.command-input{border:0;border-bottom:1px solid #e2e8f0;padding:14px 16px;font:16px/1.4 system-ui,sans-serif;outline:none;color:inherit}
+.command-list{overflow:auto;padding:6px}
+.command-group{padding:8px 10px 4px;font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#64748b}
+.command-item{display:flex;align-items:baseline;gap:10px;width:100%;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;padding:8px 10px;font:inherit;cursor:pointer}
+.command-item:hover{background:#f8fafc}.command-item[aria-selected="true"]{background:#eff6ff}
+.command-item small{color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.command-item kbd{margin-left:auto;color:#64748b;font:600 11px system-ui,sans-serif;white-space:nowrap}
+.command-empty{padding:16px;color:#64748b}
+
+/* ── Guide panel and comments (editor) ── */
+.guide-panel{display:none;position:fixed;top:48px;right:0;bottom:0;width:380px;z-index:2002;overflow:auto;background:#fff;border-left:1px solid var(--border);box-shadow:-12px 0 32px rgba(15,23,42,.12);font:13px/1.45 system-ui,-apple-system,sans-serif;color:var(--text)}
+.guide-panel.show{display:block}
+.guide-head{position:sticky;top:0;z-index:1;background:#fff;border-bottom:1px solid var(--border);padding:12px 14px}
+.guide-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:800;font-size:14px}
+.guide-status{display:inline-block;margin-top:6px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800;background:#f1f5f9;color:#334155}
+.guide-status[data-status="ready to present"]{background:#dcfce7;color:#166534}
+.guide-status[data-status="ready to rehearse"]{background:#e0f2fe;color:#075985}
+.guide-status[data-status="draft"]{background:#fef3c7;color:#92400e}
+.guide-status[data-status="brief needed"]{background:#fee2e2;color:#991b1b}
+.guide-progress{height:6px;margin-top:8px;border-radius:999px;background:#e2e8f0;overflow:hidden}
+.guide-progress>i{display:block;height:100%;background:var(--accent)}
+.guide-body{padding:12px 14px 24px;display:grid;gap:14px}
+.guide-section-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.guide-step{border:1px solid var(--accent);border-radius:10px;padding:12px;background:var(--accent-bg);display:grid;gap:8px}
+.guide-step-kicker{font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.guide-step h4{margin:0;font-size:14px}
+.guide-step p{margin:0;color:#334155}
+.guide-step .guide-evidence{font-style:italic;color:#475569;overflow-wrap:anywhere}
+.guide-brief{display:grid;gap:8px}
+.guide-brief .field-row{grid-template-columns:1fr 1fr}
+.guide-list{display:grid;gap:6px}
+.guide-item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start;border:1px solid var(--border);border-radius:8px;padding:8px;background:#fafafa}
+.guide-item[data-severity="major"]{border-color:#fca5a5;background:#fef2f2}
+.guide-item[data-severity="moderate"]{border-color:#fcd34d;background:#fffbeb}
+.guide-dot{width:8px;height:8px;margin-top:5px;border-radius:50%;background:#94a3b8}
+.guide-item[data-severity="major"] .guide-dot{background:#dc2626}
+.guide-item[data-severity="moderate"] .guide-dot{background:#d97706}
+.guide-item strong{display:block;font-size:12.5px}
+.guide-item span{display:block;color:#475569;font-size:12px;overflow-wrap:anywhere}
+.guide-done{padding:12px;border-radius:10px;background:#f0fdf4;color:#166534;font-weight:700}
+body.edit-mode .editor-main.commenting [data-bind],body.edit-mode .editor-main.commenting .slide{cursor:crosshair}
+.comment-pin{position:absolute;z-index:40;min-width:22px;height:22px;padding:0 6px;border:2px solid #fff;border-radius:999px 999px 999px 4px;background:#f59e0b;color:#111;font:800 11px/18px system-ui,sans-serif;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+.comment-pin.resolved{background:#94a3b8;color:#fff}
+.comment-composer{position:fixed;z-index:2400;width:300px;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;box-shadow:0 18px 44px rgba(15,23,42,.22);display:grid;gap:8px;font:13px/1.4 system-ui,sans-serif}
+.comment-composer textarea{min-height:70px;border:1px solid var(--border);border-radius:6px;padding:7px 8px;font:13px/1.4 system-ui,sans-serif;resize:vertical}
+.comment-composer .comment-target{font-size:11px;color:var(--muted)}
+.comment-thread{display:grid;gap:6px;max-height:220px;overflow:auto}
+.comment-thread .comment-entry{border-left:3px solid #f59e0b;padding-left:8px}
+.comment-thread .comment-entry.resolved{border-left-color:#94a3b8;color:#64748b}
+.placeholder.drop-ready{outline:3px dashed var(--accent);outline-offset:-6px;background:var(--accent-bg)}
+body:not(.edit-mode) .guide-panel{display:none!important}
+.guide-item{width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.guide-item:hover{border-color:var(--accent)}
+.guide-feedback{margin:0;padding:9px 11px;border-radius:8px;background:#f1f5f9;color:#0f172a}
+.guide-checks{display:grid;gap:4px}
+.guide-check{font-size:12.5px;color:#92400e}.guide-check[data-pass="true"]{color:#166534}.guide-check[data-pass="null"]{color:var(--muted)}
+.guide-brief-rows{display:grid;gap:4px}
+.guide-brief-row{display:grid;grid-template-columns:70px 1fr;gap:8px;font-size:12.5px}
+.guide-brief-row span{overflow-wrap:anywhere}.guide-brief-row em{color:var(--muted)}
+.guide-flash{outline:3px solid #f59e0b!important;outline-offset:3px;border-radius:4px}
+.controls #presenter-btn.active{background:var(--toolbar-active-bg);color:var(--toolbar-active)}
+@media (min-width:861px){body.edit-mode.guide-open .editor-main{right:380px!important}}
+
+/* ── Print / PDF (one 1200×675 page per slide at its final build) and offscreen snapshots ── */
+#print-root,#slide-snapshot-host{position:absolute;left:-100000px;top:0;width:1200px}
+#slide-snapshot-host{height:675px;overflow:hidden;visibility:hidden}
+.print-page{position:relative;width:1200px;height:675px;overflow:hidden;background:var(--frame)}
+.print-page .body-shell,.print-page .main-shell,.print-page main{width:1200px;height:675px;min-height:0;display:flex;flex-direction:column}
+.print-page .slide{animation:none!important}
+.print-sheet{display:grid;gap:16px}
+.print-thumb{width:696px;height:392px;overflow:hidden;border:1px solid #d4d4d8}
+.print-thumb .print-page{transform:scale(.58);transform-origin:top left}
+.print-notes{font:14px/1.55 system-ui,sans-serif;color:#111}
+.print-notes-head{font-weight:800;margin-bottom:6px}
+@media print{
+  html,body{background:#fff!important;margin:0!important;padding:0!important;display:block!important;overflow:visible!important;height:auto!important;min-height:0!important}
+  body>*:not(#print-root){display:none!important}
+  #print-root{position:static;width:auto}
+  #print-root>*{break-after:page;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print-root>:last-child{break-after:auto;page-break-after:auto}
+  #print-root>.print-page{height:100vh}/* Chrome rounds the 675px page height down; a full 675px would spill onto a blank page */
+}
+
 /* ── Utility classes for render functions (no inline styles) ── */
 .hero-text-mt{margin-top:12px}
 .cover-subtitle{max-width:none;margin:12px auto 0}
@@ -515,12 +677,28 @@ body.edit-mode .progress{display:none}
     <button id="home" aria-label="First slide">⌂</button>
     <span class="counter" id="counter">1 / 1</span>
     <button id="next" aria-label="Next slide">→</button>
-    <button id="play-btn" aria-label="Play slideshow" title="Play / pause (P)">▶</button>
+    <button id="play-btn" aria-label="Auto-advance" title="Auto-advance (A)">▶</button>
     <span class="play-state" id="play-state">00:00</span>
     <button id="phone-btn" aria-label="Phone remote" title="Phone remote (R)">Phone</button>
     <button id="laser-btn" aria-label="Laser pointer" title="Laser pointer (L)">🪄</button>
     <button id="gallery-btn" aria-label="Slide overview" title="Slide overview (G)">⊞</button>
+    <button id="motion-btn" aria-label="Motion graphics" title="Motion graphics (M)">✦</button>
+    <button id="presenter-btn" aria-label="Presenter view" title="Presenter view with notes and timer (P)">Speaker</button>
+    <button id="command-btn" aria-label="Command menu" title="Search slides and actions (Ctrl/⌘ K)">⌘K</button>
     <button id="fullscreen" aria-label="Fullscreen">Full</button>
+  </div>
+  <div class="blackout" id="blackout" aria-hidden="true"></div>
+  <div class="notes-drawer" id="notes-drawer" role="region" aria-label="Speaker notes" aria-live="polite"></div>
+  <div class="help" id="help" role="dialog" aria-label="Keyboard shortcuts">
+    <div class="help-title">Keyboard shortcuts</div>
+    <ul class="help-list">
+      <li>→ / Space / PgDn: next beat · ← / PgUp: previous</li>
+      <li>Home / End, 1–9: jump · O or G: overview</li>
+      <li>P: presenter view · N: notes · A: auto-advance</li>
+      <li>F: fullscreen · L: laser · B / W: black or white screen</li>
+      <li>M: motion · R: phone remote · Ctrl/⌘ K: command menu</li>
+      <li>E: edit · ?: this list · Esc: close</li>
+    </ul>
   </div>
   <div class="laser-dot" id="laser-dot"></div>
   <!-- Gallery overlay (inside deck for fullscreen) -->
@@ -542,6 +720,7 @@ body.edit-mode .progress{display:none}
       <button class="mini-btn danger" id="remote-clear-notes">Clear notes</button>
     </div>
   </div>
+  <div class="motion-panel" id="motion-panel" role="dialog" aria-label="Motion graphics"></div>
 </div>
 </div><!-- end deck-wrapper -->
 
@@ -653,6 +832,12 @@ body.edit-mode .progress{display:none}
   <div class="tb-sep"></div>
   <div class="tb-group">
     <button class="tb-btn" id="tb-theme" title="Theme and colors">Theme</button>
+    <button class="tb-btn" id="tb-motion" title="Slide transitions and text motion" aria-haspopup="dialog" aria-expanded="false">Motion</button>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-group">
+    <button class="tb-btn" id="tb-guide" title="Guided checklist to finish the deck (G)" aria-haspopup="dialog" aria-expanded="false">Guide <span class="tb-badge" id="tb-guide-count"></span></button>
+    <button class="tb-btn" id="tb-comment" title="Comment mode: click any text to leave a note (C)" aria-pressed="false">Comment <span class="tb-badge" id="tb-comment-count"></span></button>
   </div>
   <input type="file" id="img-file-input" accept="image/*" style="display:none">
   <input type="file" id="json-file-input" accept="application/json,.json" style="display:none">
@@ -671,6 +856,10 @@ body.edit-mode .progress{display:none}
         <button class="menu-item" id="tb-json-import" role="menuitem"><span>Import slide JSON</span></button>
         <button class="menu-item" id="tb-json-export" role="menuitem"><span>Export slide JSON</span></button>
         <button class="menu-item" id="tb-export" role="menuitem"><span>Download HTML</span></button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" id="tb-print" role="menuitem"><span>Print / save as PDF</span><kbd>Ctrl/Cmd+P</kbd></button>
+        <button class="menu-item" id="tb-print-notes" role="menuitem"><span>Print handout with notes</span></button>
+        <button class="menu-item" id="tb-comments-export" role="menuitem"><span>Export comments for agent</span></button>
       </div>
     </div>
   </div>
@@ -686,6 +875,10 @@ body.edit-mode .progress{display:none}
   <div class="shortcut-row"><strong>Move to edge</strong><kbd>Ctrl/Cmd+Shift+↑ / ↓</kbd></div>
   <div class="shortcut-row"><strong>Undo / redo</strong><kbd>Ctrl/Cmd+Z / Shift+Z</kbd></div>
   <div class="shortcut-row"><strong>Save draft</strong><kbd>Ctrl/Cmd+S</kbd></div>
+  <div class="shortcut-row"><strong>Guide: next step</strong><kbd>G</kbd></div>
+  <div class="shortcut-row"><strong>Comment mode</strong><kbd>C</kbd></div>
+  <div class="shortcut-row"><strong>Search slides and actions</strong><kbd>Ctrl/Cmd+K</kbd></div>
+  <div class="shortcut-row"><strong>Print / save as PDF</strong><kbd>Ctrl/Cmd+P</kbd></div>
 </div>
 
 <!-- Theme picker panel -->
@@ -700,6 +893,8 @@ body.edit-mode .progress{display:none}
     <div class="custom-colors" id="custom-colors"></div>
   </div>
 </div>
+<div class="motion-panel editor-motion-panel" id="editor-motion-panel" role="dialog" aria-label="Deck motion"></div>
+<aside class="guide-panel" id="guide-panel" role="dialog" aria-label="Deck guide"></aside>
 
 <div class="editor-sidebar" id="editor-sidebar">
   <div class="thumb-list" id="thumb-list"></div>
@@ -744,6 +939,9 @@ body.edit-mode .progress{display:none}
 <script>
 const themePreset="zinc-editorial"; // @render-theme
 const venuePreset="iclr"; // @render-venue
+let deckMotion={"preset":"editorial"}; // @render-motion
+const deckPalette=null; // @render-palette
+let deckBrief={}; // @render-brief
 
 const themeTokens={
   "zinc-editorial":{bg:"#f5f5f4",frame:"#fff",text:"#1a1a2e",muted:"#4a4a6a",border:"#e2e8f0",accent:"#2563eb",positive:"#059669",negative:"#dc2626",neutral:"#6b7280",panel:"#fafafa",toolbar:"light"},
@@ -947,7 +1145,8 @@ function getRevealOrder(slide){
     seen.add(target);return true;
   });
 }
-function buildAttr(target){return` data-build-target="${esc(target)}"`}
+let morphSource=null;// slide.morph of the slide renderSlide() is drawing: {buildTarget: morphId}
+function buildAttr(target){const id=morphSource&&morphSource[target];return` data-build-target="${esc(target)}"${typeof id==="string"&&id?` data-morph="${esc(id)}"`:""}`}
 function buildBlock(html,target){return`<div class="build-block"${buildAttr(target)}>${html}</div>`}
 function clampBuild(slide,revealed){return Math.max(0,Math.min(Math.trunc(Number(revealed)||0),getRevealOrder(slide).length))}
 function applyBuildState(container,slide,revealed=state.currentBuild){
@@ -960,9 +1159,659 @@ function applyBuildState(container,slide,revealed=state.currentBuild){
   });
 }
 
-/* ── Theme ── */
+/* ═══════════════════════════════════════════════
+   MOTION GRAPHICS
+   Slide transitions and text/media entrances modeled on effects catalogued at
+   kittenjam-motion-library.vercel.app: split rise, blur-in letters, spread, merge,
+   scramble, typewriter, line reveal, soft line fade, clip/soft-mask reveals,
+   staggered cards, number counters, curtain, circle reveal, split doors, slices,
+   glitch, and pixel dissolve. Web Animations only. Every effect ends on the static
+   layout, text is split only when line breaks stay identical, and any navigation
+   finishes running motion before it continues. See references/motion-graphics.md.
+   ═══════════════════════════════════════════════ */
+const MOTION_TRANSITIONS=["none","fade","rise","push","wipe","curtain","circle","doors","slices","zoom","glitch","pixel","morph"];
+const MOTION_TEXT_EFFECTS=["none","fade-up","rise","blur","spread","merge","scramble","typewriter","lines","soft"];
+const MOTION_CHANNELS={
+  kicker:MOTION_TEXT_EFFECTS,title:MOTION_TEXT_EFFECTS,hero:MOTION_TEXT_EFFECTS,text:MOTION_TEXT_EFFECTS,
+  media:["none","fade-up","clip","mask","zoom"],data:["none","count","scramble"],
+  group:["none","fade-up","stagger"],emphasis:["none","sweep"]
+};
+const MOTION_PRESETS={
+  none:{name:"None",note:"Instant cuts",transition:"none",accent:"none",kicker:"none",title:"none",hero:"none",text:"none",media:"none",data:"none",group:"none",emphasis:"none"},
+  subtle:{name:"Subtle",note:"Short fades",transition:"fade",accent:"rise",kicker:"fade-up",title:"fade-up",hero:"fade-up",text:"fade-up",media:"fade-up",data:"none",group:"fade-up",emphasis:"none"},
+  editorial:{name:"Editorial",note:"Push, rising words",transition:"push",accent:"curtain",kicker:"fade-up",title:"rise",hero:"spread",text:"soft",media:"mask",data:"count",group:"stagger",emphasis:"sweep"},
+  kinetic:{name:"Kinetic",note:"Wipes, blur letters",transition:"wipe",accent:"circle",kicker:"rise",title:"blur",hero:"merge",text:"lines",media:"clip",data:"count",group:"stagger",emphasis:"sweep"},
+  cinematic:{name:"Cinematic",note:"Zoom-through, doors",transition:"zoom",accent:"doors",kicker:"fade-up",title:"spread",hero:"blur",text:"soft",media:"zoom",data:"count",group:"stagger",emphasis:"none"},
+  digital:{name:"Digital",note:"Glitch, scramble",transition:"glitch",accent:"pixel",kicker:"typewriter",title:"scramble",hero:"scramble",text:"blur",media:"clip",data:"scramble",group:"stagger",emphasis:"sweep"}
+};
+const MOTION_KEYS=["transition","accent",...Object.keys(MOTION_CHANNELS)];
+const MOTION_EASE={out:"cubic-bezier(.22,1,.36,1)",expo:"cubic-bezier(.16,1,.3,1)",inOut:"cubic-bezier(.65,0,.35,1)",in:"cubic-bezier(.55,0,1,.45)",soft:"cubic-bezier(.33,1,.68,1)",card:"cubic-bezier(.215,.61,.355,1)"};
+const MOTION_GAPS={kicker:70,title:120,hero:150,text:110,media:130,group:80,emphasis:110};
+const MOTION_TARGETS=".label,.hero-text,.title,.body-text,.bullet,.quote-block,.callout-box,.limitation-block,.equation-block,.equation-explain,.table-caption,.evidence-frame,.placeholder,.visual-frame,.metric-card,.metric,.comparison-panel>div,.timeline-step,.timeline-arrow,.result-table tr";
+const MOTION_OWNERS=".metric-card,.metric,.comparison-panel>div,.evidence-frame,.placeholder,.visual-frame,.equation-block,.quote-block,.timeline-step,.callout-box";
+const MOTION_SPLIT_BLOCKERS=".katex,img,svg,canvas,video,iframe,table,input,textarea,select,button,br";
+const MOTION_CJK=/[\u2e80-\u9fff\uf900-\ufaff\ufe30-\ufe4f\uff00-\uffef\uac00-\ud7af]/;
+const MOTION_CLOSE=/^[、。，．・：；？！ー々ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ」』）】〉》〕｝〗〙〛’”…‥,.;:!?)\]}%％]$/;
+const MOTION_OPEN=/^[「『（【〈《〔｛〖〘〚‘“(\[{]$/;
+const MOTION_GLYPHS={latin:"ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#$%&*+=?",digit:"0123456789",cjk:"アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン",other:"#%&*+=<>/|"};
+const MOTION_NUMBER=/^(\D*?)([+\-−–]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?(\D*)$/;
+const MOTION_GLITCH="drop-shadow(5px 0 0 rgba(255,0,92,.75)) drop-shadow(-5px 0 0 rgba(0,224,255,.75))";
+const motion={anims:new Set(),jobs:new Set(),lastNavAt:-1e9};
+let motionSegmenter,motionMaskSupport=null;
+
+function sanitizeMotion(src,withPreset=true){
+  const out={};
+  if(!src||typeof src!=="object")return out;
+  if(withPreset&&MOTION_PRESETS[src.preset])out.preset=src.preset;
+  for(const key of MOTION_KEYS){const allowed=key==="transition"||key==="accent"?MOTION_TRANSITIONS:MOTION_CHANNELS[key];if(allowed.includes(src[key]))out[key]=src[key]}
+  const speed=Number(src.speed);
+  if(Number.isFinite(speed)&&speed>0)out.speed=Math.max(.25,Math.min(4,speed));
+  return out;
+}
+function setDeckMotion(next){const clean=sanitizeMotion(typeof next==="string"?{preset:next}:next);deckMotion={...clean,preset:clean.preset||"editorial"}}
+setDeckMotion(deckMotion);
+const INITIAL_DECK_MOTION=JSON.stringify(deckMotion);
+function prefersReducedMotion(){return Boolean(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)}
+function isAccentSlide(slide,index){
+  if(!slide)return false;
+  if(typeof slide.accent==="boolean")return slide.accent;
+  if(["cover","takeaway","experiment-headline","limitations"].includes(slide.layout)||["title","main-result","limitation","takeaway"].includes(slide.pageRole))return true;
+  return Boolean(slide.appendix&&index>0&&!slides[index-1]?.appendix);
+}
+/* ?motion=<preset> previews or disables motion (e.g. ?motion=none for screenshots) without saving it. */
+const MOTION_URL_PRESET=(()=>{try{const id=new URLSearchParams(location.search).get("motion");return MOTION_PRESETS[id]?id:null}catch(_e){return null}})();
+function resolveMotion(slide,index,ignoreReduced=false){
+  if(!ignoreReduced&&prefersReducedMotion())return{...MOTION_PRESETS.none,speed:1,reduced:true};
+  if(MOTION_URL_PRESET){const p=MOTION_PRESETS[MOTION_URL_PRESET];return{...p,transition:isAccentSlide(slide,index)?p.accent:p.transition,speed:1}}
+  let profile={...(MOTION_PRESETS[deckMotion.preset]||MOTION_PRESETS.editorial),...sanitizeMotion(deckMotion,false)};
+  const own=slide?.motion;
+  if(typeof own==="string"&&MOTION_PRESETS[own])profile={...MOTION_PRESETS[own],speed:profile.speed};
+  else if(own&&typeof own==="object"){const patch=sanitizeMotion(own);profile={...(patch.preset?{...MOTION_PRESETS[patch.preset],speed:profile.speed}:profile),...patch}}
+  const transition=MOTION_TRANSITIONS.includes(slide?.transition)?slide.transition:(isAccentSlide(slide,index)?profile.accent:profile.transition);
+  return{...profile,transition,speed:profile.speed||1};
+}
+function motionContext(profile){
+  const speed=Math.max(.25,Math.min(4,Number(profile.speed)||1));
+  return{speed,S:ms=>Math.max(0,ms)/speed,accent:getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#2563eb"};
+}
+
+/* Bookkeeping: every animation and timer job can be finished synchronously. */
+function motionAnimate(el,frames,opts){
+  if(!el||typeof el.animate!=="function")return null;
+  const anim=el.animate(frames,{fill:"backwards",easing:MOTION_EASE.out,...opts});
+  motion.anims.add(anim);
+  const done=()=>motion.anims.delete(anim);
+  anim.finished.then(done,done);
+  return anim;
+}
+function motionJob(stop){const job={stop,done:false};motion.jobs.add(job);return job}
+function endMotionJob(job){if(!job||job.done)return;job.done=true;motion.jobs.delete(job);try{job.stop()}catch(_e){}}
+function waitMotion(job,anims){
+  const list=(anims||[]).filter(Boolean);
+  if(!list.length){endMotionJob(job);return}
+  Promise.all(list.map(a=>a.finished.catch(()=>{}))).then(()=>endMotionJob(job));
+}
+function afterMotion(anims,stop){waitMotion(motionJob(stop),anims)}
+function trackSplit(split,make){const job=motionJob(split.restore);try{waitMotion(job,make())}catch(_e){endMotionJob(job)}}
+function motionActive(){return motion.anims.size>0||motion.jobs.size>0}
+function finishMotion(){
+  for(const anim of [...motion.anims]){try{anim.finish()}catch(_e){try{anim.cancel()}catch(_e2){}}}
+  motion.anims.clear();
+  for(const job of [...motion.jobs])endMotionJob(job);
+}
+function motionLayer(deck,name){
+  let layer=Array.from(deck.children).find(el=>el.classList.contains(name));
+  if(!layer){layer=document.createElement("div");layer.className=`motion-layer ${name}`;layer.setAttribute("aria-hidden","true");deck.appendChild(layer)}
+  return layer;
+}
+function motionPiece(layer,slideEl,clip){
+  const piece=document.createElement("div");piece.className="motion-piece";
+  piece.appendChild(slideEl.cloneNode(true));
+  if(clip)piece.style.clipPath=clip;
+  layer.appendChild(piece);
+  return piece;
+}
+
+/* Text splitting. Units keep the exact static line breaks or the split is undone. */
+function motionGraphemes(text){
+  if(motionSegmenter===undefined)motionSegmenter=typeof Intl!=="undefined"&&Intl.Segmenter?new Intl.Segmenter(undefined,{granularity:"grapheme"}):null;
+  return motionSegmenter?Array.from(motionSegmenter.segment(text),s=>s.segment):Array.from(text);
+}
+function motionTokens(text){
+  const tokens=[];
+  for(const part of text.split(/(\s+)/)){
+    if(!part)continue;
+    if(/^\s+$/.test(part)){tokens.push({space:true,text:part});continue}
+    const units=[];let latin="";
+    for(const g of motionGraphemes(part)){
+      if(MOTION_CJK.test(g)){if(latin){units.push(latin);latin=""}units.push(g)}
+      else latin+=g;
+    }
+    if(latin)units.push(latin);
+    let prefix="";
+    for(const unit of units){
+      const last=tokens[tokens.length-1];
+      if(MOTION_OPEN.test(unit)){prefix+=unit;continue}
+      if(!prefix&&MOTION_CLOSE.test(unit)&&last&&!last.space){last.text+=unit;continue}
+      tokens.push({space:false,text:prefix+unit});prefix="";
+    }
+    if(prefix)tokens.push({space:false,text:prefix});
+  }
+  return tokens;
+}
+function canSplitForMotion(el){
+  if(!el||!el.isConnected||el.querySelector(MOTION_SPLIT_BLOCKERS))return false;
+  const text=el.textContent||"";
+  if(!text.trim()||text.length>420||/\$|\\\(|\\\[/.test(text))return false;
+  return Array.from(el.childNodes).every(node=>node.nodeType===3);
+}
+function motionSrOnly(text){const sr=document.createElement("span");sr.className="mo-sr";sr.textContent=text;return sr}
+function motionLineIndices(tops){let line=0,last=null;return tops.map(top=>{if(last!==null&&Math.abs(top-last)>3)line++;last=top;return line})}
+function motionRangeTops(textNode,tokens){
+  const range=document.createRange(),tops=[];let offset=0;
+  for(const token of tokens){
+    if(!token.space){range.setStart(textNode,offset);range.setEnd(textNode,offset+token.text.length);const rects=range.getClientRects();if(rects.length!==1)return null;tops.push(rects[0].top)}
+    offset+=token.text.length;
+  }
+  return tops;
+}
+function splitMotionText(el,{chars=false,mask=false}={}){
+  if(!canSplitForMotion(el))return null;
+  el.normalize();
+  const original=Array.from(el.childNodes),text=el.textContent,tokens=motionTokens(text);
+  if(original.length!==1)return null;
+  const tops=motionRangeTops(original[0],tokens);
+  if(!tops)return null;
+  const height=el.offsetHeight,width=el.offsetWidth,nodes=[motionSrOnly(text)],units=[],words=[];
+  for(const token of tokens){
+    if(token.space){nodes.push(document.createTextNode(token.text));continue}
+    const word=document.createElement("span");word.className="mo-w";word.setAttribute("aria-hidden","true");
+    for(const part of chars?motionGraphemes(token.text):[token.text]){
+      const unit=document.createElement("span");unit.className="mo-c";unit.textContent=part;
+      if(mask){const m=document.createElement("span");m.className="mo-m";m.appendChild(unit);word.appendChild(m)}
+      else word.appendChild(unit);
+      units.push(unit);
+    }
+    nodes.push(word);words.push(word);
+  }
+  el.replaceChildren(...nodes);
+  const restore=()=>el.replaceChildren(...original);
+  const same=Math.abs(el.offsetHeight-height)<=1&&Math.abs(el.offsetWidth-width)<=1&&motionLineIndices(tops).join()===motionLineIndices(words.map(w=>w.getBoundingClientRect().top)).join();
+  if(!same){restore();return null}
+  return{units,restore};
+}
+function splitMotionLines(el,{mask=false}={}){
+  if(!canSplitForMotion(el)||getComputedStyle(el).display.startsWith("inline"))return null;
+  el.normalize();
+  const original=Array.from(el.childNodes),text=el.textContent,height=el.offsetHeight,width=el.offsetWidth;
+  const restore=()=>el.replaceChildren(...original);
+  const pieces=motionTokens(text).map(token=>{if(token.space)return document.createTextNode(token.text);const span=document.createElement("span");span.textContent=token.text;return span});
+  el.replaceChildren(...pieces);
+  const groups=[];let top=null;
+  for(const piece of pieces){
+    if(piece.nodeType===1){
+      if(piece.getClientRects().length>1){restore();return null}
+      if(top===null||Math.abs(piece.offsetTop-top)>2){groups.push([]);top=piece.offsetTop}
+    }
+    if(!groups.length)groups.push([]);
+    groups[groups.length-1].push(piece);
+  }
+  const lines=[],blocks=groups.map(group=>{
+    const line=document.createElement("span");line.className=mask?"mo-l mo-lm":"mo-l";line.setAttribute("aria-hidden","true");
+    let inner=line;
+    if(mask){inner=document.createElement("span");inner.className="mo-li";line.appendChild(inner)}
+    inner.append(...group);lines.push(inner);
+    return line;
+  });
+  el.replaceChildren(motionSrOnly(text),...blocks);
+  if(Math.abs(el.offsetHeight-height)>1||Math.abs(el.offsetWidth-width)>1){restore();return null}
+  return{lines,blocks,restore};
+}
+
+/* Text effects: (element, start ms, context) -> end ms, all at 1x speed. */
+function fxFadeUp(el,t,ctx,distance=18){
+  motionAnimate(el,[{opacity:0,transform:`translateY(${distance}px)`},{opacity:1,transform:"none"}],{duration:ctx.S(640),delay:ctx.S(t),easing:MOTION_EASE.out});
+  return t+640;
+}
+function fxRise(el,t,ctx){
+  const split=splitMotionText(el,{mask:true});
+  if(!split)return fxFadeUp(el,t,ctx);
+  const n=split.units.length,step=Math.min(42,420/Math.max(1,n-1));
+  trackSplit(split,()=>split.units.map((unit,i)=>motionAnimate(unit,[{transform:"translateY(122%)"},{transform:"none"}],{duration:ctx.S(780),delay:ctx.S(t+i*step),easing:MOTION_EASE.expo})));
+  return t+(n-1)*step+780;
+}
+function fxBlur(el,t,ctx){
+  const short=(el.textContent||"").length<=60,split=splitMotionText(el,{chars:short});
+  if(!split)return fxSoft(el,t,ctx);
+  const n=split.units.length,step=Math.min(short?28:46,(short?520:620)/Math.max(1,n-1));
+  trackSplit(split,()=>split.units.map((unit,i)=>motionAnimate(unit,[{opacity:0,filter:"blur(10px)",transform:"translateY(.25em) scale(1.15)"},{opacity:1,filter:"blur(0px)",transform:"none"}],{duration:ctx.S(720),delay:ctx.S(t+i*step),easing:MOTION_EASE.out})));
+  return t+(n-1)*step+720;
+}
+function fxSpread(el,t,ctx){
+  const split=(el.textContent||"").length<=90?splitMotionText(el,{chars:true}):null;
+  if(!split)return fxSoft(el,t,ctx);
+  const rows=[];
+  for(const unit of split.units){
+    const top=unit.offsetTop,left=unit.offsetLeft,right=left+unit.offsetWidth;
+    let row=rows.find(r=>Math.abs(r.top-top)<=4);
+    if(!row){row={top,min:left,max:right,units:[]};rows.push(row)}
+    row.min=Math.min(row.min,left);row.max=Math.max(row.max,right);row.units.push(unit);
+  }
+  trackSplit(split,()=>rows.flatMap(row=>{
+    const center=(row.min+row.max)/2;
+    return row.units.map(unit=>{const dx=(center-(unit.offsetLeft+unit.offsetWidth/2))*.9;return motionAnimate(unit,[{opacity:0,filter:"blur(8px)",transform:`translateX(${dx.toFixed(1)}px)`},{opacity:1,offset:.45},{opacity:1,filter:"blur(0px)",transform:"none"}],{duration:ctx.S(1000),delay:ctx.S(t),easing:MOTION_EASE.expo})});
+  }));
+  return t+1000;
+}
+function fxMerge(el,t,ctx){
+  const split=splitMotionLines(el);
+  if(!split)return fxFadeUp(el,t,ctx);
+  trackSplit(split,()=>split.blocks.flatMap((line,i)=>{
+    line.classList.add("mo-merge");
+    const top=document.createElement("span");top.className="mo-half mo-top";top.append(...line.childNodes);
+    const bottom=top.cloneNode(true);bottom.className="mo-half mo-bottom";
+    line.append(top,bottom);
+    const timing={duration:ctx.S(880),delay:ctx.S(t+i*90),easing:MOTION_EASE.expo};
+    return[motionAnimate(top,[{opacity:0,transform:"translateX(-26%)"},{opacity:1,transform:"none"}],timing),motionAnimate(bottom,[{opacity:0,transform:"translateX(26%)"},{opacity:1,transform:"none"}],timing)];
+  }));
+  return t+(split.blocks.length-1)*90+880;
+}
+function motionGlyph(ch){const pool=/\d/.test(ch)?MOTION_GLYPHS.digit:/[A-Za-z]/.test(ch)?MOTION_GLYPHS.latin:MOTION_CJK.test(ch)?MOTION_GLYPHS.cjk:MOTION_GLYPHS.other;return pool[Math.floor(Math.random()*pool.length)]}
+function fxScramble(el,t,ctx){
+  const split=(el.textContent||"").length<=64?splitMotionText(el,{chars:true}):null;
+  if(!split)return fxBlur(el,t,ctx);
+  const chars=split.units.filter(unit=>unit.textContent.trim());
+  chars.forEach(unit=>{unit.dataset.g=motionGlyph(unit.textContent);unit.classList.add("mo-scr")});
+  motionAnimate(el,[{opacity:0},{opacity:1}],{duration:ctx.S(160),delay:ctx.S(t),easing:"linear"});
+  const start=performance.now()+ctx.S(t),total=ctx.S(820);
+  let timer=0;
+  const job=motionJob(()=>{clearTimeout(timer);split.restore()});
+  const tick=()=>{
+    const p=(performance.now()-start)/total;
+    if(p>=0)chars.forEach((unit,i)=>{if(!unit.classList.contains("mo-scr"))return;if(p>=.25+.75*i/Math.max(1,chars.length-1))unit.classList.remove("mo-scr");else if(Math.random()<.55)unit.dataset.g=motionGlyph(unit.textContent)});
+    if(p<1)timer=setTimeout(tick,45);else endMotionJob(job);
+  };
+  tick();
+  return t+820;
+}
+function fxTypewriter(el,t,ctx){
+  const split=(el.textContent||"").length<=160?splitMotionText(el,{chars:true}):null;
+  if(!split)return fxSoft(el,t,ctx);
+  const units=split.units,n=units.length,step=Math.max(10,Math.min(34,1100/Math.max(1,n)));
+  const on=`2px 0 0 0 ${ctx.accent}`,off="0 0 0 0 transparent";
+  const blink=[{boxShadow:on},{boxShadow:on,offset:.3},{boxShadow:off,offset:.31},{boxShadow:off,offset:.6},{boxShadow:on,offset:.61},{boxShadow:on,offset:.9},{boxShadow:off,offset:.91},{boxShadow:off}];
+  trackSplit(split,()=>units.flatMap((unit,i)=>{
+    const at=ctx.S(t+i*step),last=i===n-1;
+    return[motionAnimate(unit,[{opacity:0},{opacity:1}],{duration:1,delay:at,easing:"steps(1,end)"}),motionAnimate(unit,last?blink:[{boxShadow:on},{boxShadow:on}],{duration:ctx.S(last?900:step),delay:at,easing:"linear",fill:"none"})];
+  }));
+  return t+n*step+300;
+}
+function fxLines(el,t,ctx){
+  const split=splitMotionLines(el,{mask:true});
+  if(!split)return fxFadeUp(el,t,ctx);
+  trackSplit(split,()=>split.lines.map((line,i)=>motionAnimate(line,[{transform:"translateY(118%) rotate(2.5deg)"},{transform:"none"}],{duration:ctx.S(820),delay:ctx.S(t+i*110),easing:MOTION_EASE.expo})));
+  return t+(split.lines.length-1)*110+820;
+}
+function fxSoft(el,t,ctx){
+  const split=splitMotionLines(el),lines=split?split.lines:[el];
+  const make=()=>lines.map((line,i)=>motionAnimate(line,[{opacity:0,transform:"translateY(10px)",filter:"blur(4px)"},{opacity:1,transform:"none",filter:"blur(0px)"}],{duration:ctx.S(900),delay:ctx.S(t+i*150),easing:MOTION_EASE.out}));
+  if(split)trackSplit(split,make);else make();
+  return t+(lines.length-1)*150+900;
+}
+const MOTION_TEXT_FX={"fade-up":fxFadeUp,rise:fxRise,blur:fxBlur,spread:fxSpread,merge:fxMerge,scramble:fxScramble,typewriter:fxTypewriter,lines:fxLines,soft:fxSoft};
+
+/* Figure, card, number, and callout effects. */
+function fxClip(el,t,ctx){
+  const across=el.classList.contains("equation-block"),media=el.querySelector("img,svg");
+  motionAnimate(el,[{clipPath:across?"inset(0% 100% 0% 0%)":"inset(100% 0% 0% 0%)"},{clipPath:"inset(0% 0% 0% 0%)"}],{duration:ctx.S(980),delay:ctx.S(t),easing:"cubic-bezier(.7,0,.2,1)"});
+  if(media)motionAnimate(media,[{transform:"scale(1.18)"},{transform:"none"}],{duration:ctx.S(1300),delay:ctx.S(t),easing:MOTION_EASE.out});
+  return t+1300;
+}
+function motionMaskReady(){
+  if(motionMaskSupport!==null)return motionMaskSupport;
+  motionMaskSupport=false;
+  try{
+    if(window.CSS&&CSS.registerProperty&&(CSS.supports("mask-image","linear-gradient(#000,transparent)")||CSS.supports("-webkit-mask-image","linear-gradient(#000,transparent)"))){CSS.registerProperty({name:"--mo-p",syntax:"<percentage>",inherits:false,initialValue:"130%"});motionMaskSupport=true}
+  }catch(e){motionMaskSupport=Boolean(e&&e.name==="InvalidModificationError")}
+  return motionMaskSupport;
+}
+function fxMask(el,t,ctx){
+  if(!motionMaskReady())return fxClip(el,t,ctx);
+  const media=el.querySelector("img,svg");
+  el.classList.add("mo-masking");
+  afterMotion([
+    motionAnimate(el,[{"--mo-p":"0%"},{"--mo-p":"130%"}],{duration:ctx.S(1150),delay:ctx.S(t),easing:MOTION_EASE.inOut}),
+    media&&motionAnimate(media,[{transform:"translateX(-10px) scale(1.08)"},{transform:"none"}],{duration:ctx.S(1400),delay:ctx.S(t),easing:MOTION_EASE.out})
+  ],()=>el.classList.remove("mo-masking"));
+  return t+1400;
+}
+function fxZoom(el,t,ctx){
+  motionAnimate(el,[{opacity:0,transform:"scale(1.06)",filter:"blur(8px)"},{opacity:1,transform:"none",filter:"blur(0px)"}],{duration:ctx.S(900),delay:ctx.S(t),easing:MOTION_EASE.out});
+  return t+900;
+}
+const MOTION_MEDIA_FX={"fade-up":fxFadeUp,clip:fxClip,mask:fxMask,zoom:fxZoom};
+function fxCard(el,t,ctx){
+  if(el.matches(".timeline-arrow")){motionAnimate(el,[{opacity:0,transform:"scaleX(0)"},{opacity:1,transform:"none"}],{duration:ctx.S(420),delay:ctx.S(t),easing:MOTION_EASE.out});return t+420}
+  const row=el.tagName==="TR";
+  motionAnimate(el,row?[{opacity:0,transform:"translateY(14px)"},{opacity:1,transform:"none"}]:[{opacity:0,transform:"translateY(24px) scale(.96)",filter:"blur(6px)"},{opacity:1,transform:"none",filter:"blur(0px)"}],{duration:ctx.S(row?560:720),delay:ctx.S(t),easing:MOTION_EASE.card});
+  return t+720;
+}
+function fxCount(el,t,ctx){
+  const node=el.childNodes.length===1&&el.firstChild.nodeType===3?el.firstChild:null,text=node?node.data:"";
+  const match=node&&text.trim()===text?text.match(MOTION_NUMBER):null;
+  if(!match||!/^(block|flex|grid|flow-root|list-item)$/.test(getComputedStyle(el).display))return t;
+  const [,prefix,sign,whole,fraction="",suffix]=match,target=Number(whole.replace(/,/g,"")+fraction);
+  if(!Number.isFinite(target))return t;
+  const decimals=Math.max(0,fraction.length-1),grouped=whole.includes(",");
+  const format=value=>{let s=value.toFixed(decimals);if(grouped){const [i,f]=s.split(".");s=i.replace(/\B(?=(\d{3})+(?!\d))/g,",")+(f?`.${f}`:"")}return prefix+sign+s+suffix};
+  const start=performance.now()+ctx.S(t+60),duration=ctx.S(1100);
+  let frame=0;
+  node.data=format(0);
+  const job=motionJob(()=>{cancelAnimationFrame(frame);node.data=text});
+  const step=now=>{const p=Math.min(1,Math.max(0,(now-start)/duration));node.data=format(target*(1-Math.pow(1-p,3)));if(p<1)frame=requestAnimationFrame(step);else endMotionJob(job)};
+  frame=requestAnimationFrame(step);
+  return t+1160;
+}
+function fxSweep(el,t,ctx){
+  const round=el.classList.contains("limitation-block")?"round 0 12px 12px 0":"round 12px";
+  motionAnimate(el,[{clipPath:`inset(0% 100% 0% 0% ${round})`},{clipPath:`inset(0% 0% 0% 0% ${round})`}],{duration:ctx.S(820),delay:ctx.S(t),easing:MOTION_EASE.inOut});
+  return t+820;
+}
+
+/* Choreography: reading-order stagger, compressed so long slides still settle quickly. */
+function motionChannel(el){
+  if(el.matches(".label"))return"kicker";
+  if(el.matches(".hero-text"))return"hero";
+  if(el.matches(".title"))return"title";
+  if(el.matches(".evidence-frame,.placeholder,.visual-frame,.equation-block"))return"media";
+  if(el.matches(".metric-card,.metric,.comparison-panel>div,.timeline-step,.timeline-arrow,.result-table tr"))return"group";
+  if(el.matches(".callout-box,.limitation-block"))return"emphasis";
+  return"text";
+}
+function collectMotionTargets(scope){
+  return Array.from(scope.querySelectorAll(MOTION_TARGETS)).filter(el=>{
+    if(el.closest('[data-build-state="pending"]'))return false;
+    const owner=el.parentElement&&el.parentElement.closest(MOTION_OWNERS);
+    return!(owner&&scope.contains(owner));
+  });
+}
+function playMotionTarget(el,channel,t,profile,ctx){
+  const effect=profile[channel];
+  if(channel==="media"){const fx=MOTION_MEDIA_FX[effect];return fx?fx(el,t,ctx):t}
+  if(channel==="group"){
+    let end=effect==="stagger"?fxCard(el,t,ctx):effect==="fade-up"?fxFadeUp(el,t,ctx,12):t;
+    if(profile.data==="count"||profile.data==="scramble")el.querySelectorAll(".metric-value,.hero-number").forEach(value=>{end=Math.max(end,profile.data==="count"?fxCount(value,t,ctx):fxScramble(value,t+80,ctx))});
+    return end;
+  }
+  if(channel==="emphasis"){
+    let end=effect==="sweep"?fxSweep(el,t,ctx):t;
+    const fx=el.matches(".callout-box")&&MOTION_TEXT_FX[profile.text];
+    if(fx)end=Math.max(end,fx(el,t+(effect==="sweep"?160:0),ctx));
+    return end;
+  }
+  const fx=MOTION_TEXT_FX[effect];
+  if(!fx)return t;
+  if(el.matches(".bullet")){
+    const dot=el.querySelector(".bullet-dot"),text=el.querySelector("[data-bind]")||el.lastElementChild;
+    if(dot)motionAnimate(dot,[{opacity:0,transform:"scale(0)"},{opacity:1,transform:"none"}],{duration:ctx.S(460),delay:ctx.S(t),easing:MOTION_EASE.out});
+    return text&&text!==dot?fx(text,t+40,ctx):t;
+  }
+  if(el.matches(".quote-block")){
+    const quote=el.querySelector(":scope>span"),attr=el.querySelector(".quote-attr");
+    if(attr)fxFadeUp(attr,t+240,ctx,10);
+    return quote?fx(quote,t,ctx):fxFadeUp(el,t,ctx);
+  }
+  return fx(el,t,ctx);
+}
+function playMotionEntrance(scope,profile,startAt=0,targets){
+  const ctx=motionContext(profile),plan=[];
+  let cursor=0;
+  for(const el of targets||collectMotionTargets(scope)){if(morphedWithin(el,scope))continue;const channel=motionChannel(el);plan.push([el,channel,cursor]);cursor+=MOTION_GAPS[channel]||100}
+  const squeeze=cursor>760?760/cursor:1;
+  for(const [el,channel,at] of plan){try{playMotionTarget(el,channel,startAt+at*squeeze,profile,ctx)}catch(_e){}}
+}
+
+/* Morph ("magic move"): elements on both slides fly from the old box to the new one while the rest
+   crossfades. Pairs, in order: data-morph ids (slide.morph maps build targets to ids), the same image,
+   the same metric label, the same label, title, or equation text, then title to title. Styled clones fly
+   in the over layer because slide columns clip their children. */
+const MORPH_SEL={text:".label,.title,.hero-text",title:".title,.hero-text",frame:".evidence-frame,.visual-frame",metric:".metric-card,.metric",metricLabel:".metric-label",eq:".equation-block"};
+const MORPH_STYLE=["display","flexDirection","alignItems","justifyContent","gap","fontFamily","fontSize","fontWeight","fontStyle","lineHeight","letterSpacing","color","textAlign","textTransform","whiteSpace","overflowWrap","backgroundColor","borderRadius","boxShadow","objectFit"];
+const motionMorphed=new WeakSet();
+function morphedWithin(el,scope){for(let node=el;node&&node!==scope;node=node.parentElement)if(motionMorphed.has(node))return true;return false}
+function morphKeys(scope){
+  const keyed=new Map(),take=(key,el)=>{if(key&&!keyed.has(key)&&!el.closest('[data-build-state="pending"]'))keyed.set(key,el)};
+  scope.querySelectorAll("[data-morph]").forEach(el=>take(`id:${el.dataset.morph}`,el));
+  scope.querySelectorAll(MORPH_SEL.frame).forEach(el=>{const src=el.querySelector("img")?.getAttribute("src");take(src&&`img:${src}`,el)});
+  scope.querySelectorAll(MORPH_SEL.metric).forEach(el=>{const label=el.querySelector(MORPH_SEL.metricLabel)?.textContent.trim();take(label&&`metric:${label}`,el)});
+  scope.querySelectorAll(`${MORPH_SEL.text},${MORPH_SEL.eq}`).forEach(el=>{const text=el.textContent.replace(/\s+/g," ").trim();take(text&&`${el.matches(MORPH_SEL.eq)?"eq":el.matches(MORPH_SEL.title)?"title":"text"}:${text}`,el)});
+  return keyed;
+}
+function morphPairs(ghost,incoming){
+  const from=morphKeys(ghost),pairs=[],used=new Set();
+  const free=(a,b)=>!used.has(a)&&!used.has(b)&&a.querySelectorAll("*").length<=80&&!pairs.some(([x,y])=>x.contains(a)||a.contains(x)||y.contains(b)||b.contains(y));
+  const pair=(a,b)=>{if(a&&b&&free(a,b)){pairs.push([a,b]);used.add(a);used.add(b)}};
+  for(const [key,b] of morphKeys(incoming))pair(from.get(key),b);
+  const titleB=incoming.querySelector(MORPH_SEL.title);
+  if(titleB&&!titleB.closest('[data-build-state="pending"]'))pair(ghost.querySelector(MORPH_SEL.title),titleB);
+  return pairs;
+}
+function morphClone(el,box){
+  const clone=el.cloneNode(true),copy=(src,dst)=>{const cs=getComputedStyle(src);for(const prop of MORPH_STYLE)dst.style[prop]=cs[prop]};
+  copy(el,clone);
+  const to=clone.querySelectorAll("*");
+  el.querySelectorAll("*").forEach((node,i)=>copy(node,to[i]));
+  clone.removeAttribute("id");clone.querySelectorAll("[id]").forEach(node=>node.removeAttribute("id"));
+  clone.classList.add("mo-morph");
+  Object.assign(clone.style,{position:"absolute",left:`${box.x}px`,top:`${box.y}px`,width:`${box.w}px`,height:`${box.h}px`,margin:"0",boxSizing:"border-box",visibility:"visible",opacity:"1"});
+  return clone;
+}
+function morphFlights(c,pairs){
+  const deckRect=c.deck.getBoundingClientRect(),scale=deckRect.width/(c.deck.offsetWidth||1)||1;
+  const local=r=>({x:(r.left-deckRect.left)/scale-c.deck.clientLeft,y:(r.top-deckRect.top)/scale-c.deck.clientTop,w:r.width/scale||1,h:r.height/scale||1});
+  const ink=el=>{const range=document.createRange();range.selectNodeContents(el);const r=range.getBoundingClientRect();return r.width&&r.height?r:el.getBoundingClientRect()};
+  /* Measure every pair before any clone or hidden element changes layout. */
+  return pairs.map(([a,b])=>{
+    const text=a.matches(MORPH_SEL.text)&&b.matches(MORPH_SEL.text),boxA=local(a.getBoundingClientRect()),boxB=local(b.getBoundingClientRect());
+    const inkA=text?local(ink(a)):boxA,inkB=text?local(ink(b)):boxB,ratio=text?parseFloat(getComputedStyle(a).fontSize)/parseFloat(getComputedStyle(b).fontSize)||1:0;
+    const same=a.textContent.trim()===b.textContent.trim()&&a.querySelector("img")?.getAttribute("src")===b.querySelector("img")?.getAttribute("src");
+    return{a,b,boxA,boxB,inkA,inkB,sx:ratio||boxA.w/boxB.w,sy:ratio||boxA.h/boxB.h,same,cloneA:same?null:morphClone(a,boxA),cloneB:morphClone(b,boxB)};
+  });
+}
+
+/* Transitions: (context) -> ms when the incoming slide's entrance should begin. */
+const MOTION_TRANSITION_FX={
+  fade(c){
+    c.over.appendChild(c.ghost);
+    c.add(motionAnimate(c.ghost,[{opacity:1},{opacity:0}],{duration:c.S(460),easing:MOTION_EASE.soft,fill:"forwards"}));
+    return 60;
+  },
+  rise(c){
+    c.over.appendChild(c.ghost);
+    c.add(motionAnimate(c.ghost,[{opacity:1,transform:"none"},{opacity:0,transform:`translateY(${-14*c.dir}px)`}],{duration:c.S(360),easing:MOTION_EASE.soft,fill:"forwards"}));
+    c.add(motionAnimate(c.incoming,[{opacity:0,transform:`translateY(${20*c.dir}px)`},{opacity:1,transform:"none"}],{duration:c.S(600),delay:c.S(80),easing:MOTION_EASE.out}));
+    return 120;
+  },
+  push(c){
+    const d=c.dir;
+    c.under.appendChild(c.ghost);
+    c.add(motionAnimate(c.ghost,[{transform:"none",filter:"brightness(1)"},{transform:`translateX(${-30*d}%)`,filter:"brightness(.62)"}],{duration:c.S(720),easing:MOTION_EASE.inOut,fill:"forwards"}));
+    c.add(motionAnimate(c.incoming,[{transform:`translateX(${100*d}%)`,boxShadow:`${-28*d}px 0 56px rgba(15,23,42,.24)`},{transform:"none",boxShadow:`${-28*d}px 0 56px rgba(15,23,42,0)`}],{duration:c.S(720),easing:MOTION_EASE.inOut}));
+    return 300;
+  },
+  wipe(c){
+    const d=c.dir,W=c.deck.clientWidth,H=c.deck.clientHeight,slant=W*.32;
+    c.under.appendChild(c.ghost);
+    c.add(motionAnimate(c.incoming,d>0?[{clipPath:"polygon(0% 0%, 0% 0%, -32% 100%, -32% 100%)"},{clipPath:"polygon(0% 0%, 132% 0%, 100% 100%, 0% 100%)"}]:[{clipPath:"polygon(100% 0%, 100% 0%, 132% 100%, 132% 100%)"},{clipPath:"polygon(100% 0%, -32% 0%, 0% 100%, 100% 100%)"}],{duration:c.S(780),easing:MOTION_EASE.inOut}));
+    const edge=document.createElement("div");edge.className="mo-wipe-edge";c.over.appendChild(edge);
+    const skew=Math.atan2(slant,H)*180/Math.PI*(d>0?-1:1),from=d>0?-slant/2:W+slant/2,to=d>0?W*1.32-slant/2:W-W*1.32+slant/2;
+    c.add(motionAnimate(edge,[{transform:`translateX(${from}px) skewX(${skew}deg)`},{transform:`translateX(${to}px) skewX(${skew}deg)`}],{duration:c.S(780),easing:MOTION_EASE.inOut,fill:"both"}));
+    return 260;
+  },
+  curtain(c){
+    const d=c.dir,n=3,duration=1020,gap=70,colors=["var(--accent)","color-mix(in srgb,var(--accent) 80%,var(--text))","color-mix(in srgb,var(--accent) 60%,var(--text))"];
+    c.over.appendChild(c.ghost);
+    for(let i=0;i<n;i++){
+      const panel=document.createElement("div");panel.className="mo-curtain";
+      panel.style.left=`${i*100/n}%`;panel.style.width=`calc(${100/n}% + 1px)`;panel.style.background="var(--accent)";panel.style.background=colors[i];
+      c.over.appendChild(panel);
+      const enter=d>0?-101:101,leave=d>0?101:-101;
+      c.add(motionAnimate(panel,[{transform:`translateY(${enter}%)`,easing:MOTION_EASE.inOut},{transform:"none",offset:.44},{transform:"none",offset:.56,easing:MOTION_EASE.inOut},{transform:`translateY(${leave}%)`}],{duration:c.S(duration),delay:c.S((d>0?i:n-1-i)*gap),easing:"linear",fill:"both"}));
+    }
+    const covered=(n-1)*gap+duration*.45;
+    c.add(motionAnimate(c.ghost,[{opacity:1},{opacity:0}],{duration:c.S(covered),easing:"steps(1,end)",fill:"forwards"}));
+    return covered+duration*.1;
+  },
+  circle(c){
+    const forward=c.dir>0,duration=forward?820:760,timing={duration:c.S(duration),easing:MOTION_EASE.inOut};
+    /* circle(75%) resolves against the stage diagonal / sqrt(2); the ring tracks that radius. */
+    const radius=.75*Math.hypot(c.deck.clientWidth,c.deck.clientHeight)/Math.SQRT2,ring=document.createElement("div");
+    ring.className="mo-ring";ring.style.width=ring.style.height=`${radius*2}px`;
+    if(forward){
+      c.under.appendChild(c.ghost);
+      c.add(motionAnimate(c.incoming,[{clipPath:"circle(0% at 50% 50%)"},{clipPath:"circle(75% at 50% 50%)"}],timing));
+      c.add(motionAnimate(c.ghost,[{transform:"none",opacity:1},{transform:"scale(.94)",opacity:.45}],{...timing,fill:"forwards"}));
+    }else{
+      c.over.appendChild(c.ghost);
+      c.add(motionAnimate(c.ghost,[{clipPath:"circle(75% at 50% 50%)"},{clipPath:"circle(0% at 50% 50%)"}],{...timing,fill:"forwards"}));
+      c.add(motionAnimate(c.incoming,[{transform:"scale(.94)",opacity:.45},{transform:"none",opacity:1}],timing));
+    }
+    c.over.appendChild(ring);
+    c.add(motionAnimate(ring,[{transform:`translate(-50%,-50%) scale(${forward?0:1})`,opacity:forward?1:0},{opacity:1,offset:forward?.72:.28},{transform:`translate(-50%,-50%) scale(${forward?1:0})`,opacity:forward?0:1}],{...timing,fill:"both"}));
+    return 220;
+  },
+  doors(c){
+    const left=motionPiece(c.over,c.ghost,"inset(0 50% 0 0)"),right=motionPiece(c.over,c.ghost,"inset(0 0 0 50%)");
+    c.ghost.remove();
+    c.add(motionAnimate(left,[{transform:"none"},{transform:"translateX(-51%)"}],{duration:c.S(860),easing:MOTION_EASE.inOut,fill:"forwards"}));
+    c.add(motionAnimate(right,[{transform:"none"},{transform:"translateX(51%)"}],{duration:c.S(860),easing:MOTION_EASE.inOut,fill:"forwards"}));
+    c.add(motionAnimate(c.incoming,[{transform:"scale(.9)",filter:"blur(6px)",opacity:.6},{transform:"none",filter:"blur(0px)",opacity:1}],{duration:c.S(900),easing:MOTION_EASE.out}));
+    return 280;
+  },
+  slices(c){
+    const n=6,d=c.dir;
+    for(let i=0;i<n;i++){
+      const left=(i*100/n).toFixed(3),right=(100-(i+1)*100/n).toFixed(3);
+      const piece=motionPiece(c.over,c.ghost,`inset(0 calc(${right}% - 1px) 0 calc(${left}% - 1px))`);
+      c.add(motionAnimate(piece,[{transform:"none"},{transform:`translateY(${i%2?112:-112}%)`}],{duration:c.S(640),delay:c.S((d>0?i:n-1-i)*55),easing:"cubic-bezier(.55,0,.75,.2)",fill:"both"}));
+    }
+    c.ghost.remove();
+    c.add(motionAnimate(c.incoming,[{transform:"scale(1.08)"},{transform:"none"}],{duration:c.S(1000),easing:MOTION_EASE.out}));
+    return 180;
+  },
+  zoom(c){
+    const d=c.dir;
+    c.over.appendChild(c.ghost);
+    c.add(motionAnimate(c.ghost,[{transform:"none",opacity:1,filter:"blur(0px)"},{transform:`scale(${d>0?1.4:.82})`,opacity:0,filter:"blur(10px)"}],{duration:c.S(620),easing:MOTION_EASE.in,fill:"forwards"}));
+    c.add(motionAnimate(c.incoming,[{transform:`scale(${d>0?.88:1.12})`,opacity:0},{transform:"none",opacity:1}],{duration:c.S(760),delay:c.S(140),easing:MOTION_EASE.out}));
+    return 260;
+  },
+  glitch(c){
+    const n=7,steps=6;
+    for(let i=0;i<n;i++){
+      const top=(i*100/n).toFixed(3),bottom=(100-(i+1)*100/n).toFixed(3);
+      const piece=motionPiece(c.over,c.ghost,`inset(calc(${top}% - 1px) 0 calc(${bottom}% - 1px) 0)`),frames=[];
+      for(let f=0;f<=steps;f++){const x=f===0||f===steps?0:(Math.random()*2-1)*38;frames.push({offset:f/steps,transform:`translateX(${x.toFixed(1)}px)`,filter:f%2?MOTION_GLITCH:"none",opacity:f===steps?0:1,easing:"steps(1,end)"})}
+      c.add(motionAnimate(piece,frames,{duration:c.S(400),easing:"linear",fill:"forwards"}));
+    }
+    c.ghost.remove();
+    c.add(motionAnimate(c.incoming,[{opacity:0,easing:"steps(1,end)"},{opacity:1,transform:"translateX(-12px)",filter:MOTION_GLITCH,offset:.25,easing:"steps(1,end)"},{opacity:1,transform:"translateX(8px) skewX(-6deg)",filter:"none",offset:.5,easing:"steps(1,end)"},{opacity:1,transform:"translateX(-3px)",filter:MOTION_GLITCH,offset:.75,easing:"steps(1,end)"},{opacity:1,transform:"none",filter:"none"}],{duration:c.S(300),delay:c.S(340),easing:"linear"}));
+    return 380;
+  },
+  pixel(c){
+    const cols=16,rows=9,duration=900,grid=document.createElement("div");
+    grid.className="mo-pixels";
+    c.over.appendChild(c.ghost);c.over.appendChild(grid);
+    for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){
+      const cell=document.createElement("i");cell.style.left=`${q*100/cols}%`;cell.style.top=`${r*100/rows}%`;
+      if(Math.random()<.14)cell.className="hot";
+      grid.appendChild(cell);
+      const a=Math.random()*.38,b=.56+Math.random()*.38;
+      c.add(motionAnimate(cell,[{opacity:0,offset:0},{opacity:0,offset:a},{opacity:1,offset:a+.001},{opacity:1,offset:b},{opacity:0,offset:b+.001},{opacity:0,offset:1}],{duration:c.S(duration),easing:"linear",fill:"both"}));
+    }
+    c.add(motionAnimate(c.ghost,[{opacity:1},{opacity:0}],{duration:c.S(duration*.42),easing:"steps(1,end)",fill:"forwards"}));
+    return duration*.55;
+  },
+  morph(c){
+    c.over.appendChild(c.ghost);
+    const pairs=morphPairs(c.ghost,c.incoming);
+    if(!pairs.length)return MOTION_TRANSITION_FX.fade(c);
+    const duration=c.S(760),timing={duration,easing:MOTION_EASE.inOut,fill:"both"};
+    for(const f of morphFlights(c,pairs)){
+      f.cloneB.style.transformOrigin=`${f.inkB.x-f.boxB.x}px ${f.inkB.y-f.boxB.y}px`;
+      const start=`translate(${f.inkA.x-f.inkB.x}px,${f.inkA.y-f.inkB.y}px) scale(${f.sx},${f.sy})`;
+      f.a.style.visibility="hidden";
+      motionMorphed.add(f.b);
+      c.add(motionAnimate(f.b,[{opacity:0},{opacity:0}],{duration,easing:"linear"}));
+      c.over.appendChild(f.cloneB);
+      if(f.same){c.add(motionAnimate(f.cloneB,[{transform:start},{transform:"none"}],timing));continue}
+      f.cloneA.style.transformOrigin=`${f.inkA.x-f.boxA.x}px ${f.inkA.y-f.boxA.y}px`;
+      c.over.insertBefore(f.cloneA,f.cloneB);
+      c.add(motionAnimate(f.cloneA,[{transform:"none",opacity:1},{transform:`translate(${f.inkB.x-f.inkA.x}px,${f.inkB.y-f.inkA.y}px) scale(${1/f.sx},${1/f.sy})`,opacity:0}],timing));
+      c.add(motionAnimate(f.cloneB,[{transform:start,opacity:0},{transform:"none",opacity:1}],timing));
+    }
+    c.add(motionAnimate(c.ghost,[{opacity:1},{opacity:0}],{duration:c.S(420),easing:MOTION_EASE.soft,fill:"forwards"}));
+    return 160;
+  }
+};
+function runMotionTransition(id,ghost,incoming,dir,profile){
+  const fx=MOTION_TRANSITION_FX[id],deck=incoming.closest(".deck");
+  if(!fx||!deck){ghost.remove();return 0}
+  const under=motionLayer(deck,"motion-under"),over=motionLayer(deck,"motion-over"),anims=[];
+  const job=motionJob(()=>{under.replaceChildren();over.replaceChildren();ghost.remove()});
+  const ctx={...motionContext(profile),ghost,incoming,dir,deck,under,over,add:anim=>{if(anim)anims.push(anim);return anim}};
+  let reveal=0;
+  try{reveal=fx(ctx)}catch(_e){endMotionJob(job);return 0}
+  waitMotion(job,anims);
+  return reveal;
+}
+function motionGhostFor(index){
+  const slide=slides[index];
+  if(!slide)return null;
+  const layer=motionLayer(deckEl,"motion-under"),box=document.createElement("div");
+  box.className="motion-piece";box.innerHTML=renderSlide(slide);layer.appendChild(box);
+  applyBuildState(box,slide,getRevealOrder(slide).length);renderMath(box);
+  const ghost=box.querySelector(".slide");
+  if(ghost){fitSlideElement(ghost);layer.appendChild(ghost)}
+  box.remove();
+  return ghost;
+}
+function playSlideMotion(ghost,meta){
+  const slide=slides[state.currentSlide],incoming=root.querySelector(".slide"),now=performance.now();
+  const rapid=!meta.force&&now-motion.lastNavAt<220;
+  motion.lastNavAt=now;
+  const profile=resolveMotion(slide,state.currentSlide);
+  if(getTokenFromUrl()||rapid||!incoming){if(ghost)ghost.remove();return}
+  const reveal=ghost&&profile.transition!=="none"?runMotionTransition(profile.transition,ghost,incoming,meta.dir||1,profile):(ghost&&ghost.remove(),0);
+  if(meta.entrance!==false)playMotionEntrance(incoming,profile,reveal);
+}
+function playBuildMotion(previous){
+  const slide=slides[state.currentSlide],targets=[];
+  if(state.currentBuild<=previous)return;
+  for(const target of getRevealOrder(slide).slice(previous,state.currentBuild)){
+    root.querySelectorAll(`[data-build-target="${CSS.escape(target)}"]`).forEach(el=>{
+      if(el.matches(MOTION_TARGETS))targets.push(el);else targets.push(...collectMotionTargets(el));
+    });
+  }
+  if(targets.length)playMotionEntrance(root,resolveMotion(slide,state.currentSlide),0,targets);
+}
+window.addEventListener("beforeprint",finishMotion);
+function slideNeedsMath(slide){return/\$|\\\(|\\\[/.test(JSON.stringify(slide||{}))}
+
+/* ── Theme ──
+   deckPalette holds the Theme panel colors that differ from the preset; exportHTML() writes it back. */
+const PALETTE_KEYS=["bg","frame","text","muted","border","accent","positive","negative","neutral","panel"];
+function sanitizePalette(src){
+  const out={};
+  if(!src||typeof src!=="object")return out;
+  for(const key of PALETTE_KEYS)if(/^#(?:[0-9a-f]{3}){1,2}$/i.test(src[key]))out[key]=src[key];
+  if(src.toolbar==="dark"||src.toolbar==="light")out.toolbar=src.toolbar;
+  return out;
+}
+function presetColors(){return themeTokens[themePreset]||themeTokens["zinc-editorial"]}
+function paletteOverrides(){const base=presetColors();return Object.fromEntries(Object.entries(sanitizePalette(getCurrentColors())).filter(([key,value])=>value!==base[key]))}
 function applyTheme(){
-  const t=themeTokens[themePreset]||themeTokens["zinc-editorial"];const r=document.documentElement.style;
+  const t={...presetColors(),...sanitizePalette(deckPalette)};const r=document.documentElement.style;
   r.setProperty("--bg",t.bg);r.setProperty("--frame",t.frame);r.setProperty("--text",t.text);r.setProperty("--muted",t.muted);r.setProperty("--border",t.border);r.setProperty("--accent",t.accent);
   r.setProperty("--positive",t.positive||"#059669");r.setProperty("--negative",t.negative||"#dc2626");r.setProperty("--neutral",t.neutral||"#6b7280");r.setProperty("--panel",t.panel);
   r.setProperty("--accent-bg",hexToRgba(t.accent,.07));r.setProperty("--positive-bg",hexToRgba(t.positive||"#059669",.07));r.setProperty("--negative-bg",hexToRgba(t.negative||"#dc2626",.07));
@@ -970,24 +1819,36 @@ function applyTheme(){
 }
 
 /* ── Navigation ── */
-function goTo(i,entry="jump"){
+function goTo(i,entry="jump",build=null){
   if(!slides.length)return;
+  const from=state.currentSlide;
   state.currentSlide=Math.max(0,Math.min(i,slides.length-1));
-  state.currentBuild=entry==="forward"?0:getRevealOrder(slides[state.currentSlide]).length;
-  if(state.editMode)editorRender();else render();
+  state.currentBuild=build!=null?build:entry==="forward"?0:getRevealOrder(slides[state.currentSlide]).length;
+  if(state.editMode)editorRender();
+  else render(from===state.currentSlide?null:{from,dir:entry==="backward"||state.currentSlide<from?-1:1,entrance:entry!=="backward"});
   redrawAnnotations();
   syncRemoteState();
 }
 function advance(){
   const slide=slides[state.currentSlide],count=getRevealOrder(slide).length;
-  if(state.currentBuild<count){state.currentBuild++;render();syncRemoteState();return true}
+  if(state.currentBuild<count){state.currentBuild++;renderBuildStep(state.currentBuild-1);syncRemoteState();return true}
   if(state.currentSlide<slides.length-1){goTo(state.currentSlide+1,"forward");return true}
   return false;
 }
 function retreat(){
-  if(state.currentBuild>0){state.currentBuild--;render();syncRemoteState();return true}
+  if(state.currentBuild>0){state.currentBuild--;renderBuildStep(state.currentBuild+1);syncRemoteState();return true}
   if(state.currentSlide>0){goTo(state.currentSlide-1,"backward");return true}
   return false;
+}
+/* Builds update the rendered slide in place so only the revealed target animates. */
+function renderBuildStep(previous){
+  if(state.editMode||!root.querySelector(".slide")){render();return}
+  finishMotion();
+  const slide=slides[state.currentSlide];
+  state.currentBuild=clampBuild(slide,state.currentBuild);
+  applyBuildState(root,slide,state.currentBuild);
+  updateDeckChrome(slide);
+  playBuildMotion(previous);
 }
 function stopPlayback(){
   state.playing=false;
@@ -1099,8 +1960,9 @@ function renderClassicSlide(slide){
 
 /* ── Slide router ── */
 function renderSlide(slide){
-  if(slide.contentBlocks&&slide.contentBlocks.length>0)return renderContentBlocks(slide);
-  return renderClassicSlide(slide)
+  morphSource=slide.morph&&typeof slide.morph==="object"?slide.morph:null;
+  try{return slide.contentBlocks&&slide.contentBlocks.length>0?renderContentBlocks(slide):renderClassicSlide(slide)}
+  finally{morphSource=null}
 }
 
 /* ── Main render ── */
@@ -1120,14 +1982,28 @@ function renderMath(container){
 function fitRenderedSlide(container){
   const slideEl=container.querySelector('.slide');
   if(!slideEl)return;
-  slideEl.classList.remove('density-compact','density-tight');
-  slideEl.removeAttribute('data-overflow-fail');
   for(const img of slideEl.querySelectorAll('img')){
     if(img.dataset.fitBound==="1")continue;
     img.dataset.fitBound="1";
     img.addEventListener('load',()=>fitRenderedSlide(container),{once:true});
     img.addEventListener('error',()=>fitRenderedSlide(container),{once:true});
   }
+  if(container===root&&motionActive())fitSlideAtRest(slideEl);
+  else fitSlideElement(slideEl);
+}
+/* Mid-animation transforms would read as overflow, so measure a resting clone instead. */
+function fitSlideAtRest(slideEl){
+  const probe=motionLayer(slideEl.closest(".deck")||deckEl,"motion-probe"),clone=slideEl.cloneNode(true);
+  probe.replaceChildren(clone);
+  fitSlideElement(clone);
+  probe.replaceChildren();
+  for(const cls of ["density-compact","density-tight"])slideEl.classList.toggle(cls,clone.classList.contains(cls));
+  if(clone.hasAttribute("data-overflow-fail"))slideEl.setAttribute("data-overflow-fail","true");
+  else slideEl.removeAttribute("data-overflow-fail");
+}
+function fitSlideElement(slideEl){
+  slideEl.classList.remove('density-compact','density-tight');
+  slideEl.removeAttribute('data-overflow-fail');
   const overflows=()=>slideEl.scrollHeight>slideEl.clientHeight+1||slideEl.scrollWidth>slideEl.clientWidth+1;
   if(!overflows())return;
   slideEl.classList.add('density-compact');
@@ -1138,19 +2014,27 @@ function fitRenderedSlide(container){
   /* density-tight still overflows — mark as failed for audit */
   slideEl.setAttribute('data-overflow-fail','true');
 }
-function render(){
-  if(!slides.length){root.innerHTML='<section class="slide stack"><div><h2 class="title" style="text-align:center;margin-top:200px;color:var(--muted)">No slides loaded</h2><p class="body-text" style="text-align:center">Inject slide data at the slide-data marker.</p></div></section>';return}
-  const s=slides[state.currentSlide];
-  state.currentBuild=clampBuild(s,state.currentBuild);
-  root.innerHTML=renderSlide(s);
-  applyBuildState(root,s,state.currentBuild);
+function updateDeckChrome(s){
   const buildCount=getRevealOrder(s).length;
   counter.textContent=`${state.currentSlide+1} / ${slides.length}${buildCount?` · ${state.currentBuild}/${buildCount}`:""}`;
   progressBar.style.width=`${((state.currentSlide+1)/slides.length)*100}%`;
+  syncDeckLocation();syncNotesDrawer();syncPresenter();
+}
+/* meta (optional): {from|ghostIndex, dir, entrance, force} plays a transition and/or entrance. */
+function render(meta){
+  finishMotion();
+  if(!slides.length){root.innerHTML='<section class="slide stack"><div><h2 class="title" style="text-align:center;margin-top:200px;color:var(--muted)">No slides loaded</h2><p class="body-text" style="text-align:center">Inject slide data at the slide-data marker.</p></div></section>';return}
+  const s=slides[state.currentSlide];
+  state.currentBuild=clampBuild(s,state.currentBuild);
+  const ghost=!meta?null:meta.ghostIndex!=null?motionGhostFor(meta.ghostIndex):meta.from!=null?root.querySelector(".slide"):null;
+  root.innerHTML=renderSlide(s);
+  applyBuildState(root,s,state.currentBuild);
+  updateDeckChrome(s);
   renderMath(root);
   fitRenderedSlide(root);
   renderCollaborativeNotes();
   redrawAnnotations();
+  if(meta)playSlideMotion(ghost,meta);
 }
 
 /* ── Fullscreen ── */
@@ -1177,7 +2061,7 @@ document.addEventListener("fullscreenchange",()=>{syncFSBody();scaleDeck();rende
 document.addEventListener("webkitfullscreenchange",()=>{syncFSBody();scaleDeck();render()});
 
 /* ── Init ── */
-applyTheme();render();
+applyStartLocation();applyTheme();render({entrance:true,force:true});
 
 /* ── Math readiness hook (KaTeX race condition fix) ── */
 (function waitForMath(){
@@ -1187,7 +2071,7 @@ applyTheme();render();
     attempts++;
     if(typeof renderMathInElement==='function'){
       clearInterval(poll);
-      render();// re-render with math
+      if(slideNeedsMath(slides[state.currentSlide]))render();// re-render with math; math-free slides keep their entrance
     }
     if(attempts>50)clearInterval(poll);// give up after ~5s
   },100);
@@ -1224,23 +2108,24 @@ document.addEventListener('mousemove',e=>{
 });
 
 window.addEventListener("keydown",e=>{
-  if(state.editMode||e.target.closest('[contenteditable]'))return;
+  if(state.editMode||e.target.closest('[contenteditable],input,select,textarea'))return;
+  if(galleryOverlay.classList.contains('show')&&galleryKey(e))return;
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
   const k=e.key.toLowerCase();
-  if(k==="arrowright"||k===" "){e.preventDefault();advance()}
-  if(k==="arrowleft")retreat();
-  if(k==="home")goTo(0);if(k==="end")goTo(slides.length-1);
-  if(k==="f")toggleFullscreen();
-  if(k==="l")toggleLaser();
-  if(k==="g")toggleGallery();
-  if(k==="r")toggleRemotePanel();
-  if(k==="p")togglePlayback();
-  if(k==="escape"){if(galleryOverlay.classList.contains('show')){galleryOverlay.classList.remove('show');e.preventDefault();return}if(state.playing){stopPlayback();e.preventDefault();return}if(state.laser){toggleLaser();e.preventDefault();return}if(isRealFullscreen()){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else if(isSimulatedFS()){wrapperEl.classList.remove('simulated-fs');document.body.style.overflow='';syncFSBody();scaleDeck();render()}}
-  if(/^[1-9]$/.test(k)){const idx=Number(k)-1;if(idx<slides.length)goTo(idx)}
+  const nav=k===" "?(e.shiftKey?-1:1):k==="arrowright"||k==="arrowdown"||k==="pagedown"?1:k==="arrowleft"||k==="arrowup"||k==="pageup"?-1:0;
+  if(nav){e.preventDefault();if(deckBlackout)setBlackout(null);if(nav>0)advance();else retreat();return}
+  if(k==="home"){goTo(0);return}
+  if(k==="end"){goTo(slides.length-1);return}
+  if(e.key==="?"){toggleHelp();return}
+  if(k==="escape"){if(closePresentLayer())e.preventDefault();else exitAnyFullscreen();return}
+  const action={f:toggleFullscreen,l:toggleLaser,g:toggleGallery,o:toggleGallery,r:toggleRemotePanel,a:togglePlayback,p:openPresenter,n:()=>toggleNotesDrawer(),b:()=>setBlackout("black"),".":()=>setBlackout("black"),w:()=>setBlackout("white"),m:()=>toggleMotionPanel(motionPanel)}[k];
+  if(action){e.preventDefault();action();return}
+  if(/^[0-9]$/.test(k))digitJump(Number(k));
 });
 
 /* ── Beat-aware wheel and touch navigation ── */
 let wheelAccum=0,wheelLastAt=0,wheelNavigatedAt=0,touchStart=null;
-function ignoresDeckGesture(target){return target instanceof Element&&Boolean(target.closest("button,input,textarea,select,[contenteditable],.remote-panel,.gallery-overlay,.help"))}
+function ignoresDeckGesture(target){return target instanceof Element&&Boolean(target.closest("button,input,textarea,select,[contenteditable],.remote-panel,.motion-panel,.gallery-overlay,.help,.notes-drawer"))}
 wrapperEl.addEventListener("wheel",e=>{
   if(state.editMode||e.ctrlKey||ignoresDeckGesture(e.target))return;
   const dy=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*675:e.deltaY;
@@ -1276,6 +2161,8 @@ function scaleDeck(){
   deckEl.style.height='675px';
   deckEl.style.transform=`scale(${s})`;
   deckEl.style.transformOrigin='center center';
+  /* Margins resize the layout box to the scaled stage, so windows narrower than 1248px center the deck instead of clipping its right edge. */
+  deckEl.style.margin=isFS?'':`${(675*s-675)/2}px ${(1200*s-1200)/2}px`;
 }
 scaleDeck();window.addEventListener('resize',scaleDeck);document.addEventListener('fullscreenchange',scaleDeck);document.addEventListener('webkitfullscreenchange',scaleDeck);
 
@@ -1404,7 +2291,7 @@ function handleRemoteKey(key){
   else if(key==="End")goTo(slides.length-1);
   else if(key==="Escape"){if(state.playing)stopPlayback();if(isAnyFullscreen())toggleFullscreen()}
   else if(key==="f"||key==="F")toggleFullscreen();
-  else if(key==="p"||key==="P")togglePlayback();
+  else if(/^[ap]$/i.test(key))togglePlayback();// P kept for older remotes; the presenter view needs a local click
   else if(key==="g"||key==="G")toggleGallery();
 }
 function handleRemoteData(data,conn){
@@ -1698,7 +2585,7 @@ let slideClipboard=null;
 let draggedSlideIndex=null;
 
 function captureEditorSnapshot(){
-  return JSON.stringify({slides,currentSlide:state.currentSlide,theme:getCurrentColors()});
+  return JSON.stringify({slides,currentSlide:state.currentSlide,theme:getCurrentColors(),motion:deckMotion,brief:deckBrief});
 }
 function restoreEditorSnapshot(serialized){
   const snapshot=JSON.parse(serialized);
@@ -1707,6 +2594,8 @@ function restoreEditorSnapshot(serialized){
   slides.length=0;slides.push(...nextSlides);
   state.currentSlide=Math.max(0,Math.min(Number(snapshot.currentSlide??state.currentSlide),slides.length-1));
   if(snapshot.theme)applyColors(snapshot.theme);
+  if(snapshot.motion)setDeckMotion(snapshot.motion);
+  if(snapshot.brief)deckBrief=sanitizeBrief(snapshot.brief);
 }
 function updateEditorControls(){
   if(undoButton)undoButton.disabled=undoStack.length===0;
@@ -1730,7 +2619,8 @@ function markDirty(){
   state.dirty=true;
   updateEditorStatus();
   clearTimeout(autosaveTimer);
-  autosaveTimer=setTimeout(()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify({slides,theme:getCurrentColors(),savedAt:new Date().toISOString()}));updateEditorStatus("Autosaved draft")}catch(_e){updateEditorStatus("Autosave unavailable · export HTML to keep changes")}},800);
+  autosaveTimer=setTimeout(()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify({slides,theme:getCurrentColors(),motion:deckMotion,brief:deckBrief,savedAt:new Date().toISOString()}));updateEditorStatus("Autosaved draft")}catch(_e){updateEditorStatus("Autosave unavailable · export HTML to keep changes")}},800);
+  scheduleGuideRefresh();
 }
 function pushUndo(){
   const snapshot=captureEditorSnapshot();
@@ -1760,6 +2650,7 @@ function closeEditorPopovers(except){
   if(except!==editorShortcuts)editorShortcuts.classList.remove('show');
   if(except!==editorContextMenu)editorContextMenu.classList.remove('show');
   if(except!==themePanel)themePanel.classList.remove('show');
+  if(except!==editorMotionPanel){editorMotionPanel.classList.remove('show');motionToolbarButton.setAttribute('aria-expanded','false');}
 }
 function syncEditorPanels(){
   document.body.classList.toggle('editor-sidebar-closed',!state.editorSidebarOpen);
@@ -1771,6 +2662,8 @@ function syncEditorPanels(){
 /* ── Mode toggle ── */
 function enterEditMode(){
   stopPlayback();
+  finishMotion();
+  toggleMotionPanel(motionPanel,false);
   state.currentBuild=getRevealOrder(slides[state.currentSlide]).length;
   if(!state.editorPanelsInitialized){
     state.editorSidebarOpen=window.innerWidth>=720;
@@ -1783,13 +2676,16 @@ function enterEditMode(){
   editorRender();
   scaleEditDeck();
   updateEditorStatus();
+  scheduleGuideRefresh(true);
 }
-function enterPresentMode(){
+function enterPresentMode(animate=true){
   closeEditorPopovers();
+  closeCommentComposer();
   document.body.classList.remove('edit-mode');
   state.editMode=false;
+  renderCommentPins();
   state.currentBuild=getRevealOrder(slides[state.currentSlide]).length;
-  render();
+  render(animate?{entrance:true,force:true}:null);
   scaleDeck();
 }
 
@@ -1821,8 +2717,10 @@ function refreshEditCanvas(updateThumbnails=true){
   renderMath(editRoot);
   fitRenderedSlide(editRoot);
   makeEditable();
+  bindSlotDrops();
   if(updateThumbnails)renderThumbnails();else scheduleThumbnailRender();
   scaleEditDeck();
+  renderCommentPins();
 }
 function editorRender(){
   refreshEditCanvas();
@@ -2139,6 +3037,24 @@ function inspectorSelect(path,label,value,options){
   const id=inspectorControlId(path);
   return`<div class="field"><label for="${id}">${esc(label)}</label><select id="${id}" data-field="${esc(path)}">${options.map(o=>`<option value="${esc(o)}"${o===value?" selected":""}>${esc(o)}</option>`).join("")}</select></div>`;
 }
+function inspectorChoice(path,label,value,choices){
+  const id=inspectorControlId(path);
+  return`<div class="field"><label for="${id}">${esc(label)}</label><select id="${id}" data-field="${esc(path)}">${choices.map(([v,text])=>`<option value="${esc(v)}"${v===value?" selected":""}>${esc(text)}</option>`).join("")}</select></div>`;
+}
+function renderMotionInspector(slide){
+  const index=state.currentSlide,bare={...slide};
+  delete bare.transition;
+  const fallback=resolveMotion(bare,index,true).transition,autoAccent=isAccentSlide({...slide,accent:undefined},index);
+  const own=typeof slide.motion==="string"?slide.motion:(slide.motion&&slide.motion.preset)||"";
+  return`
+    <div class="inspector-section">
+      <div class="inspector-section-title">Motion</div>
+      ${inspectorChoice("transition","Transition into this slide",slide.transition||"",[["",`Deck default · ${fallback}`],...MOTION_TRANSITIONS.map(v=>[v,v])])}
+      <div class="field-row">${inspectorChoice("motion","Text & media",own,[["",`Deck · ${MOTION_PRESETS[deckMotion.preset].name}`],...Object.entries(MOTION_PRESETS).map(([v,p])=>[v,p.name])])}${inspectorChoice("accent","Accent slide",slide.accent===true?"on":slide.accent===false?"off":"",[["",`Auto · ${autoAccent?"yes":"no"}`],["on","Yes"],["off","No"]])}</div>
+      <div class="mini-actions"><button class="mini-btn" data-action="preview-motion">Preview</button><button class="mini-btn" data-action="deck-motion">Deck motion…</button></div>
+      <div class="inline-hint">Accent slides use the deck's stronger transition. Motion always ends on this static layout; reduced-motion viewers get instant cuts.</div>
+    </div>`;
+}
 function renderClassicInspector(slide){
   const bullets=Array.isArray(slide.bullets)?slide.bullets.map(b=>typeof b==="string"?b:b.text||"").join("\n"):"";
   const metrics=Array.isArray(slide.metrics)?slide.metrics:[];
@@ -2153,7 +3069,7 @@ function renderClassicInspector(slide){
       <div class="inspector-section-title">Visual</div>
       ${inspectorField("visual.caption","Caption",slide.visual?.caption||"")}
       ${inspectorField("visual.alt","Alt text",slide.visual?.alt||"")}
-      <div class="mini-actions"><button class="mini-btn danger" data-action="remove-visual">Remove visual</button></div>
+      <div class="mini-actions"><button class="mini-btn" data-action="choose-visual">${slide.visual?.src?"Replace image…":"Choose image…"}</button><button class="mini-btn danger" data-action="remove-visual">Remove visual</button></div>
     </div>
     <div class="inspector-section">
       <div class="inspector-section-title">Metrics</div>
@@ -2174,7 +3090,8 @@ function blockContentEditor(block,i){
   if(block.type==="bullets"||block.type==="timeline")return`<div class="field"><label>Lines</label><textarea data-lines="${i}">${esc((block.content||[]).join("\n"))}</textarea></div>`;
   if(block.type==="equation")return`${inspectorTextarea(`${base}.content`,"Equation",block.content||"","json-area")}${inspectorTextarea(`${base}.explanation`,"Explanation",block.explanation||"")}`;
   if(block.type==="spacer")return inspectorField(`${base}.size`,"Flex size",block.size||1,"number",'min="0.25" step="0.25"');
-  return`<div class="field"><label>Content JSON</label><textarea class="json-area" data-block-json="${i}">${esc(JSON.stringify(block.content??{},null,2))}</textarea><div class="mini-actions"><button class="mini-btn" data-action="apply-block-json" data-index="${i}">Apply JSON</button></div></div>`;
+  const json=`<div class="field"><label>Content JSON</label><textarea class="json-area" data-block-json="${i}">${esc(JSON.stringify(block.content??{},null,2))}</textarea><div class="mini-actions"><button class="mini-btn" data-action="apply-block-json" data-index="${i}">Apply JSON</button></div></div>`;
+  return block.type==="figure"?`<div class="mini-actions"><button class="mini-btn" data-action="choose-block-image" data-index="${i}">${block.content?.src?"Replace image…":"Choose image…"}</button></div>${json}`:json;
 }
 function renderBlocksInspector(slide){
   const blocks=slide.contentBlocks||[];
@@ -2224,6 +3141,7 @@ function renderInspector(){
       <div class="inline-hint">Use bullets.N, metrics.N, visual, keyMessage, or contentBlocks.N. Direct jumps show the final state.</div>
       ${inspectorField("__playSeconds","Play seconds",state.playSeconds,"number",'min="2" step="1"')}
     </div>
+    ${renderMotionInspector(slide)}
     ${slide.contentBlocks?renderBlocksInspector(slide):renderClassicInspector(slide)}
     <div class="inspector-section">
       <div class="inspector-section-title">Raw slide JSON</div>
@@ -2248,7 +3166,12 @@ function bindInspectorEvents(){
         return;
       }
       const value=el.type==="checkbox"?el.checked:el.value;
-      if(path==="bullets")slide.bullets=String(value).split("\n").map(x=>x.trim()).filter(Boolean);
+      if(path==="transition"||path==="motion"){if(value)slide[path]=value;else delete slide[path];}
+      else if(path==="accent"){
+        if(value==="on")slide.accent=true;else if(value==="off")slide.accent=false;else delete slide.accent;
+        markDirty();refreshEditCanvas(false);renderInspector();return;
+      }
+      else if(path==="bullets")slide.bullets=String(value).split("\n").map(x=>x.trim()).filter(Boolean);
       else if(path==="revealOrder"){
         const targets=String(value).split("\n").map(x=>x.trim()).filter(Boolean);
         if(targets.length)slide.revealOrder=targets;else delete slide.revealOrder;
@@ -2293,6 +3216,14 @@ function bindInspectorEvents(){
         commitEdit();slide.metrics.splice(i,1);editorRender();
       }else if(action==="remove-visual"){
         commitEdit();delete slide.visual;editorRender();
+      }else if(action==="choose-visual"){
+        chooseSlotImage(state.currentSlide,"figureLabel");
+      }else if(action==="choose-block-image"){
+        chooseSlotImage(state.currentSlide,`contentBlocks.${i}.content.placeholder`);
+      }else if(action==="preview-motion"){
+        replayMotion();
+      }else if(action==="deck-motion"){
+        toggleMotionPanel(editorMotionPanel,true);
       }
     });
     if(el.dataset.action==="block-type"){
@@ -2311,7 +3242,17 @@ function addDefaultBlock(){
 
 /* ── Export ── */
 function exportHTML(){
-  const templateHTML=document.documentElement.outerHTML;
+  finishMotion();
+  const page=document.documentElement.cloneNode(true);
+  page.querySelectorAll('.motion-layer').forEach(el=>el.remove());
+  page.querySelectorAll('.motion-panel').forEach(el=>{el.classList.remove('show');el.replaceChildren()});
+  page.querySelectorAll('#command-menu,#print-root,#slide-snapshot-host,#print-page-style,#comment-composer,.slider-toast,.comment-pin').forEach(el=>el.remove());
+  page.querySelectorAll('#gallery-grid,#notes-drawer,#guide-panel').forEach(el=>el.replaceChildren());
+  page.querySelectorAll('.help,.notes-drawer,.gallery-overlay,.guide-panel,.remote-panel').forEach(el=>el.classList.remove('show'));
+  page.querySelector('#blackout')?.setAttribute('class','blackout');
+  page.querySelector('#editor-main')?.classList.remove('commenting');
+  page.querySelector('body')?.classList.remove('chrome-off','guide-open','fs-active');
+  const templateHTML=page.outerHTML;
   /* Encode slide data to UTF-8 base64 to ensure pristine transport of LaTeX equations without escape collisions */
   const slideJSON=JSON.stringify(slides);
   const b64Data=encodeB64Utf8(slideJSON);
@@ -2321,6 +3262,10 @@ function exportHTML(){
   const rawMarker='@'+'render-slide-data';
   html=html.replace(new RegExp('const SLIDE_DATA_B64\\s*=\\s*"[^"]*"\\s*;(?:\\s*//\\s*'+b64Marker+')?'),'const SLIDE_DATA_B64 = "'+b64Data+'";');
   html=html.replace(new RegExp('const SLIDE_DATA_RAW\\s*=\\s*String\\.raw`[\\s\\S]*?`\\s*;(?:\\s*//\\s*'+rawMarker+')?'),'const SLIDE_DATA_RAW = String.raw``;');
+  html=html.replace(/let deckMotion\s*=\s*\{[^\n]*?\};/,()=>`let deckMotion=${JSON.stringify(deckMotion)};`);
+  html=html.replace(/^let deckBrief\s*=\s*\{.*\};/m,()=>`let deckBrief=${JSON.stringify(sanitizeBrief(deckBrief)).replace(/</g,()=>String.fromCharCode(92)+"u003c")};`);
+  const palette=paletteOverrides();
+  html=html.replace(/const deckPalette\s*=\s*(?:null|\{[^\n]*?\});/,()=>`const deckPalette=${Object.keys(palette).length?JSON.stringify(palette):"null"};`);
   // Remove edit-mode class from body
   html=html.replace(/<body([^>]*)class="([^"]*)\bedit-mode\b([^"]*)"([^>]*)>/,'<body$1class="$2$3"$4>');
   const blob=new Blob([html],{type:'text/html'});
@@ -2338,7 +3283,7 @@ function downloadText(filename,text,type="application/json"){
   a.click();
   URL.revokeObjectURL(a.href);
 }
-function exportJSON(){downloadText('slide-data.json',JSON.stringify({slideData:slides},null,2))}
+function exportJSON(){downloadText('slide-data.json',JSON.stringify({meta:{motion:deckMotion,brief:deckBrief},slideData:slides},null,2))}
 function replaceSlideDeck(nextSlides){
   slides.length=0;slides.push(...nextSlides);
   state.currentSlide=0;
@@ -2350,12 +3295,14 @@ function importJSONText(text){
   const next=Array.isArray(parsed)?parsed:parsed.slideData;
   if(!Array.isArray(next))throw new Error('JSON must be an array or an object with slideData');
   commitEdit();
+  if(parsed&&parsed.meta&&parsed.meta.motion)setDeckMotion(parsed.meta.motion);
+  if(parsed&&parsed.meta&&parsed.meta.brief)deckBrief=sanitizeBrief(parsed.meta.brief);
   replaceSlideDeck(next);
 }
 function saveDraft(){
   clearTimeout(autosaveTimer);autosaveTimer=null;
   try{
-    localStorage.setItem(STORAGE_KEY,JSON.stringify({slides,theme:getCurrentColors(),savedAt:new Date().toISOString()}));
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({slides,theme:getCurrentColors(),motion:deckMotion,brief:deckBrief,savedAt:new Date().toISOString()}));
     state.dirty=false;
     updateEditorStatus('Saved draft');
   }catch(_e){
@@ -2368,6 +3315,8 @@ function loadDraft(){
   const draft=JSON.parse(raw);
   if(!Array.isArray(draft.slides))throw new Error('Saved draft is invalid');
   commitEdit();
+  if(draft.motion)setDeckMotion(draft.motion);
+  if(draft.brief)deckBrief=sanitizeBrief(draft.brief);
   replaceSlideDeck(draft.slides);
   if(draft.theme)applyColors(draft.theme);
   state.dirty=false;
@@ -2375,7 +3324,7 @@ function loadDraft(){
 }
 
 /* ── Wire up toolbar buttons ── */
-document.getElementById('tb-present').addEventListener('click',enterPresentMode);
+document.getElementById('tb-present').addEventListener('click',()=>enterPresentMode());
 document.getElementById('tb-export').addEventListener('click',exportHTML);
 document.getElementById('tb-undo').addEventListener('click',popUndo);
 document.getElementById('tb-redo').addEventListener('click',popRedo);
@@ -2420,36 +3369,54 @@ const galleryOverlay=document.getElementById('gallery-overlay');
 const galleryGrid=document.getElementById('gallery-grid');
 const galleryBtn=document.getElementById('gallery-btn');
 
-function toggleGallery(){
-  if(galleryOverlay.classList.contains('show')){
-    galleryOverlay.classList.remove('show');
-    return;
-  }
-  galleryGrid.innerHTML='';
-  slides.forEach((s,i)=>{
-    const card=document.createElement('div');
-    card.className='gallery-card'+(i===state.currentSlide?' current':'');
-    const title=s.title||'Untitled';
-    const layout=s.contentBlocks?'blocks':(s.layout||'default');
-    card.innerHTML=`
-      <div class="gallery-card-inner">
-        <span class="gallery-card-idx">${i+1}</span>
-        <div class="gallery-card-layout">${esc(layout)}</div>
-        <div class="gallery-card-title">${esc(title)}</div>
-      </div>
-    `;
-    card.addEventListener('click',()=>{
-      goTo(i);
-      galleryOverlay.classList.remove('show');
-    });
-    galleryGrid.appendChild(card);
-  });
-  galleryOverlay.classList.add('show');
+function toggleGallery(){if(galleryOverlay.classList.contains('show'))closeGallery();else openGallery()}
+function closeGallery(){
+  galleryOverlay.classList.remove('show');
+  if(galleryOverlay.contains(document.activeElement))galleryBtn.focus();
+  galleryGrid.replaceChildren();
 }
+function openGallery(){
+  galleryGrid.innerHTML=slides.map((s,i)=>{
+    const builds=getRevealOrder(s).length,transition=s.transition&&s.transition!=="auto"?s.transition:"",current=i===state.currentSlide,title=s.title||'Untitled';
+    return`<button type="button" class="gallery-card${current?' current':''}" data-index="${i}" aria-label="Slide ${i+1}: ${esc(title)}"${current?' aria-current="true"':''}><div class="thumb-canvas" aria-hidden="true"><div class="thumb-stage"><div class="body-shell"><div class="main-shell"><main>${renderSlide(s)}</main></div></div></div></div><span class="gallery-card-idx">${i+1}</span><span class="gallery-card-meta"><span class="gallery-card-title">${esc(title)}</span>${builds?`<span class="gallery-badge" title="${builds} build step${builds===1?'':'s'}">▸ ${builds}</span>`:''}${transition?`<span class="gallery-badge" title="Transition">${esc(transition)}</span>`:''}${s.speakerNote?'<span class="gallery-badge" title="Has speaker notes">notes</span>':''}</span></button>`;
+  }).join('');
+  galleryOverlay.classList.add('show');
+  galleryGrid.querySelectorAll('.gallery-card').forEach(card=>{
+    const i=Number(card.dataset.index),stage=card.querySelector('.thumb-stage');
+    applyBuildState(stage,slides[i],getRevealOrder(slides[i]).length);
+    card.addEventListener('click',()=>{closeGallery();goTo(i)});
+  });
+  renderMath(galleryGrid);
+  layoutGalleryStages();
+  galleryGrid.querySelectorAll('.thumb-stage .slide').forEach(fitSlideElement);
+  const current=galleryGrid.querySelector('.gallery-card.current');
+  current?.focus({preventScroll:true});current?.scrollIntoView({block:'center'});
+}
+function layoutGalleryStages(){
+  galleryGrid.querySelectorAll('.thumb-canvas').forEach(canvas=>{
+    const stage=canvas.querySelector('.thumb-stage');
+    if(stage&&canvas.clientWidth)stage.style.transform=`scale(${canvas.clientWidth/1200})`;
+  });
+}
+/* Arrow keys move across the grid; Enter/Space use the focused card's own click. */
+function galleryKey(e){
+  const cards=[...galleryGrid.querySelectorAll('.gallery-card')];
+  if(!cards.length)return false;
+  if(e.key==='Escape'||/^[go]$/i.test(e.key)){e.preventDefault();closeGallery();return true}
+  const at=cards.indexOf(document.activeElement);
+  if((e.key==='Enter'||e.key===' ')&&at>=0)return true;
+  const cols=cards.filter(card=>card.offsetTop===cards[0].offsetTop).length||1;
+  const step={ArrowRight:1,ArrowLeft:-1,ArrowDown:cols,ArrowUp:-cols,Home:-cards.length,End:cards.length,PageDown:cols*2,PageUp:-cols*2}[e.key];
+  if(step==null)return false;
+  e.preventDefault();
+  cards[Math.max(0,Math.min(cards.length-1,(at<0?state.currentSlide:at)+step))].focus();
+  return true;
+}
+window.addEventListener('resize',()=>{if(galleryOverlay.classList.contains('show'))layoutGalleryStages()});
 
 galleryBtn.addEventListener('click',toggleGallery);
-document.getElementById('gallery-close').addEventListener('click',()=>galleryOverlay.classList.remove('show'));
-galleryOverlay.addEventListener('click',e=>{if(e.target===galleryOverlay)galleryOverlay.classList.remove('show')});
+document.getElementById('gallery-close').addEventListener('click',closeGallery);
+galleryOverlay.addEventListener('click',e=>{if(e.target===galleryOverlay)closeGallery()});
 
 /* ── Insert image ── */
 const imgFileInput=document.getElementById('img-file-input');
@@ -2609,6 +3576,934 @@ document.addEventListener('click',e=>{
   }
 });
 
+/* ── Motion panel: deck-level presets (present mode: M / ✦; editor: Motion) ── */
+const motionPanel=document.getElementById("motion-panel");
+const editorMotionPanel=document.getElementById("editor-motion-panel");
+const motionButton=document.getElementById("motion-btn");
+const motionToolbarButton=document.getElementById("tb-motion");
+const MOTION_FIELD_LABELS={transition:"Transition",accent:"Accent slides",title:"Titles",hero:"Hero titles",text:"Body text",media:"Figures",data:"Numbers",group:"Cards & rows",kicker:"Labels",emphasis:"Callouts"};
+function motionOptions(key){return key==="transition"||key==="accent"?MOTION_TRANSITIONS:MOTION_CHANNELS[key]}
+function renderMotionPanel(panel){
+  const editor=panel===editorMotionPanel,prefix=editor?"emo":"pmo",preset=MOTION_PRESETS[deckMotion.preset]||MOTION_PRESETS.editorial,speed=deckMotion.speed||1;
+  const active=panel.contains(document.activeElement)?document.activeElement:null;
+  const refocus=active?.dataset.motionPreset?`[data-motion-preset="${active.dataset.motionPreset}"]`:active?.id?`#${active.id}`:null;
+  panel.innerHTML=`<div class="motion-head"><h3>Motion graphics</h3><button type="button" class="motion-close" data-motion-close aria-label="Close motion panel">×</button></div>
+    ${prefersReducedMotion()?'<p class="motion-note">This system asks for reduced motion, so slides change instantly in this browser.</p>':""}
+    <div class="motion-presets" role="group" aria-label="Motion preset">${Object.entries(MOTION_PRESETS).map(([id,p])=>`<button type="button" class="motion-chip" data-motion-preset="${id}" aria-pressed="${deckMotion.preset===id}">${esc(p.name)}<small>${esc(p.note)}</small></button>`).join("")}</div>
+    <div class="motion-fields">${Object.keys(MOTION_FIELD_LABELS).map(key=>`<div class="motion-field"><label for="${prefix}-${key}">${MOTION_FIELD_LABELS[key]}</label><select id="${prefix}-${key}" data-motion-key="${key}"><option value="">Preset · ${esc(preset[key])}</option>${motionOptions(key).map(v=>`<option value="${v}"${deckMotion[key]===v?" selected":""}>${v}</option>`).join("")}</select></div>`).join("")}</div>
+    <div class="motion-speed"><label for="${prefix}-speed">Speed</label><input id="${prefix}-speed" type="range" min="0.5" max="2" step="0.1" value="${speed}" data-motion-speed><output for="${prefix}-speed">${speed.toFixed(1)}×</output></div>
+    <div class="motion-actions"><button type="button" class="mini-btn" data-motion-replay>${editor?"Preview in present mode":"Replay this slide"}</button><button type="button" class="mini-btn" data-motion-reset>Reset</button></div>
+    <p class="motion-note">Accent transitions mark the opener, main result, limitations, and takeaway. Per-slide choices live in the editor inspector.</p>`;
+  panel.querySelector("[data-motion-close]").addEventListener("click",()=>toggleMotionPanel(panel,false));
+  panel.querySelectorAll("[data-motion-preset]").forEach(btn=>btn.addEventListener("click",()=>updateDeckMotion({preset:btn.dataset.motionPreset,speed:deckMotion.speed},panel)));
+  panel.querySelectorAll("[data-motion-key]").forEach(select=>select.addEventListener("change",()=>{
+    const next={...deckMotion};
+    if(select.value)next[select.dataset.motionKey]=select.value;else delete next[select.dataset.motionKey];
+    updateDeckMotion(next,panel);
+  }));
+  const range=panel.querySelector("[data-motion-speed]"),output=panel.querySelector(".motion-speed output");
+  range.addEventListener("input",()=>{output.textContent=`${Number(range.value).toFixed(1)}×`});
+  range.addEventListener("change",()=>updateDeckMotion({...deckMotion,speed:Number(range.value)},panel));
+  panel.querySelector("[data-motion-replay]").addEventListener("click",replayMotion);
+  panel.querySelector("[data-motion-reset]").addEventListener("click",()=>updateDeckMotion(JSON.parse(INITIAL_DECK_MOTION),panel));
+  if(refocus)panel.querySelector(refocus)?.focus();
+}
+function updateDeckMotion(next,panel){
+  commitEdit();
+  setDeckMotion(next);
+  renderMotionPanel(panel);
+  if(state.editMode)renderInspector();else replayMotion();
+}
+function toggleMotionPanel(panel,force){
+  const open=force??!panel.classList.contains("show");
+  if(open){if(panel===editorMotionPanel)closeEditorPopovers(editorMotionPanel);renderMotionPanel(panel)}
+  panel.classList.toggle("show",open);
+  if(panel===editorMotionPanel){motionToolbarButton.setAttribute("aria-expanded",String(open));if(open)panel.querySelector('[aria-pressed="true"]')?.focus()}
+  else{motionButton.classList.toggle("active",open);if(!open&&panel.contains(document.activeElement))motionButton.focus()}
+}
+/* Replays the current slide's incoming transition (from the previous slide) and entrance. */
+function replayMotion(){
+  if(state.editMode)enterPresentMode(false);
+  const index=state.currentSlide;
+  render({ghostIndex:index>0?index-1:null,dir:1,entrance:true,force:true});
+}
+[motionPanel,editorMotionPanel].forEach(panel=>panel.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){toggleMotionPanel(panel,false);e.preventDefault()}
+  e.stopPropagation();
+}));
+motionButton.addEventListener("click",()=>toggleMotionPanel(motionPanel));
+motionToolbarButton.addEventListener("click",()=>toggleMotionPanel(editorMotionPanel));
+document.addEventListener("click",e=>{
+  if(!editorMotionPanel.classList.contains("show"))return;
+  const path=e.composedPath();
+  if(!path.includes(editorMotionPanel)&&!path.includes(motionToolbarButton)&&!e.target.closest?.('[data-action="deck-motion"]'))toggleMotionPanel(editorMotionPanel,false);
+});
+
+/* ── Presenting tools: deep links, notes, blackout, help, presenter view, print, command menu ──
+   updateDeckChrome() calls the sync hooks during init, before this section runs, so their state uses var. */
+var presenterWin=null,presenterTimer=null,notesDrawerOpen=false,deckBlackout=null,printMode="slides",digitBuffer={value:0,at:0};
+var talkClock={elapsed:0,running:false,since:0,armed:false};
+const IS_MAC=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent||"");
+function toast(message){
+  const el=document.createElement("div");
+  el.className="slider-toast";el.setAttribute("role","status");el.textContent=message;
+  (isRealFullscreen()?wrapperEl:document.body).appendChild(el);
+  setTimeout(()=>el.remove(),2600);
+}
+function copyText(text,done){
+  const fallback=()=>window.prompt("Copy this text",text);
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(text).then(done,fallback);else fallback();
+}
+
+/* #/N opens slide N fully built and #/N/B at build step B (?slide=N works too); ?chrome=0 hides the deck controls. */
+function readDeckLocation(){
+  const hash=/^#\/?(\d+)(?:\/(\d+))?$/.exec(location.hash||""),query=new URLSearchParams(location.search).get("slide")||"";
+  const number=hash?Number(hash[1]):/^\d+$/.test(query)?Number(query):0;
+  return number?{index:number-1,build:hash&&hash[2]!=null?Number(hash[2]):null}:null;
+}
+function applyStartLocation(){
+  if(new URLSearchParams(location.search).get("chrome")==="0")document.body.classList.add("chrome-off");
+  const start=readDeckLocation();
+  if(!start||!slides.length||getTokenFromUrl())return;
+  state.currentSlide=Math.max(0,Math.min(start.index,slides.length-1));
+  state.currentBuild=start.build??getRevealOrder(slides[state.currentSlide]).length;
+}
+function deckLocationHash(withBuild){
+  const count=getRevealOrder(slides[state.currentSlide]).length;
+  return`#/${state.currentSlide+1}${withBuild&&state.currentBuild<count?`/${state.currentBuild}`:""}`;
+}
+function syncDeckLocation(){
+  if(state.editMode||!slides.length||getTokenFromUrl()||(!location.hash&&state.currentSlide===0&&state.currentBuild===0))return;
+  const hash=deckLocationHash(true);
+  if(location.hash!==hash)try{history.replaceState(history.state,"",hash)}catch(_e){}
+}
+window.addEventListener("hashchange",()=>{
+  const at=readDeckLocation();
+  if(at&&!state.editMode&&!getTokenFromUrl()&&location.hash!==deckLocationHash(true))goTo(at.index,"jump",at.build);
+});
+function copySlideLink(){copyText(location.href.split("#")[0]+deckLocationHash(false),()=>toast(`Link to slide ${state.currentSlide+1} copied`))}
+
+/* Speaker notes take light Markdown: blank-line paragraphs, "-" or "1." lists, **bold**, *italic*, `code`. */
+function notesHTML(text){
+  const source=String(text||"").trim();
+  if(!source)return'<p class="notes-empty">No speaker notes for this slide.</p>';
+  const inline=t=>esc(t).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g,"$1<em>$2</em>");
+  const bullet=/^\s*[-*•]\s+/,numbered=/^\s*\d+[.)]\s+/;
+  return source.split(/\n\s*\n/).map(block=>{
+    const lines=block.split("\n").filter(line=>line.trim());
+    if(lines.every(line=>bullet.test(line)))return`<ul>${lines.map(line=>`<li>${inline(line.replace(bullet,""))}</li>`).join("")}</ul>`;
+    if(lines.every(line=>numbered.test(line)))return`<ol>${lines.map(line=>`<li>${inline(line.replace(numbered,""))}</li>`).join("")}</ol>`;
+    return`<p>${lines.map(inline).join("<br>")}</p>`;
+  }).join("");
+}
+function toggleNotesDrawer(force){notesDrawerOpen=force??!notesDrawerOpen;syncNotesDrawer()}
+function syncNotesDrawer(){
+  const drawer=document.getElementById("notes-drawer"),open=Boolean(notesDrawerOpen)&&!state.editMode&&slides.length>0;
+  if(!drawer)return;
+  drawer.classList.toggle("show",open);
+  if(open)drawer.innerHTML=`<div class="notes-head">Speaker notes · slide ${state.currentSlide+1} · shown on this screen · N hides</div><div class="notes-md">${notesHTML(slides[state.currentSlide].speakerNote)}</div>`;
+}
+function setBlackout(mode){
+  deckBlackout=mode&&deckBlackout!==mode?mode:null;
+  document.getElementById("blackout").className=`blackout${deckBlackout?` ${deckBlackout}`:""}`;
+  tickPresenter();
+}
+function toggleHelp(force){const open=force??!helpPanel.classList.contains("show");helpPanel.classList.toggle("show",open);state.showHelp=open}
+function exitAnyFullscreen(){
+  if(isRealFullscreen())(document.exitFullscreen||document.webkitExitFullscreen).call(document);
+  else if(isSimulatedFS()){wrapperEl.classList.remove("simulated-fs");document.body.style.overflow="";syncFSBody();scaleDeck();render()}
+}
+/* Escape closes the topmost presenting layer; fullscreen exits only when nothing else is open. */
+function closePresentLayer(){
+  if(helpPanel.classList.contains("show"))toggleHelp(false);
+  else if(motionPanel.classList.contains("show"))toggleMotionPanel(motionPanel,false);
+  else if(galleryOverlay.classList.contains("show"))closeGallery();
+  else if(remotePanel.classList.contains("show"))remotePanel.classList.remove("show");
+  else if(deckBlackout)setBlackout(null);
+  else if(notesDrawerOpen)toggleNotesDrawer(false);
+  else if(state.playing)stopPlayback();
+  else if(state.laser)toggleLaser();
+  else return false;
+  return true;
+}
+/* Digits typed within 0.9 s join up, so 1 then 2 lands on slide 12. */
+function digitJump(digit){
+  const now=Date.now(),joined=digitBuffer.value*10+digit;
+  digitBuffer=now-digitBuffer.at<900&&digitBuffer.value&&joined<=slides.length?{value:joined,at:now}:{value:digit,at:now};
+  if(digitBuffer.value>=1&&digitBuffer.value<=slides.length)goTo(digitBuffer.value-1);
+}
+
+/* Offscreen renders with math, build state, and density fitting (presenter previews and Guide probes). */
+function snapshotHost(){
+  let host=document.getElementById("slide-snapshot-host");
+  if(!host){
+    host=document.createElement("div");host.id="slide-snapshot-host";host.setAttribute("aria-hidden","true");
+    host.innerHTML='<div class="print-page"><div class="body-shell"><div class="main-shell"><main></main></div></div></div>';
+    document.body.appendChild(host);
+  }
+  return host.querySelector("main");
+}
+function renderSnapshot(index,build,read){
+  const slide=slides[index],host=snapshotHost();
+  host.innerHTML=renderSlide(slide);
+  applyBuildState(host,slide,build??getRevealOrder(slide).length);
+  if(slideNeedsMath(slide))renderMath(host);
+  const el=host.querySelector(".slide");
+  if(el)fitSlideElement(el);
+  const result=read?read(host,el):host.innerHTML;
+  host.replaceChildren();
+  return result;
+}
+
+/* ── Presenter view (P): a second window with the current beat, the next beat, notes, and a talk timer.
+   Beats render here and are copied over as HTML, so the popup runs no deck code. ── */
+const PRESENTER_CSS=`body.presenter-window{display:block;min-height:0;height:100vh;padding:0;overflow:hidden;background:#0b1020}
+.pv{color:#e2e8f0;font:14px/1.45 system-ui,-apple-system,sans-serif;display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:14px;height:100vh;padding:14px 16px}
+.pv-top,.pv-bar{grid-column:1/3;display:flex;align-items:center;gap:12px;min-width:0}
+.pv-pos{font-weight:800;font-size:15px}
+.pv-flag{padding:2px 8px;border-radius:999px;background:#f8fafc;color:#0b1020;font-weight:800;font-size:12px}.pv-flag:empty{display:none}
+.pv-target{margin-left:auto;color:#94a3b8;font-size:13px}
+.pv-clock{font:700 30px/1 ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+.pv-clock[data-pace="late"]{color:#fbbf24}.pv-clock[data-pace="over"]{color:#f87171}
+.pv-wall{color:#94a3b8;font:600 14px ui-monospace,monospace}
+.pv-now,.pv-side{display:flex;flex-direction:column;gap:8px;min-height:0}
+.pv-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8}
+.pv .thumb-canvas{flex:0 0 auto;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.pv-now .thumb-canvas{max-width:calc((100vh - 150px)*16/9)}
+.pv-end{display:grid;place-items:center;aspect-ratio:16/9;border:1px dashed #334155;border-radius:8px;color:#64748b;font-weight:700}
+.pv-notes{flex:1;min-height:0;overflow:auto;padding:12px 14px;border-radius:8px;background:#111a33;font-size:var(--pv-notes-size,20px);line-height:1.5}
+.pv-notes .notes-empty{color:#64748b}
+.pv-font{margin-left:auto;display:flex;gap:4px}
+.pv button{border:1px solid #334155;background:#1e293b;color:#e2e8f0;border-radius:8px;padding:7px 12px;font:600 13px system-ui,sans-serif;cursor:pointer}
+.pv button:hover{background:#334155}.pv button:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+.pv-font button{padding:2px 8px;font-size:12px}
+.pv-progress{flex:1;height:6px;border-radius:999px;background:#1e293b;overflow:hidden}.pv-progress i{display:block;height:100%;background:#60a5fa}
+.pv-keys{color:#64748b;font-size:12px}`;
+/* The popup document is built with DOM calls; literal document tags in this script would confuse
+   tools that splice HTML into the page (the browser audit injects its probe before the first body end tag). */
+function writePresenterDocument(doc){
+  doc.open();doc.write("<!doctype html>");doc.close();
+  doc.documentElement.lang=document.documentElement.lang||"en";
+  doc.title=`Presenter · ${document.title}`;
+  const styles=[...document.querySelectorAll('link[rel="stylesheet"],style')].filter(node=>node.id!=="print-page-style").map(node=>node.outerHTML).join("\n");
+  const slideText=`.pv .thumb-stage{color:var(--text);font-size:16px;line-height:normal;font-family:${getComputedStyle(document.body).fontFamily}}`;
+  doc.head.innerHTML=`${styles}<style>${PRESENTER_CSS}\n${slideText}</style>`;
+  doc.body.className="presenter-window";
+  doc.body.innerHTML=`<div class="pv">
+<header class="pv-top"><span class="pv-pos" id="pv-pos"></span><span class="pv-flag" id="pv-flag"></span><span class="pv-target" id="pv-target"></span><span class="pv-clock" id="pv-clock">00:00</span><span class="pv-wall" id="pv-wall"></span></header>
+<section class="pv-now" aria-label="Current slide"><div class="pv-label">Now</div><div id="pv-now"></div></section>
+<aside class="pv-side"><div class="pv-label" id="pv-next-label">Next</div><div id="pv-next"></div><div class="pv-label">Notes<span class="pv-font"><button type="button" data-pv="font-down" aria-label="Smaller notes">A−</button><button type="button" data-pv="font-up" aria-label="Larger notes">A+</button></span></div><div class="pv-notes notes-md" id="pv-notes" aria-live="polite"></div></aside>
+<footer class="pv-bar"><button type="button" data-pv="prev">← Prev</button><button type="button" data-pv="next">Next →</button><div class="pv-progress" aria-hidden="true"><i id="pv-progress"></i></div><span class="pv-keys">Space / arrows · B black · T timer</span><button type="button" data-pv="clock" id="pv-clock-btn">Start timer</button><button type="button" data-pv="reset">Reset</button><button type="button" data-pv="black">Black screen</button></footer>
+</div>`;
+}
+function openPresenter(){
+  if(presenterWin&&!presenterWin.closed){presenterWin.focus();return}
+  let win=null,doc=null;
+  try{win=window.open("","slider-presenter","popup,width=1180,height=760");doc=win&&win.document}catch(_e){doc=null}
+  if(!doc){try{win&&win.close()}catch(_e){}toast("Pop-ups are blocked here, so the notes open under the slide instead (N).");toggleNotesDrawer(true);return}
+  attachPresenter(win);
+  win.focus();
+}
+function attachPresenter(win){
+  const doc=win.document;
+  writePresenterDocument(doc);
+  presenterWin=win;
+  presenterFontSize(0);
+  doc.addEventListener("click",e=>{
+    const button=e.target.closest?.("[data-pv]");
+    if(!button)return;
+    const action=button.dataset.pv;
+    if(action==="prev")retreat();else if(action==="next")advance();
+    else if(action==="clock")toggleClock();else if(action==="reset")resetClock();
+    else if(action==="black")setBlackout("black");
+    else presenterFontSize(action==="font-up"?2:-2);
+    button.blur();tickPresenter();
+  });
+  doc.addEventListener("keydown",e=>{
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    const k=e.key.toLowerCase();
+    const nav=k===" "?(e.shiftKey?-1:1):k==="arrowright"||k==="arrowdown"||k==="pagedown"?1:k==="arrowleft"||k==="arrowup"||k==="pageup"?-1:0;
+    if(nav){e.preventDefault();if(deckBlackout)setBlackout(null);if(nav>0)advance();else retreat()}
+    else if(k==="home")goTo(0);
+    else if(k==="end")goTo(slides.length-1);
+    else if(k==="b"||k===".")setBlackout("black");
+    else if(k==="w")setBlackout("white");
+    else if(k==="escape"&&deckBlackout)setBlackout(null);
+    else if(k==="t")toggleClock();
+    else if(/^[0-9]$/.test(k))digitJump(Number(k));
+    tickPresenter();
+  });
+  win.addEventListener("resize",layoutPresenter);
+  document.getElementById("presenter-btn").classList.add("active");
+  clearInterval(presenterTimer);presenterTimer=setInterval(tickPresenter,500);
+  syncPresenter();
+  talkClock.armed=!talkClock.running&&!talkClock.elapsed;// the timer starts with the first slide change
+}
+function presenterFontSize(delta){
+  let size=20;
+  try{size=Number(localStorage.getItem("slider-presenter-notes"))||20}catch(_e){}
+  size=Math.max(12,Math.min(44,size+delta));
+  if(delta)try{localStorage.setItem("slider-presenter-notes",String(size))}catch(_e){}
+  presenterDoc()?.getElementById("pv-notes").style.setProperty("--pv-notes-size",`${size}px`);
+}
+function presenterDoc(){
+  if(!presenterWin)return null;
+  if(presenterWin.closed){closePresenterState();return null}
+  try{return presenterWin.document.getElementById("pv-now")?presenterWin.document:null}catch(_e){closePresenterState();return null}
+}
+function closePresenterState(){
+  clearInterval(presenterTimer);presenterTimer=null;presenterWin=null;
+  document.getElementById("presenter-btn")?.classList.remove("active");
+}
+function nextBeat(){
+  const count=getRevealOrder(slides[state.currentSlide]).length;
+  if(state.currentBuild<count)return{index:state.currentSlide,build:state.currentBuild+1,label:`Next · build ${state.currentBuild+1} of ${count}`};
+  if(state.currentSlide<slides.length-1)return{index:state.currentSlide+1,build:0,label:`Next · slide ${state.currentSlide+2}`};
+  return null;
+}
+function presenterStageHTML(index,build){return`<div class="thumb-canvas"><div class="thumb-stage"><div class="body-shell"><div class="main-shell"><main>${renderSnapshot(index,build)}</main></div></div></div></div>`}
+function syncPresenter(){
+  const doc=presenterDoc();
+  if(!doc||!slides.length)return;
+  if(talkClock.armed){talkClock.armed=false;toggleClock(true)}
+  const slide=slides[state.currentSlide],count=getRevealOrder(slide).length,next=nextBeat();
+  doc.documentElement.setAttribute("style",document.documentElement.getAttribute("style")||"");
+  doc.getElementById("pv-pos").textContent=`Slide ${state.currentSlide+1} / ${slides.length}${count?` · build ${state.currentBuild}/${count}`:""}`;
+  doc.getElementById("pv-now").innerHTML=presenterStageHTML(state.currentSlide,state.currentBuild);
+  doc.getElementById("pv-next-label").textContent=next?next.label:"Next";
+  doc.getElementById("pv-next").innerHTML=next?presenterStageHTML(next.index,next.build):'<div class="pv-end">End of deck</div>';
+  doc.getElementById("pv-notes").innerHTML=notesHTML(slide.speakerNote);
+  doc.getElementById("pv-progress").style.width=`${((state.currentSlide+1)/slides.length)*100}%`;
+  layoutPresenter();tickPresenter();
+}
+function layoutPresenter(){
+  presenterDoc()?.querySelectorAll(".thumb-canvas").forEach(canvas=>{
+    const stage=canvas.querySelector(".thumb-stage");
+    if(stage&&canvas.clientWidth)stage.style.transform=`scale(${canvas.clientWidth/1200})`;
+  });
+}
+function clockElapsed(){return talkClock.elapsed+(talkClock.running?Date.now()-talkClock.since:0)}
+function toggleClock(force){
+  const run=force??!talkClock.running;
+  if(run===talkClock.running)return;
+  if(run)talkClock.since=Date.now();else talkClock.elapsed=clockElapsed();
+  talkClock.running=run;
+}
+function resetClock(){talkClock.elapsed=0;talkClock.since=Date.now();talkClock.armed=false}
+function briefMinutes(){const minutes=Number(deckBrief&&deckBrief.minutes);return minutes>0?minutes:0}
+function tickPresenter(){
+  const doc=presenterDoc();
+  if(!doc)return;
+  const ms=clockElapsed(),minutes=briefMinutes(),target=minutes*60000;
+  const progress=slides.length>1?state.currentSlide/(slides.length-1):1;
+  const pace=!target?"":ms>target?"over":ms/target-progress>.12?"late":"ok";
+  const clock=doc.getElementById("pv-clock");
+  clock.textContent=formatElapsed(ms/1000);clock.dataset.pace=pace;
+  doc.getElementById("pv-target").textContent=!target?"Set the talk length in the editor's Guide":pace==="over"?`${formatElapsed((ms-target)/1000)} over ${minutes} min`:`${formatElapsed((target-ms)/1000)} left of ${minutes} min${pace==="late"?" · behind pace":""}`;
+  doc.getElementById("pv-wall").textContent=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  doc.getElementById("pv-clock-btn").textContent=talkClock.running?"Pause timer":ms?"Resume timer":"Start timer";
+  doc.getElementById("pv-flag").textContent=deckBlackout?`Screen ${deckBlackout}`:"";
+}
+window.addEventListener("pagehide",()=>{try{if(presenterWin&&!presenterWin.closed)presenterWin.close()}catch(_e){}});
+document.getElementById("presenter-btn").addEventListener("click",openPresenter);
+
+/* ── Print / PDF: the browser's print (Ctrl/⌘ P) or File › Print renders every slide at its final build,
+   one 1200×675 page each; the handout variant puts the notes under each slide on A4. ── */
+function buildPrintRoot(){
+  finishMotion();
+  document.getElementById("print-root")?.remove();
+  const withNotes=printMode==="notes",host=document.createElement("div");
+  host.id="print-root";
+  host.innerHTML=slides.map((slide,i)=>{
+    const page=`<section class="print-page"><div class="body-shell"><div class="main-shell"><main>${renderSlide(slide)}</main></div></div></section>`;
+    return withNotes?`<div class="print-sheet"><div class="print-thumb">${page}</div><div class="print-notes"><div class="print-notes-head">${i+1}. ${esc(slide.title||"Untitled")}</div><div class="notes-md">${notesHTML(slide.speakerNote)}</div></div></div>`:page;
+  }).join("");
+  document.body.appendChild(host);
+  host.querySelectorAll(".print-page").forEach((page,i)=>applyBuildState(page,slides[i],getRevealOrder(slides[i]).length));
+  renderMath(host);
+  host.querySelectorAll(".print-page .slide").forEach(fitSlideElement);
+  let pageStyle=document.getElementById("print-page-style");
+  if(!pageStyle){pageStyle=document.createElement("style");pageStyle.id="print-page-style";document.head.appendChild(pageStyle)}
+  pageStyle.textContent=withNotes?"@page{size:A4 portrait;margin:12mm}":"@page{size:1200px 675px;margin:0}";
+}
+function printDeck(withNotes){
+  printMode=withNotes?"notes":"slides";
+  if(state.editMode)closeEditorPopovers();
+  window.print();
+}
+window.addEventListener("beforeprint",buildPrintRoot);
+window.addEventListener("afterprint",()=>{document.getElementById("print-root")?.remove();printMode="slides"});
+
+/* ── Command menu (Ctrl/⌘ K): search slides by any of their text, or run a deck action ── */
+var commandState={items:[],index:0};
+function inPresent(run){return()=>{if(state.editMode)enterPresentMode(false);run()}}
+function commandActions(){
+  const edit=state.editMode;
+  return[
+    {label:"Present from the first slide",keys:"start begin",run:inPresent(()=>goTo(0))},
+    {label:"Presenter view: notes, next slide, timer",key:"P",keys:"speaker",run:inPresent(openPresenter)},
+    {label:"Slide overview",key:"O",keys:"grid gallery thumbnails",run:inPresent(openGallery)},
+    {label:"Speaker notes under the slide",key:"N",run:inPresent(()=>toggleNotesDrawer())},
+    {label:"Fullscreen",key:"F",run:inPresent(toggleFullscreen)},
+    {label:"Auto-advance",key:"A",keys:"autoplay play",run:inPresent(togglePlayback)},
+    {label:"Black screen",key:"B",keys:"blank pause",run:inPresent(()=>setBlackout("black"))},
+    {label:"Copy link to this slide",keys:"share url deep link",run:copySlideLink},
+    {label:"Motion graphics",key:"M",keys:"transition animation",run:()=>toggleMotionPanel(state.editMode?editorMotionPanel:motionPanel,true)},
+    {label:"Phone remote and collaboration",key:"R",run:inPresent(toggleRemotePanel)},
+    {label:edit?"Back to present mode":"Edit slides",key:"E",run:()=>edit?enterPresentMode():enterEditMode()},
+    {label:"Guide: next step to finish the deck",key:"G in editor",keys:"checklist brief readiness",run:openGuide},
+    {label:"Comment mode",key:"C in editor",keys:"review feedback",run:()=>{if(!state.editMode)enterEditMode();toggleCommentMode(true)}},
+    {label:"Print or save as PDF",key:IS_MAC?"⌘ P":"Ctrl P",keys:"pdf export",run:()=>printDeck(false)},
+    {label:"Print handout with speaker notes",keys:"pdf notes",run:()=>printDeck(true)},
+    {label:"Download HTML",keys:"export save",run:exportHTML},
+    {label:"Export slide JSON",keys:"data",run:exportJSON},
+    {label:"Export comments for an agent",keys:"feedback review",run:exportComments},
+    {label:"Keyboard shortcuts",key:"?",keys:"help keys",run:()=>{if(state.editMode)document.getElementById("tb-shortcuts").click();else toggleHelp(true)}},
+  ];
+}
+function slideSearchText(slide){
+  const out=[];
+  (function walk(value,key){
+    if(typeof value==="string"){if(!/^(?:src|id|layout|type|transition|motion|pageRole|accent|emphasis|delta)$/.test(key)&&!value.startsWith("data:"))out.push(value)}
+    else if(value&&typeof value==="object")for(const [k,v] of Object.entries(value))walk(v,k);
+  })(slide,"");
+  return out.join(" ").toLowerCase();
+}
+function commandItems(query){
+  const q=query.trim().toLowerCase(),terms=q.split(/\s+/).filter(Boolean),hit=text=>terms.every(term=>text.includes(term));
+  const actions=commandActions().filter(action=>!q||hit(`${action.label} ${action.keys||""}`.toLowerCase())).map(action=>({...action,group:"Actions"}));
+  const found=slides.map((slide,i)=>({group:"Slides",label:`${i+1}. ${slide.title||"Untitled"}`,hint:slide.keyMessage||"",run:()=>jumpToSlide(i),exact:String(i+1)===q,match:!q||String(i+1)===q||hit(slideSearchText(slide))})).filter(item=>item.match).sort((a,b)=>b.exact-a.exact);
+  return/^\d+$/.test(q)?[...found,...actions]:[...actions,...found];
+}
+function jumpToSlide(i){if(state.editMode){state.currentSlide=i;editorRender()}else goTo(i)}
+function commandMenu(){
+  let el=document.getElementById("command-menu");
+  if(!el){
+    el=document.createElement("div");el.id="command-menu";el.className="command-menu";
+    el.innerHTML='<div class="command-box" role="dialog" aria-modal="true" aria-label="Command menu"><input class="command-input" type="text" role="combobox" aria-expanded="true" aria-controls="command-list" aria-autocomplete="list" placeholder="Search slides or actions…" autocomplete="off" spellcheck="false"><div class="command-list" id="command-list" role="listbox" aria-label="Results"></div></div>';
+    const input=el.querySelector("input");
+    el.addEventListener("mousedown",e=>{if(e.target===el){e.preventDefault();closeCommandMenu()}});
+    input.addEventListener("input",()=>{commandState.index=0;renderCommandList()});
+    input.addEventListener("keydown",e=>{
+      e.stopPropagation();
+      const n=commandState.items.length;
+      if((e.key==="ArrowDown"||e.key==="ArrowUp")&&n){e.preventDefault();commandState.index=(commandState.index+(e.key==="ArrowDown"?1:n-1))%n;renderCommandList(false)}
+      else if(e.key==="Enter"){e.preventDefault();runCommand(commandState.items[commandState.index])}
+      else if(e.key==="Escape"){e.preventDefault();closeCommandMenu()}
+    });
+    el.querySelector(".command-list").addEventListener("click",e=>{const item=e.target.closest(".command-item");if(item)runCommand(commandState.items[Number(item.dataset.i)])});
+  }
+  const host=isRealFullscreen()?wrapperEl:document.body;
+  if(el.parentNode!==host)host.appendChild(el);
+  return el;
+}
+function renderCommandList(rebuild=true){
+  const el=commandMenu(),input=el.querySelector("input"),list=el.querySelector(".command-list");
+  if(rebuild)commandState.items=commandItems(input.value);
+  const items=commandState.items;
+  if(!items.length){list.innerHTML='<div class="command-empty">No matching slides or actions.</div>';input.removeAttribute("aria-activedescendant");return}
+  commandState.index=Math.min(commandState.index,items.length-1);
+  let group="";
+  list.innerHTML=items.map((item,i)=>{
+    const head=item.group!==group?`<div class="command-group" role="presentation">${item.group}</div>`:"";
+    group=item.group;
+    return`${head}<button type="button" class="command-item" role="option" id="command-item-${i}" data-i="${i}" tabindex="-1" aria-selected="${i===commandState.index}"><span>${esc(item.label)}</span>${item.hint?`<small>${esc(item.hint)}</small>`:""}${item.key?`<kbd>${esc(item.key)}</kbd>`:""}</button>`;
+  }).join("");
+  input.setAttribute("aria-activedescendant",`command-item-${commandState.index}`);
+  list.querySelector('[aria-selected="true"]')?.scrollIntoView({block:"nearest"});
+}
+function toggleCommandMenu(force){
+  const el=commandMenu(),open=force??!el.classList.contains("show");
+  if(!open){closeCommandMenu();return}
+  const input=el.querySelector("input");
+  if(!el.classList.contains("show")){input.value="";commandState.index=0;el.classList.add("show");renderCommandList()}
+  input.focus();
+}
+function closeCommandMenu(){
+  const el=document.getElementById("command-menu");
+  if(!el||!el.classList.contains("show"))return;
+  el.classList.remove("show");
+  if(el.contains(document.activeElement))document.activeElement.blur();
+}
+function runCommand(item){if(!item)return;closeCommandMenu();item.run()}
+window.addEventListener("keydown",e=>{
+  if(!(e.metaKey||e.ctrlKey)||e.altKey||e.key.toLowerCase()!=="k"||document.body.classList.contains("remote-controller-mode"))return;
+  if(IS_MAC&&e.ctrlKey&&!e.metaKey&&e.target.closest?.('input,textarea,[contenteditable="true"]')&&!e.target.closest(".command-menu"))return;// keep the macOS kill-line binding in text fields
+  e.preventDefault();e.stopPropagation();toggleCommandMenu();
+},true);
+const commandButton=document.getElementById("command-btn");
+commandButton.addEventListener("click",()=>toggleCommandMenu(true));
+if(!IS_MAC)commandButton.textContent="Ctrl K";
+
+/* ── Review comments (editor C): pin a note to any text. Comments live in slide.comments
+   ({id, path, text, createdAt, resolved}); File › Export comments writes them for an agent to apply. ── */
+var commentMode=false;
+const commentButton=document.getElementById("tb-comment"),editorMainEl=document.getElementById("editor-main");
+function openComments(slide){return(slide?.comments||[]).filter(comment=>!comment.resolved)}
+function fieldText(slide,path){const value=path?getByPath(slide,path):null;return typeof value==="string"?value:value&&typeof value==="object"&&typeof value.text==="string"?value.text:""}
+function commentTargetLabel(slide,path){
+  const text=fieldText(slide,path).trim();
+  return path?`${path}${text?` · “${text.slice(0,48)}${text.length>48?"…":""}”`:""}`:"Whole slide";
+}
+function toggleCommentMode(force){
+  commentMode=force??!commentMode;
+  if(!commentMode)closeCommentComposer();
+  editorMainEl.classList.toggle("commenting",commentMode);
+  commentButton.classList.toggle("tb-active",commentMode);commentButton.setAttribute("aria-pressed",String(commentMode));
+  if(state.editMode)updateEditorStatus(commentMode?"Comment mode · click text to comment · Esc stops":undefined);
+}
+editorMainEl.addEventListener("mousedown",e=>{if(commentMode&&e.target.closest("#edit-slide-root"))e.preventDefault()},true);
+editorMainEl.addEventListener("click",e=>{
+  if(!commentMode||!e.target.closest("#edit-slide-root"))return;
+  e.preventDefault();e.stopPropagation();
+  openCommentComposer(state.currentSlide,e.target.closest("[data-bind]")?.dataset.bind||"",e.clientX,e.clientY);
+},true);
+function closeCommentComposer(){document.getElementById("comment-composer")?.remove()}
+function openCommentComposer(index,path,x,y){
+  closeCommentComposer();
+  const slide=slides[index];
+  if(!slide)return;
+  const thread=(slide.comments||[]).filter(comment=>(comment.path||"")===path);
+  const box=document.createElement("div");
+  box.id="comment-composer";box.className="comment-composer";box.setAttribute("role","dialog");box.setAttribute("aria-label","Comment");
+  box.innerHTML=`<div class="comment-target">Slide ${index+1} · ${esc(commentTargetLabel(slide,path))}</div>
+    ${thread.length?`<div class="comment-thread">${thread.map(comment=>`<div class="comment-entry${comment.resolved?" resolved":""}"><div>${esc(comment.text)}</div><div class="mini-actions"><button type="button" class="mini-btn" data-comment-resolve="${esc(comment.id)}">${comment.resolved?"Reopen":"Resolve"}</button><button type="button" class="mini-btn danger" data-comment-delete="${esc(comment.id)}">Delete</button></div></div>`).join("")}</div>`:""}
+    <textarea aria-label="New comment" placeholder="What should change here? Ctrl/⌘ Enter adds it."></textarea>
+    <div class="mini-actions"><button type="button" class="mini-btn" data-comment-add>Add comment</button><button type="button" class="mini-btn" data-comment-close>Close</button></div>`;
+  document.body.appendChild(box);
+  box.style.left=`${Math.max(8,Math.min(x+12,window.innerWidth-box.offsetWidth-8))}px`;
+  box.style.top=`${Math.max(56,Math.min(y+12,window.innerHeight-box.offsetHeight-8))}px`;
+  const input=box.querySelector("textarea");
+  const add=()=>{const text=input.value.trim();if(!text){input.focus();return}addComment(index,path,text);closeCommentComposer()};
+  box.querySelector("[data-comment-add]").addEventListener("click",add);
+  box.querySelector("[data-comment-close]").addEventListener("click",closeCommentComposer);
+  box.querySelectorAll("[data-comment-resolve]").forEach(button=>button.addEventListener("click",()=>{setCommentResolved(index,button.dataset.commentResolve);openCommentComposer(index,path,x,y)}));
+  box.querySelectorAll("[data-comment-delete]").forEach(button=>button.addEventListener("click",()=>{deleteComment(index,button.dataset.commentDelete);openCommentComposer(index,path,x,y)}));
+  box.addEventListener("keydown",e=>{
+    e.stopPropagation();
+    if(e.key==="Escape"){e.preventDefault();closeCommentComposer()}
+    else if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();add()}
+  });
+  input.focus();
+}
+function addComment(index,path,text){
+  commitEdit();
+  const slide=slides[index];
+  (slide.comments||(slide.comments=[])).push({id:`c${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`,path,text,createdAt:new Date().toISOString(),resolved:false});
+  afterCommentChange();
+}
+function setCommentResolved(index,id,resolved){
+  const comment=(slides[index]?.comments||[]).find(item=>item.id===id);
+  if(!comment)return;
+  commitEdit();comment.resolved=resolved??!comment.resolved;
+  afterCommentChange();
+}
+function deleteComment(index,id){
+  const slide=slides[index];
+  if(!slide?.comments)return;
+  commitEdit();
+  slide.comments=slide.comments.filter(comment=>comment.id!==id);
+  if(!slide.comments.length)delete slide.comments;
+  afterCommentChange();
+}
+function afterCommentChange(){renderCommentPins();updateCommentBadge();scheduleGuideRefresh(true)}
+function updateCommentBadge(){
+  const count=slides.reduce((sum,slide)=>sum+openComments(slide).length,0);
+  document.getElementById("tb-comment-count").textContent=count?String(count):"";
+}
+/* Pins sit in deck coordinates, so they follow the canvas scale. */
+function renderCommentPins(){
+  editDeck.querySelectorAll(".comment-pin").forEach(pin=>pin.remove());
+  if(!state.editMode)return;
+  const groups=new Map();
+  for(const comment of openComments(slides[state.currentSlide]))groups.set(comment.path||"",(groups.get(comment.path||"")||0)+1);
+  if(!groups.size)return;
+  const deckRect=editDeck.getBoundingClientRect(),scale=deckRect.width/1200||1;
+  for(const [path,count] of groups){
+    const target=(path&&editRoot.querySelector(`[data-bind="${CSS.escape(path)}"]`))||editRoot.querySelector(".slide")||editDeck;
+    const rect=target.getBoundingClientRect(),pin=document.createElement("button");
+    pin.type="button";pin.className="comment-pin";pin.textContent=String(count);
+    pin.title=`${count} open comment${count===1?"":"s"} · ${path||"whole slide"}`;pin.setAttribute("aria-label",pin.title);
+    pin.style.left=`${Math.max(4,Math.min(1174,(rect.right-deckRect.left)/scale-12))}px`;
+    pin.style.top=`${Math.max(4,Math.min(649,(rect.top-deckRect.top)/scale-10))}px`;
+    pin.addEventListener("click",e=>{e.stopPropagation();const r=pin.getBoundingClientRect();openCommentComposer(state.currentSlide,path,r.right,r.top)});
+    editDeck.appendChild(pin);
+  }
+}
+function exportComments(){
+  const comments=slides.flatMap((slide,i)=>openComments(slide).map(comment=>({slide:i+1,slideId:slide.id??null,slideTitle:slide.title||"",path:comment.path||"",currentText:fieldText(slide,comment.path||"")||null,comment:comment.text,id:comment.id,createdAt:comment.createdAt})));
+  if(state.editMode)closeEditorPopovers();
+  if(!comments.length){toast("No open comments to export");return}
+  downloadText("slide-comments.json",JSON.stringify({deck:document.title,exportedAt:new Date().toISOString(),howToApply:"Apply each comment to the slide-data field its path names (an empty path means the whole slide). Keep claims, numbers, names, and citations unless the comment asks to change them, and do not invent sources. Then set resolved: true on that entry in slide.comments and re-render.",comments},null,2));
+}
+commentButton.addEventListener("click",()=>toggleCommentMode());
+document.getElementById("tb-comments-export").addEventListener("click",exportComments);
+document.getElementById("tb-print").addEventListener("click",()=>printDeck(false));
+document.getElementById("tb-print-notes").addEventListener("click",()=>printDeck(true));
+
+/* ── Figure slots: drop an image on a placeholder, or choose one from the inspector or the Guide ── */
+const slotFileInput=document.createElement("input");
+slotFileInput.type="file";slotFileInput.accept="image/*";slotFileInput.hidden=true;
+document.body.appendChild(slotFileInput);
+var slotTarget=null;
+function readImageFile(file,done){
+  if(!file||!/^image\//.test(file.type)){toast("Choose an image file");return}
+  const reader=new FileReader();
+  reader.onload=()=>done(String(reader.result));
+  reader.readAsDataURL(file);
+}
+function chooseSlotImage(index,path){slotTarget={index,path};slotFileInput.value="";slotFileInput.click()}
+slotFileInput.addEventListener("change",()=>{
+  const target=slotTarget,file=slotFileInput.files[0];
+  slotTarget=null;
+  if(target&&file)readImageFile(file,src=>replaceSlotImage(target.index,target.path,src,file.name));
+});
+/* path is figureLabel (classic visual) or contentBlocks.N.content.placeholder (figure block). */
+function replaceSlotImage(index,path,src,name){
+  const slide=slides[index],block=/^contentBlocks\.(\d+)\./.test(path)?slide?.contentBlocks?.[Number(path.split(".")[1])]:null;
+  if(!slide||(path!=="figureLabel"&&block?.type!=="figure"))return;
+  commitEdit();
+  const slotLabel=text=>String(text||"").replace(/^\s*insert\s+(?:figure|image)\b\s*[:：-]?\s*/i,"").trim()||name;
+  if(block){const label=slotLabel(block.content?.placeholder);block.content={...(block.content||{}),src,alt:block.content?.alt||label,caption:block.content?.caption||label}}
+  else{const label=slotLabel(slide.figureLabel);slide.visual={...(slide.visual||{}),src,alt:slide.visual?.alt||label,caption:slide.visual?.caption||label}}
+  if(state.editMode){state.currentSlide=index;editorRender()}
+  toast(`Image placed on slide ${index+1}. Check its caption and alt text.`);
+}
+function bindSlotDrops(){
+  editRoot.querySelectorAll(".placeholder[data-bind]").forEach(slot=>{
+    const path=slot.dataset.bind,hasFiles=e=>Array.from(e.dataTransfer?.types||[]).includes("Files");
+    slot.title="Drop an image here, or use Choose image in the inspector";
+    slot.addEventListener("dragover",e=>{if(hasFiles(e)){e.preventDefault();slot.classList.add("drop-ready")}});
+    slot.addEventListener("dragleave",()=>slot.classList.remove("drop-ready"));
+    slot.addEventListener("drop",e=>{
+      e.preventDefault();slot.classList.remove("drop-ready");
+      const file=e.dataTransfer?.files?.[0],index=state.currentSlide;
+      readImageFile(file,src=>replaceSlotImage(index,path,src,file.name));
+    });
+  });
+}
+/* A file dropped anywhere else in the editor would replace the whole page and lose unsaved edits. */
+["dragover","drop"].forEach(type=>window.addEventListener(type,e=>{if(state.editMode&&Array.from(e.dataTransfer?.types||[]).includes("Files"))e.preventDefault()}));
+
+/* ── Guide (editor G): finish the deck one step at a time ──
+   Adapted from life-design-compass: ask one question, give brief feedback, move on, and report readiness
+   honestly (brief needed → draft → ready to rehearse → ready to present). The wording checks run the table in
+   scripts/audit_slide_copy.py; refresh it with: python3 scripts/audit_slide_copy.py --sync-template <this file> */
+const COPY_RULESET={"cjk":"[\\u4e00-\\u9fff]","rules":[{"id":"SC-C01-meta","severity":"moderate","locale":"zh","scope":"all","pattern":"值得注意的是|不難發現|顯而易見|接下來(?:讓我們|我們將)|讓我們(?:一起)?(?:來)?(?:看看|探討|分析|拆解)|以下(?:將|我們會)","why":"The sentence manages the talk instead of saying something.","move":"Delete the lead-in and state the point."},{"id":"SC-C01-opening","severity":"major","locale":"zh","scope":"face","pattern":"在(?:當今|如今|這個).{0,14}(?:快速|迅速|不斷).{0,14}(?:發展|變化|演進).{0,14}(?:時代|環境|浪潮|背景)","why":"A ceremonial era opening carries no evidence.","move":"Start from the task, gap, or result."},{"id":"SC-C02-significance","severity":"moderate","locale":"zh","scope":"face","pattern":"關鍵(?:時刻|轉折)|深遠影響|不可忽視|至關重要|標誌著|彰顯(?:了)?|時代(?:性)?(?:意義|變革)|里程碑","why":"Inflated significance without an observable effect.","move":"Say what changed, for whom, and how it was measured."},{"id":"SC-C03-jargon","severity":"moderate","locale":"zh","scope":"all","pattern":"賦能|助力|深耕|抓手|閉環|全方位|無縫|顛覆性|開創性|革命性|底層邏輯|打造(?:一個)?(?:全新|卓越)|構建(?:一個)?(?:完整|全新)","why":"Business jargon replaces the actual mechanism or result.","move":"Name the component, step, or measured change."},{"id":"SC-C04-authority","severity":"major","locale":"zh","scope":"face","pattern":"研究(?:顯示|表明|指出)|數據顯示|資料顯示|專家(?:指出|認為|表示)|業界(?:人士|普遍|專家)","why":"An authority claim without a traceable source.","move":"Cite the paper, table, or figure, or state it as the authors' judgment."},{"id":"SC-C05-contrast","severity":"minor","locale":"zh","scope":"face","pattern":"不是.{1,40}?(?:而是|而在於)|不只是.{1,40}?(?:更是|也是)|與其.{1,40}?不如","why":"A reversal template; the first half often adds nothing.","move":"Keep the contrast only if both sides are real alternatives; otherwise state the second half."},{"id":"SC-C07-closing","severity":"moderate","locale":"zh","scope":"all","pattern":"總而言之|綜上所述|歸根結底|最終(?:來看|而言)","why":"A generic summary closer.","move":"End on the result, limitation, or next action."},{"id":"SC-C09-abstract","severity":"minor","locale":"zh","scope":"face","pattern":"(?:能力|價值|體驗|策略|效能|效率|品質)(?:建設|實現|提升|優化|落地|升級)","why":"Stacked abstract nouns hide the real action.","move":"Use a concrete verb and object."},{"id":"SC-C01-meta-en","severity":"moderate","locale":"en","scope":"all","pattern":"\\b(?:it is important to note|it is worth noting|let(?:'s| us) (?:explore|delve|dive)|here(?:'s| is) what|in this (?:talk|section|slide),? we(?: will|'ll))\\b","why":"The sentence manages the talk instead of saying something.","move":"Delete the preview and state the point."},{"id":"SC-C01-opening-en","severity":"major","locale":"en","scope":"face","pattern":"\\b(?:in today'?s|in an?)\\s+(?:fast-paced|ever-changing|rapidly evolving|dynamic)\\s+(?:world|landscape|environment|era)\\b","why":"A ceremonial opening carries no evidence.","move":"Start from the task, gap, or result."},{"id":"SC-C02-significance-en","severity":"moderate","locale":"en","scope":"face","pattern":"\\b(?:paradigm shift|game[- ]changer|groundbreaking|revolutionary|unprecedented|pivotal|plays? a (?:vital|crucial|key) role)\\b","why":"Inflated significance without an observable effect.","move":"Say what changed, for whom, and how it was measured."},{"id":"SC-C03-jargon-en","severity":"moderate","locale":"en","scope":"all","pattern":"\\b(?:empower(?:s|ing)?|unlock(?:s|ing)?|unleash(?:es|ing)?|seamless(?:ly)?|cutting-edge|holistic|leverag(?:e|es|ing)|transformative|synerg(?:y|ies))\\b","why":"Transformation jargon needs a concrete object and evidence.","move":"Name the component, step, or measured change."},{"id":"SC-C04-authority-en","severity":"major","locale":"en","scope":"face","pattern":"\\b(?:studies show|research (?:shows|suggests|indicates)|experts (?:say|believe|agree)|it is widely (?:known|believed|accepted))\\b","why":"An authority claim without a traceable source.","move":"Cite the paper, table, or figure, or state it as the authors' judgment."},{"id":"SC-C05-contrast-en","severity":"minor","locale":"en","scope":"face","pattern":"\\b(?:not only\\b.{1,80}\\bbut also|(?:it|this|the problem|the answer) (?:is not|isn'?t)\\b.{0,60}\\b(?:it is|it'?s|but rather|instead))\\b","why":"A reversal template; the first half often adds nothing.","move":"Keep the contrast only if both sides are real alternatives."},{"id":"SC-C07-closing-en","severity":"moderate","locale":"en","scope":"all","pattern":"\\b(?:in conclusion|to sum up|at the end of the day|all things considered)\\b","why":"A generic summary closer.","move":"End on the result, limitation, or next action."},{"id":"SC-C11-slogan-en","severity":"minor","locale":"en","scope":"face","pattern":"\\b(?:the future of|the key to success|more than just|not just an? .{1,30}? but an?)\\b","why":"A manufactured slogan in place of the claim.","move":"Replace it with the concrete claim it hides."},{"id":"SC-T01-software","severity":"moderate","locale":"zh","scope":"all","pattern":"軟件|硬件|服務器|打印|文件夾|鼠標|內存|移動端","why":"Mainland China term in Taiwan copy.","move":"Use 軟體、硬體、伺服器、列印、資料夾、滑鼠、記憶體、行動裝置."},{"id":"SC-T02-media","severity":"minor","locale":"zh","scope":"all","pattern":"視頻|在線(?!性)|信息(?!論)|聯繫|代碼","why":"Mainland China term in Taiwan copy.","move":"Use 影片、線上、資訊或訊息、聯絡、程式碼, matching the meaning."},{"id":"SC-T03-quality","severity":"major","locale":"zh","scope":"all","pattern":"質量(?:良好|很高|提升|問題|保證)","why":"質量 means physical mass in Taiwan usage.","move":"Use 品質 for quality."},{"id":"SC-T04-research","severity":"moderate","locale":"zh","scope":"all","pattern":"數據集|算法|神經網絡|網絡|人工智能|計算機視覺|分辨率|芯片|魯棒","why":"Mainland China research term in Taiwan copy.","move":"Use 資料集、演算法、神經網路、網路、人工智慧、電腦視覺、解析度、晶片、穩健."},{"id":"SC-T05-through","severity":"minor","locale":"zh","scope":"all","pattern":"通過.{1,30}?來(?:完成|實現|提升|達成|進行)","why":"A literal-translation pattern.","move":"Use 透過 or the main verb directly."},{"id":"SC-P01-halfwidth","severity":"minor","locale":"zh","scope":"face","pattern":"[\\u4e00-\\u9fff][,;:!?](?!\\d)|[,;:!?][\\u4e00-\\u9fff]","why":"Half-width punctuation inside Chinese text.","move":"Use full-width ，；：！？ in Chinese sentences."},{"id":"SC-P02-quotes","severity":"minor","locale":"zh","scope":"face","pattern":"[\\\"\\u201c][^\\\"\\u201c\\u201d]*[\\u4e00-\\u9fff][^\\\"\\u201c\\u201d]*[\\\"\\u201d]","why":"Western quotation marks around Chinese text.","move":"Use 「」 for Chinese quotations."},{"id":"SC-P03-dash","severity":"minor","locale":"any","scope":"face","pattern":"\\u2014{1,2}","why":"Dashes create a staged rhythm on slides.","move":"Use a colon, comma, or a separate line."},{"id":"SC-R01-significant","severity":"moderate","locale":"any","scope":"face","pattern":"\\bsignificant(?:ly)?\\b|顯著","why":"Significant implies a statistical test.","move":"Keep it only with the reported test; otherwise state the measured difference."},{"id":"SC-R02-vague-gain","severity":"moderate","locale":"any","scope":"face","pattern":"\\b(?:dramatic(?:ally)?|substantial(?:ly)?|huge|massive|remarkabl[ey]|vastly)\\b|大幅|明顯|大大|極大","why":"An unquantified change.","move":"Give the value, metric, and baseline."},{"id":"SC-R03-sota","severity":"moderate","locale":"any","scope":"face","pattern":"\\bstate[- ]of[- ]the[- ]art\\b|\\bSOTA\\b|最先進|業界領先|全面超越","why":"A state-of-the-art claim without its evidence.","move":"Name the benchmark, metric, and strongest baseline."},{"id":"SC-R04-placeholder","severity":"major","locale":"any","scope":"face","pattern":"\\bInsert (?:Figure|figure|image|Image)\\b|Paper Title Goes Here|Authors\\s*[·•\\-]\\s*Venue|\\bTODO\\b|\\bTBD\\b|lorem ipsum|\\bXX%?|\\?\\?\\?|待補|請填入","why":"Placeholder text is still on the slide.","move":"Replace it with the paper's content or remove it."},{"id":"SC-R05-topic-title","severity":"minor","locale":"any","scope":"title","pattern":"^(?:introduction|background|related work|methods?|methodology|approach|experiments?|results?|evaluation|discussion|conclusions?|future work|summary|overview|motivation|問題|背景|相關研究|方法|實驗|結果|討論|結論|總結|未來工作|研究動機)$","why":"The title names a topic instead of making a claim.","move":"Write the slide's claim as the title; keep the section word in the label."},{"id":"SC-R07-exclaim","severity":"minor","locale":"any","scope":"face","pattern":"[!！]","why":"Exclamation marks on a research slide.","move":"Let the evidence carry the emphasis."}],"computed":{"SC-R06-bullets":{"severity":"minor","why":"Too many or too long bullets.","move":"Keep four or fewer bullets of about 15 words (30 Chinese characters); split the slide otherwise."},"SC-P04-spacing":{"severity":"minor","why":"Mixed spacing between Chinese and Latin text across the deck.","move":"Pick one style, usually a space between Chinese and English or numbers, and apply it everywhere."}}}; // @copy-rules
+const COPY_PATTERNS=(COPY_RULESET.rules||[]).map(rule=>({...rule,re:new RegExp(rule.pattern,"i")}));
+const COPY_CJK=new RegExp(COPY_RULESET.cjk||"(?!)"),COPY_CJK_ALL=new RegExp(COPY_RULESET.cjk||"(?!)","g");
+const GUIDE_SEVERITY={major:0,moderate:1,minor:2};
+const GUIDE_DEFAULT_NOTE="Add speaker notes for this slide.";
+const GUIDE_AUDIENCES=[
+  ["Specialists in this subfield","Skip textbook background; spend the time on what is new and on the evidence for it."],
+  ["Researchers in the broader field","Give one background slide and define each term the first time it appears."],
+  ["Mixed technical audience","Lead with the problem in plain words and show one intuitive example before the method."],
+  ["Non-specialists","Lead with why it matters, keep one running example, and use one equation at most."],
+];
+const GUIDE_CHECKS=[["brief","Talk brief: length and takeaway"],["GD-count","Slide count fits the time"],["GD-pace","Speaker notes fit the time"],["GD-takeaway","Has a takeaway slide"],["GD-limits","Names the limitations"],["GD-placeholder","No empty figure slots"],["GD-overflow","No text cut off"],["GD-density","Slides stay readable"],["GD-figure","Figures have caption, alt text, and source"],["GD-notes","Speaker notes on every slide"],["GD-comment","No open comments"],["SC","Wording rules"]];
+var guideState={timer:null,findings:[],unchecked:new Set(),skipped:new Set(),focus:null,feedback:"",editingBrief:false,pendingRender:false};
+const guidePanel=document.getElementById("guide-panel"),guideButton=document.getElementById("tb-guide");
+function sanitizeBrief(src){
+  const out={};
+  if(!src||typeof src!=="object")return out;
+  const minutes=Number(src.minutes);
+  if(minutes>0&&minutes<=240)out.minutes=Math.round(minutes*2)/2;
+  for(const [key,max] of [["audience",200],["venue",120],["takeaway",400],["language",40]])if(typeof src[key]==="string"&&src[key].trim())out[key]=src[key].trim().slice(0,max);
+  if(Array.isArray(src.guideIgnore)){const ids=[...new Set(src.guideIgnore.filter(id=>typeof id==="string"&&/^[A-Z]{2}-[\w-]+$/.test(id)))];if(ids.length)out.guideIgnore=ids}
+  return out;
+}
+deckBrief=sanitizeBrief(deckBrief);
+
+/* Mirrors slide_fields() and audit_slides() in scripts/audit_slide_copy.py. */
+function copyFields(slide){
+  const out=[],text=v=>typeof v==="string"?v:v&&typeof v==="object"?String(v.text||v.content||""):"";
+  for(const key of ["title","subtitle","keyMessage","figureLabel","equationExplain","callout"])if(typeof slide[key]==="string"&&slide[key].trim())out.push([key,slide[key],key==="title"?"title":"face"]);
+  (slide.bullets||[]).forEach((bullet,i)=>out.push([`bullets.${i}`,text(bullet),"bullet"]));
+  (slide.metrics||[]).forEach((metric,i)=>{if(metric&&typeof metric==="object")for(const key of ["label","detail"])if(metric[key])out.push([`metrics.${i}.${key}`,String(metric[key]),"face"])});
+  if(slide.visual&&typeof slide.visual==="object"&&slide.visual.caption)out.push(["visual.caption",String(slide.visual.caption),"face"]);
+  (slide.contentBlocks||[]).forEach((block,i)=>{
+    if(!block||typeof block!=="object"||["custom-html","equation","spacer"].includes(block.type))return;
+    const base=`contentBlocks.${i}`,content=block.content,kind=["heading","hero-text"].includes(block.type)?"title":"face";
+    if(typeof content==="string")out.push([`${base}.content`,content,kind]);
+    else if(Array.isArray(content))content.forEach((item,j)=>out.push([`${base}.content.${j}`,text(item),block.type==="bullets"?"bullet":"face"]));
+    else if(content&&typeof content==="object")for(const key of ["caption","label","detail","placeholder","leftLabel","left","rightLabel","right"])if(content[key])out.push([`${base}.content.${key}`,String(content[key]),"face"]);
+  });
+  if(typeof slide.speakerNote==="string"&&slide.speakerNote.trim())out.push(["speakerNote",slide.speakerNote,"notes"]);
+  return out;
+}
+function copyRuleApplies(rule,text,kind){
+  if(rule.locale==="zh"&&!COPY_CJK.test(text))return false;
+  if(rule.locale==="en"&&COPY_CJK.test(text)&&!/[A-Za-z]{3}/.test(text))return false;
+  return rule.scope==="title"?kind==="title":rule.scope==="face"?kind!=="notes":true;
+}
+function copyExempt(id,text){
+  return((id==="SC-R02-vague-gain"||id==="SC-R03-sota")&&/\d/.test(text))||(id==="SC-R01-significant"&&/\bp\s*[<=≤]|\bp-value|t-test|檢定/i.test(text));
+}
+function copyExcerpt(text,start,end,radius=24){
+  const left=Math.max(0,start-radius),right=Math.min(text.length,end+radius);
+  return(left?"…":"")+text.slice(left,right).replace(/\s+/g," ").trim()+(right<text.length?"…":"");
+}
+function computedFinding(id){const spec=COPY_RULESET.computed?.[id]||{};return{id,severity:spec.severity||"minor",why:spec.why||"",move:spec.move||""}}
+function auditSlideCopy(){
+  const findings=[],cjk=COPY_RULESET.cjk||"(?!)";
+  const spacedRe=new RegExp(`${cjk} [A-Za-z0-9]|[A-Za-z0-9] ${cjk}`,"g"),unspacedRe=new RegExp(`${cjk}[A-Za-z0-9]|[A-Za-z0-9]${cjk}`,"g");
+  let spaced=0,unspaced=0;
+  slides.forEach((slide,i)=>{
+    if(!slide||typeof slide!=="object")return;
+    const ignored=new Set(slide.guideIgnore||[]),number=i+1;
+    for(const [path,text,kind] of copyFields(slide)){
+      for(const rule of COPY_PATTERNS){
+        if(ignored.has(rule.id)||!copyRuleApplies(rule,text,kind))continue;
+        const subject=rule.scope==="title"?text.trim():text,match=rule.re.exec(subject);
+        if(match&&!copyExempt(rule.id,text))findings.push({slide:number,path,id:rule.id,severity:rule.severity,evidence:copyExcerpt(subject,match.index,match.index+match[0].length),why:rule.why,move:rule.move});
+      }
+      if(kind==="bullet"&&!ignored.has("SC-R06-bullets")){
+        const chars=(text.match(COPY_CJK_ALL)||[]).length,words=(text.match(/[A-Za-z0-9][\w'\-.%]*/g)||[]).length;
+        if(words>15||chars>30)findings.push({...computedFinding("SC-R06-bullets"),slide:number,path,evidence:copyExcerpt(text,0,Math.min(text.length,40),0)});
+      }
+      if(kind!=="notes"){spaced+=(text.match(spacedRe)||[]).length;unspaced+=(text.match(unspacedRe)||[]).length}
+    }
+    if((slide.bullets||[]).length>4&&!ignored.has("SC-R06-bullets"))findings.push({...computedFinding("SC-R06-bullets"),slide:number,path:"bullets",evidence:`${slide.bullets.length} bullets`});
+  });
+  if(spaced&&unspaced)findings.push({...computedFinding("SC-P04-spacing"),slide:0,path:"deck",evidence:`${spaced} spaced vs ${unspaced} unspaced Chinese–Latin boundaries`});
+  return findings;
+}
+
+/* Structural checks for a research talk (GD-*), plus the wording findings above. */
+function slideRoleText(slide){return`${slide.label||""} ${slide.title||""}`}
+function isTakeawaySlide(slide){return slide.layout==="takeaway"||slide.pageRole==="takeaway"||/\b(?:takeaways?|conclusions?)\b|結論|總結|重點回顧/i.test(slideRoleText(slide))}
+function isLimitationSlide(slide){return slide.layout==="limitations"||slide.pageRole==="limitation"||/\blimitations?\b|限制|局限/i.test(slideRoleText(slide))}
+function hasNotes(slide){const note=String(slide.speakerNote||"").trim();return Boolean(note)&&note!==GUIDE_DEFAULT_NOTE}
+function speakingMinutes(text){const source=String(text||"");return(source.match(COPY_CJK_ALL)||[]).length/260+(source.match(/[A-Za-z0-9][\w'-]*/g)||[]).length/140}
+function faceLoad(slide){return copyFields(slide).filter(field=>field[2]!=="notes").reduce((sum,[,text])=>sum+(text.match(COPY_CJK_ALL)||[]).length/2+(text.match(/[A-Za-z0-9][\w'-]*/g)||[]).length,0)}
+/* Same count as the renderer's blocking densityBudget check in render_slideshow_artifact.py. */
+function budgetWords(slide){
+  const parts=[slide.title,slide.keyMessage,slide.subtitle].filter(Boolean);
+  for(const bullet of slide.bullets||[])parts.push(typeof bullet==="string"?bullet:bullet&&typeof bullet==="object"?bullet.text||"":"");
+  for(const block of slide.contentBlocks||[]){
+    if(!block||["label","spacer"].includes(block.type))continue;
+    const content=block.content;
+    if(typeof content==="string")parts.push(content);
+    else if(content&&typeof content==="object"&&!Array.isArray(content))for(const key of ["label","value","detail","caption","alt"])if(content[key])parts.push(String(content[key]));
+  }
+  return parts.join(" ").split(/\s+/).filter(Boolean).length;
+}
+function figureIssues(slide){
+  const issues=[],figures=[];
+  if(!slide.contentBlocks&&slide.visual?.src)figures.push({base:"visual",alt:slide.visual.alt,caption:slide.visual.caption||slide.figureLabel});
+  (slide.contentBlocks||[]).forEach((block,i)=>{if(block?.type==="figure"&&block.content?.src)figures.push({base:`contentBlocks.${i}.content`,alt:block.content.alt,caption:block.content.caption})});
+  for(const figure of figures){
+    if(!String(figure.alt||"").trim())issues.push({path:`${figure.base}.alt`,title:"Figure has no alt text",why:"Screen readers and the exported PDF describe the figure with it.",move:"Say what the figure shows in one sentence.",edit:true});
+    if(!String(figure.caption||"").trim())issues.push({path:`${figure.base}.caption`,title:"Figure has no caption",why:"The audience needs to know what they are looking at.",move:"Name the figure or table of the paper and what it shows.",edit:true});
+  }
+  const evidence=figures.length||slide.metrics?.length||slide.layout==="result-table"||(slide.contentBlocks||[]).some(block=>["table","metric","metric-grid"].includes(block?.type));
+  if(evidence&&!String(slide.evidenceNote||"").trim())issues.push({path:"evidenceNote",title:"Evidence source not noted",why:"You and your reviewers should be able to trace every number and figure back to the paper.",move:"Add an evidence note such as “Table 2, main results”.",edit:true});
+  return issues;
+}
+function collectGuideFindings(){
+  const found=[],minutes=briefMinutes(),mainSlides=slides.filter(slide=>!slide.appendix),main=mainSlides.length;
+  const add=finding=>{
+    const ignored=new Set((finding.slide?slides[finding.slide-1]?.guideIgnore:deckBrief.guideIgnore)||[]);
+    if(!ignored.has(finding.id))found.push({evidence:"",...finding,key:`${finding.id}|${finding.slide}|${finding.path||""}|${finding.commentId||""}`});
+  };
+  guideState.unchecked=new Set(minutes?[]:["GD-count","GD-pace"]);
+  if(minutes&&main){
+    const low=Math.max(3,Math.round(minutes*.6)),high=Math.round(minutes*1.2)+1;
+    if(main>high)add({id:"GD-count",severity:"moderate",slide:0,path:"deck",title:`${main} main slides for ${minutes} minutes`,why:`A ${minutes}-minute talk usually holds ${low}–${high} main slides, so extra slides get rushed.`,move:"Merge slides, or move background and secondary results to the appendix."});
+    else if(main<low)add({id:"GD-count",severity:"minor",slide:0,path:"deck",title:`${main} main slides for ${minutes} minutes`,why:`Each slide stays up for about ${Math.round(minutes/main)} minutes.`,move:"Fine for dense results; otherwise split the busiest slide."});
+    const noted=mainSlides.filter(hasNotes);
+    if(noted.length<Math.ceil(main/2))guideState.unchecked.add("GD-pace");
+    else{
+      const estimate=noted.reduce((sum,slide)=>sum+speakingMinutes(slide.speakerNote),0)*main/noted.length;
+      if(estimate>minutes*1.15)add({id:"GD-pace",severity:"moderate",slide:0,path:"deck",title:`Notes run about ${estimate.toFixed(1)} minutes`,why:`Read at a normal pace, the speaker notes overrun the ${minutes}-minute slot.`,move:"Trim the notes on the longest slides first, or move a slide to the appendix.",evidence:`${noted.length} of ${main} slides have notes`});
+    }
+  }
+  if(main&&!slides.some(isTakeawaySlide))add({id:"GD-takeaway",severity:"moderate",slide:0,path:"deck",title:"No takeaway slide",why:"People remember the last thing they see; end on the claim and its evidence.",move:"Add a takeaway slide with the brief's one-sentence takeaway."});
+  if(main>=4&&!slides.some(isLimitationSlide))add({id:"GD-limits",severity:"moderate",slide:0,path:"deck",title:"No limitations slide",why:"Naming the limits makes the result more credible, and the questions will ask anyway.",move:"Add a limitations slide: what the method does not cover and why."});
+  const slotPaths=new Set();// SC-R04 repeats GD-placeholder on a figure slot, even when that one is ignored
+  slides.forEach((slide,i)=>{
+    const number=i+1,probe=renderSnapshot(i,null,(host,el)=>({overflow:Boolean(el?.hasAttribute("data-overflow-fail")),slots:[...host.querySelectorAll(".placeholder")].map(node=>({path:node.dataset.bind||"",label:node.textContent.trim()}))}));
+    for(const slot of probe.slots){slotPaths.add(`${number}|${slot.path}`);add({id:"GD-placeholder",severity:"major",slide:number,path:slot.path,slot:slot.path,title:"Empty figure slot",why:"The audience would see the placeholder instead of the paper's figure.",move:"Drop the figure image on the slot, choose one here, or remove the slot.",evidence:slot.label})}
+    if(probe.overflow)add({id:"GD-overflow",severity:"major",slide:number,path:"",title:"Text is cut off",why:"Even the tightest density setting cannot fit this slide.",move:"Shorten the bullets, move detail to the notes, or split the slide."});
+    const budget=Number(slide.densityBudget);
+    if(budget>0){const words=budgetWords(slide);if(words>budget*1.2)add({id:"GD-density",severity:"moderate",slide:number,path:"",title:`${words} words for a budget of ${budget}`,why:"The renderer stops the build when a slide passes 120% of its density budget.",move:"Cut words from the slide face and keep the detail in the speaker notes."})}
+    else{const load=faceLoad(slide);if(load>90)add({id:"GD-density",severity:"minor",slide:number,path:"",title:"Dense slide",why:`About ${Math.round(load)} words on the slide face; people either read or listen.`,move:"Keep one claim with its evidence; move the rest to the notes or another slide."})}
+    for(const issue of figureIssues(slide))add({id:"GD-figure",severity:"minor",slide:number,...issue});
+    if(!slide.appendix&&!hasNotes(slide))add({id:"GD-notes",severity:"minor",slide:number,path:"speakerNote",title:"No speaker notes",why:"Notes carry the spoken explanation, the evidence source, and a timing cue.",move:"Write the two or three sentences you would say on this slide.",edit:true});
+    for(const comment of openComments(slide))add({id:"GD-comment",severity:"moderate",slide:number,path:comment.path||"",commentId:comment.id,title:"Open comment",why:"A reviewer asked for a change here.",move:"Apply it, then resolve it.",evidence:comment.text});
+  });
+  for(const finding of auditSlideCopy()){
+    if(finding.id==="SC-R04-placeholder"&&slotPaths.has(`${finding.slide}|${finding.path}`))continue;
+    const editable=finding.slide&&finding.path!=="bullets"&&typeof getByPath(slides[finding.slide-1],finding.path)==="string";
+    add({...finding,title:finding.why.replace(/\.$/,""),edit:editable});
+  }
+  return found.sort((a,b)=>GUIDE_SEVERITY[a.severity]-GUIDE_SEVERITY[b.severity]||a.slide-b.slide||String(a.path).localeCompare(String(b.path)));
+}
+function guideStatus(findings){
+  if(!briefMinutes()||!deckBrief.takeaway)return"brief needed";
+  if(findings.some(f=>f.severity==="major"))return"draft";
+  return findings.some(f=>f.severity==="moderate")?"ready to rehearse":"ready to present";
+}
+function guideCheckResults(findings){
+  return GUIDE_CHECKS.map(([id,label])=>({id,label,pass:id==="brief"?Boolean(briefMinutes()&&deckBrief.takeaway):guideState.unchecked.has(id)?null:!findings.some(f=>id==="SC"?f.id.startsWith("SC-"):f.id===id)}));
+}
+function briefSteps(){
+  return[["minutes",!briefMinutes()],["audience",!deckBrief.audience],["takeaway",!deckBrief.takeaway]].filter(([step,open])=>open&&!guideState.skipped.has(`brief-${step}`)).map(([step])=>step);
+}
+function nextGuideStep(findings){
+  if(guideState.focus){const focused=findings.find(f=>f.key===guideState.focus);if(focused)return{finding:focused};guideState.focus=null}
+  const brief=briefSteps()[0];
+  if(brief)return{brief};
+  const finding=findings.find(f=>!guideState.skipped.has(f.key));
+  return finding?{finding}:null;
+}
+function briefFeedback(field){
+  const main=slides.filter(slide=>!slide.appendix).length;
+  if(field==="minutes"){
+    const minutes=briefMinutes(),low=Math.max(3,Math.round(minutes*.6)),high=Math.round(minutes*1.2)+1;
+    return`${minutes} minutes usually holds ${low}–${high} main slides; this deck has ${main}.${main>high?" Plan to merge some or move them to the appendix.":main<low?" Each slide will stay up a while, which suits dense results.":" That fits."}`;
+  }
+  if(field==="audience")return GUIDE_AUDIENCES.find(([label])=>label===deckBrief.audience)?.[1]||"Noted. Keep that room in mind for the takeaway, which comes next.";
+  const text=deckBrief.takeaway||"",long=(text.match(COPY_CJK_ALL)||[]).length>60||text.split(/\s+/).length>30;
+  const hit=COPY_PATTERNS.find(rule=>rule.scope!=="title"&&copyRuleApplies(rule,text,"face")&&rule.re.test(text)&&!copyExempt(rule.id,text));
+  return[long?"That is long for a takeaway; aim for one line the audience could repeat.":"One sentence: good.",hit?`It trips ${hit.id}: ${hit.move}`:"",slides.some(isTakeawaySlide)?"Put it on the takeaway slide and say it once in the opening.":"There is no takeaway slide yet; a later step adds one."].filter(Boolean).join(" ");
+}
+function setBriefField(field,value){
+  const next=sanitizeBrief({...deckBrief,[field]:value});
+  if(!next[field])return false;
+  commitEdit();deckBrief=next;
+  return true;
+}
+function guideWhy(f){return f.why&&f.why.replace(/\.$/,"")!==f.title?f.why:""}
+function guidePrompt(f){
+  const slide=f.slide?slides[f.slide-1]:null;
+  const where=slide?`Slide ${f.slide} (“${slide.title||"Untitled"}”)${f.path&&f.path!=="deck"?`, field ${f.path}`:""}`:"Whole deck";
+  return[`${where} · ${f.id} (${f.severity}): ${f.title}.`,f.evidence?`Evidence: “${f.evidence}”`:"",guideWhy(f)?`Why: ${f.why}`:"",`Move: ${f.move}`,"Edit the slide data to fix only this. Keep every claim, number, unit, dataset, baseline, citation, and quotation; do not invent sources or results. If the paper lacks what the fix needs, leave the text and add a speaker note naming the gap. Wording rules: references/slide-copy-rules.md."].filter(Boolean).join("\n");
+}
+function guideGo(f){
+  if(!f.slide)return;
+  if(!state.editMode)enterEditMode();
+  if(state.currentSlide!==f.slide-1){state.currentSlide=f.slide-1;editorRender()}
+  const path=f.path&&f.path!=="deck"?f.path:"",target=path&&editRoot.querySelector(`[data-bind="${CSS.escape(path)}"]`);
+  if(!target)return;
+  target.scrollIntoView({block:"nearest"});target.classList.add("guide-flash");
+  setTimeout(()=>target.classList.remove("guide-flash"),1600);
+}
+
+function guideSlideLabel(f){return f.slide?`Slide ${f.slide}`:"Deck"}
+function renderBriefQuestion(step){
+  const number=["minutes","audience","takeaway"].indexOf(step)+1;
+  const head=(title,hint)=>`<div class="guide-step-kicker">Talk brief · question ${number} of 3</div><h4>${title}</h4><p>${hint}</p>`;
+  const actions=`<div class="mini-actions"><button type="button" class="mini-btn" data-guide="brief-save" data-field="${step}">Save</button><button type="button" class="mini-btn" data-guide="skip-brief" data-step="${step}">Skip for now</button></div>`;
+  if(step==="minutes")return`<div class="guide-step">${head("How long is the talk?","Slide count, pacing, and the presenter timer use this.")}<div class="mini-actions">${[5,8,10,12,15,20,30,45].map(m=>`<button type="button" class="mini-btn" data-guide="brief" data-field="minutes" data-value="${m}">${m} min</button>`).join("")}</div><div class="field"><label for="guide-minutes">Other length in minutes</label><input id="guide-minutes" type="number" min="1" max="240" step="1" data-brief-input="minutes"></div>${actions}</div>`;
+  if(step==="audience")return`<div class="guide-step">${head("Who is in the room?","This sets how much background the talk needs.")}<div class="mini-actions">${GUIDE_AUDIENCES.map(([label])=>`<button type="button" class="mini-btn" data-guide="brief" data-field="audience" data-value="${esc(label)}">${esc(label)}</button>`).join("")}</div><div class="field"><label for="guide-audience">Or describe them</label><input id="guide-audience" type="text" maxlength="200" data-brief-input="audience" placeholder="e.g. Interspeech oral session, speech researchers"></div>${actions}</div>`;
+  return`<div class="guide-step">${head("What one sentence should they remember?","The claim with its evidence, the way you would say it at the end.")}<div class="field"><label for="guide-takeaway">Takeaway</label><textarea id="guide-takeaway" maxlength="400" data-brief-input="takeaway" placeholder="e.g. Masked prediction cuts word error by 2.1 points on LibriSpeech without extra labels."></textarea></div>${actions}</div>`;
+}
+function renderGuideStep(step,findings){
+  if(!step){
+    const skipped=[...guideState.skipped].length;
+    return`<div class="guide-done">${findings.length?`${skipped} step${skipped===1?"":"s"} skipped for now.`:"Nothing left to fix. Rehearse with the presenter view (P) and its timer."}</div>${skipped?'<div class="mini-actions"><button type="button" class="mini-btn" data-guide="unskip">Show skipped steps</button></div>':""}`;
+  }
+  if(step.brief)return renderBriefQuestion(step.brief);
+  const f=step.finding,key=esc(f.key),button=(action,label,extra="")=>`<button type="button" class="mini-btn" data-guide="${action}" data-key="${key}"${extra}>${label}</button>`;
+  const actions=[f.slide?button("go",`Go to slide ${f.slide}`):"",f.slot?button("image","Choose image…"):"",f.commentId?button("resolve","Resolve"):"",button("prompt","Copy agent prompt"),f.commentId?"":button("ignore",f.slide?"Ignore on this slide":"Ignore for this deck",` title="Stored in ${f.slide?"the slide's":"the brief's"} guideIgnore list"`),button("skip","Skip for now")];
+  const current=f.edit?String(getByPath(slides[f.slide-1],f.path)??""):"";
+  const editor=f.edit?`<div class="field"><label for="guide-edit">Edit ${esc(f.path)} on slide ${f.slide}</label><textarea id="guide-edit" data-guide-edit>${esc(f.id==="GD-notes"&&!hasNotes(slides[f.slide-1])?"":current)}</textarea></div><div class="mini-actions">${button("save-field","Save")}</div>`:"";
+  return`<div class="guide-step" data-severity="${f.severity}"><div class="guide-step-kicker">${guideSlideLabel(f)} · ${f.severity}${f.path&&f.path!=="deck"?` · ${esc(f.path)}`:""}</div><h4>${esc(f.title)}</h4>${guideWhy(f)?`<p>${esc(f.why)}</p>`:""}${f.evidence?`<p class="guide-evidence">“${esc(f.evidence)}”</p>`:""}<p><strong>Try:</strong> ${esc(f.move)}</p>${editor}<div class="mini-actions">${actions.join("")}</div>${f.id.startsWith("SC-")?`<div class="inline-hint">${esc(f.id)} from the slide copy rules. A match is a prompt to reread, not proof.</div>`:""}</div>`;
+}
+function renderBriefSummary(){
+  if(guideState.editingBrief)return`<div class="field-row"><div class="field"><label for="brief-minutes">Minutes</label><input id="brief-minutes" type="number" min="1" max="240" value="${esc(deckBrief.minutes??"")}" data-brief-edit="minutes"></div><div class="field"><label for="brief-venue">Venue</label><input id="brief-venue" type="text" maxlength="120" value="${esc(deckBrief.venue||"")}" data-brief-edit="venue" placeholder="e.g. ACL oral"></div></div><div class="field"><label for="brief-audience">Audience</label><input id="brief-audience" type="text" maxlength="200" value="${esc(deckBrief.audience||"")}" data-brief-edit="audience"></div><div class="field"><label for="brief-takeaway">Takeaway</label><textarea id="brief-takeaway" maxlength="400" data-brief-edit="takeaway">${esc(deckBrief.takeaway||"")}</textarea></div><div class="mini-actions"><button type="button" class="mini-btn" data-guide="brief-apply">Save brief</button><button type="button" class="mini-btn" data-guide="brief-cancel">Cancel</button></div>`;
+  const rows=[["Length",deckBrief.minutes?`${deckBrief.minutes} min`:""],["Venue",deckBrief.venue],["Audience",deckBrief.audience],["Takeaway",deckBrief.takeaway]];
+  return`<div class="guide-brief-rows">${rows.map(([label,value])=>`<div class="guide-brief-row"><strong>${label}</strong><span>${value?esc(value):"<em>not set</em>"}</span></div>`).join("")}</div><div class="mini-actions"><button type="button" class="mini-btn" data-guide="brief-edit">Edit brief</button></div>`;
+}
+function guideItemHTML(f){return`<button type="button" class="guide-item" data-guide="focus" data-key="${esc(f.key)}" data-severity="${f.severity}"><span class="guide-dot" aria-hidden="true"></span><span><strong>${guideSlideLabel(f)} · ${esc(f.title)}</strong><span>${esc(f.evidence||f.move)}</span></span><span class="gallery-badge">${f.severity}</span></button>`}
+/* Background refreshes wait while someone types in the panel; the panel's own actions pass force. */
+function renderGuidePanel(force){
+  const active=document.activeElement;
+  if(!force&&guidePanel.contains(active)&&active.matches("input,textarea,select")){guideState.pendingRender=true;return}
+  guideState.pendingRender=false;
+  const findings=guideState.findings,status=guideStatus(findings),checks=guideCheckResults(findings),counted=checks.filter(check=>check.pass!==null),passed=counted.filter(check=>check.pass).length;
+  const ignored=slides.reduce((sum,slide)=>sum+(slide.guideIgnore||[]).length,0)+(deckBrief.guideIgnore||[]).length;
+  guidePanel.innerHTML=`<div class="guide-head"><div class="guide-title"><span>Deck guide</span><button type="button" class="motion-close" data-guide="close" aria-label="Close guide">×</button></div><span class="guide-status" data-status="${status}">${status}</span> <small>${passed} of ${counted.length} checks pass</small><div class="guide-progress" aria-hidden="true"><i style="width:${counted.length?Math.round(passed/counted.length*100):0}%"></i></div></div>
+<div class="guide-body">${guideState.feedback?`<p class="guide-feedback" role="status">${esc(guideState.feedback)}</p>`:""}
+<section><div class="guide-section-title">Next step</div>${renderGuideStep(nextGuideStep(findings),findings)}</section>
+<section class="guide-brief"><div class="guide-section-title">Talk brief</div>${renderBriefSummary()}</section>
+<section><div class="guide-section-title">Checks</div><div class="guide-checks">${checks.map(check=>`<div class="guide-check" data-pass="${check.pass}"><span aria-hidden="true">${check.pass===null?"–":check.pass?"✓":"○"}</span> ${esc(check.label)}${check.pass===null?" · not checked yet":""}</div>`).join("")}</div></section>
+<section><div class="guide-section-title">Open items · ${findings.length}</div><div class="guide-list">${findings.map(guideItemHTML).join("")||'<div class="guide-done">Nothing open.</div>'}</div>${ignored?`<div class="mini-actions"><button type="button" class="mini-btn" data-guide="reset-ignored">Restore ${ignored} ignored check${ignored===1?"":"s"}</button></div>`:""}</section></div>`;
+}
+function updateGuideBadge(){
+  const count=guideState.findings.filter(f=>f.severity!=="minor").length+(briefMinutes()&&deckBrief.takeaway?0:1);
+  document.getElementById("tb-guide-count").textContent=count?String(count):"";
+  guideButton.title=`Deck guide: ${guideStatus(guideState.findings)} (G)`;
+}
+function scheduleGuideRefresh(now){
+  if(typeof guideState!=="object")return;
+  clearTimeout(guideState.timer);
+  guideState.timer=setTimeout(refreshGuide,now?0:450);
+}
+function refreshGuide(force){
+  clearTimeout(guideState.timer);guideState.timer=null;
+  if(!state.editMode)return;
+  guideState.findings=collectGuideFindings();
+  updateGuideBadge();updateCommentBadge();
+  if(guidePanel.classList.contains("show"))renderGuidePanel(force);
+}
+function toggleGuide(force){
+  const open=force??!guidePanel.classList.contains("show");
+  guidePanel.classList.toggle("show",open);
+  document.body.classList.toggle("guide-open",open);
+  guideButton.setAttribute("aria-expanded",String(open));guideButton.classList.toggle("tb-active",open);
+  if(open){guideState.feedback="";refreshGuide(true);guidePanel.querySelector(".guide-step button,.guide-step input,.guide-step textarea")?.focus({preventScroll:true})}
+  else if(guidePanel.contains(document.activeElement))guideButton.focus();
+  requestAnimationFrame(scaleEditDeck);
+}
+function openGuide(){if(!state.editMode)enterEditMode();toggleGuide(true)}
+guideButton.addEventListener("click",()=>toggleGuide());
+guidePanel.addEventListener("focusout",()=>setTimeout(()=>{if(guideState.pendingRender&&!guidePanel.contains(document.activeElement))renderGuidePanel()},0));
+guidePanel.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("input[data-brief-input]")){e.preventDefault();guidePanel.querySelector(`[data-guide="brief-save"][data-field="${e.target.dataset.briefInput}"]`)?.click()}});
+guidePanel.addEventListener("click",e=>{
+  const button=e.target.closest("[data-guide]");
+  if(!button)return;
+  const action=button.dataset.guide,f=guideState.findings.find(item=>item.key===button.dataset.key);
+  if(action==="close"){toggleGuide(false);return}
+  if(action==="go"&&f){guideGo(f);return}
+  if(action==="image"&&f){chooseSlotImage(f.slide-1,f.slot);return}
+  if(action==="prompt"&&f){copyText(guidePrompt(f),()=>toast("Agent prompt copied"));return}
+  if(action==="brief"||action==="brief-save"){
+    const field=button.dataset.field,value=action==="brief"?button.dataset.value:guidePanel.querySelector(`[data-brief-input="${field}"]`)?.value;
+    if(!setBriefField(field,value)){toast(field==="minutes"?"Enter the talk length in minutes":"Write an answer, or skip for now");return}
+    guideState.feedback=briefFeedback(field);
+  }
+  else if(action==="skip-brief"){guideState.skipped.add(`brief-${button.dataset.step}`);guideState.feedback=""}
+  else if(action==="brief-edit")guideState.editingBrief=true;
+  else if(action==="brief-cancel")guideState.editingBrief=false;
+  else if(action==="brief-apply"){
+    const next={...deckBrief};
+    guidePanel.querySelectorAll("[data-brief-edit]").forEach(input=>{next[input.dataset.briefEdit]=input.value});
+    commitEdit();deckBrief=sanitizeBrief(next);guideState.editingBrief=false;guideState.feedback="Brief saved.";
+  }
+  else if(action==="resolve"&&f){setCommentResolved(f.slide-1,f.commentId,true);guideState.feedback="Comment resolved."}
+  else if(action==="ignore"&&f){
+    commitEdit();
+    const owner=f.slide?slides[f.slide-1]:deckBrief;
+    owner.guideIgnore=[...new Set([...(owner.guideIgnore||[]),f.id])];
+    guideState.focus=null;guideState.feedback=`Ignored ${f.id} ${f.slide?`on slide ${f.slide}`:"for this deck"}.`;
+  }
+  else if(action==="skip"&&f){guideState.skipped.add(f.key);guideState.focus=null;guideState.feedback=""}
+  else if(action==="unskip")guideState.skipped.clear();
+  else if(action==="focus"&&f){guideState.focus=f.key;guideState.feedback="";guideGo(f)}
+  else if(action==="save-field"&&f){
+    const value=guidePanel.querySelector("[data-guide-edit]")?.value.trim()||"";
+    if(!value){toast("Write the new text first");return}
+    commitEdit();setByPath(slides[f.slide-1],f.path,value);
+    state.currentSlide=f.slide-1;editorRender();
+    guideState.focus=null;guideState.feedback=`Saved ${f.path} on slide ${f.slide}.`;
+  }
+  else if(action==="reset-ignored"){commitEdit();slides.forEach(slide=>delete slide.guideIgnore);delete deckBrief.guideIgnore;guideState.feedback="Ignored checks are back in the list."}
+  refreshGuide(true);
+  guidePanel.querySelector(".guide-step button,.guide-step input,.guide-step textarea")?.focus({preventScroll:true});
+});
+
 /* ── Edit mode keyboard shortcut ── */
 window.addEventListener('keydown',e=>{
   const target=e.target instanceof Element?e.target:null;
@@ -2622,11 +4517,15 @@ window.addEventListener('keydown',e=>{
   if(!state.editMode)return;
   if(e.key==='Escape'){
     if(editingTarget){target.blur();return;}
+    if(document.getElementById('comment-composer')){closeCommentComposer();return;}
+    if(commentMode){toggleCommentMode(false);return;}
     if(editorContextMenu.classList.contains('show')){editorContextMenu.classList.remove('show');return;}
     if(editorShortcuts.classList.contains('show')){editorShortcuts.classList.remove('show');return;}
     if(fileMenu.classList.contains('open')){fileMenu.classList.remove('open');fileMenuButton.setAttribute('aria-expanded','false');return;}
     if(themePanel.classList.contains('show')){themePanel.classList.remove('show');return;}
+    if(editorMotionPanel.classList.contains('show')){toggleMotionPanel(editorMotionPanel,false);return;}
     if(layoutPicker.classList.contains('show')){layoutPicker.classList.remove('show');return;}
+    if(guidePanel.classList.contains('show')){toggleGuide(false);return;}
     enterPresentMode();return;
   }
   if(modifier&&key==='z'){
@@ -2644,6 +4543,8 @@ window.addEventListener('keydown',e=>{
     e.preventDefault();document.getElementById('tb-shortcuts').click();return;
   }
   if(editingTarget||target?.closest('button,a,[role="menuitem"]'))return;
+  if(!modifier&&!e.altKey&&key==='g'){e.preventDefault();toggleGuide();return;}
+  if(!modifier&&!e.altKey&&key==='c'){e.preventDefault();toggleCommentMode();return;}
   if(e.ctrlKey&&!e.metaKey&&key==='m'){
     e.preventDefault();insertNewSlide();return;
   }

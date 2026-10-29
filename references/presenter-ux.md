@@ -25,7 +25,24 @@ Also support when practical:
 - laser pointer toggle for pointing at figures or tables,
 - wheel and single-finger horizontal swipe navigation for trackpads and tablets.
 
+## HTML deck keys and tools
 
+| Key | Action |
+|:---|:---|
+| → ↓ Space PgDn / ← ↑ Shift+Space PgUp | Next / previous beat (clickers send PgDn and PgUp) |
+| Home, End, digits | First, last, or slide N; digits typed within 0.9 s join, so 1 then 2 opens slide 12 |
+| O or G | Overview of real thumbnails with build, transition, and notes markers; arrows move, Enter opens |
+| P | Presenter window: current and next beat (the next build, not just the next slide), notes, timer against the brief's talk length, pace warning, black screen |
+| N | Notes drawer on the deck itself, for single-screen rehearsal; when pop-ups are blocked, P opens it instead |
+| A | Auto-advance (moved from P) |
+| B or `.`, W | Black or white screen; any navigation key clears it |
+| F, L, M, R | Fullscreen, laser, motion panel, phone remote |
+| Ctrl/⌘ K | Command menu: full-text slide search and every deck action, in present and edit mode |
+| ? | Key list · Esc closes the top layer first, then leaves fullscreen |
+
+- **Deep links:** `#/N` opens slide N fully built and `#/N/B` at build step B; `?slide=N` also works. The hash follows navigation without adding history entries, so a reload keeps the place. `?chrome=0` hides the controls for embedding or recording.
+- **Print and PDF:** Ctrl/⌘ P or File › Print renders every slide at its final build on its own 1200×675 page. File › Print handout puts each slide above its notes on A4. Turn on background graphics if the browser asks.
+- **Speaker notes** accept light Markdown: blank-line paragraphs, `-` or `1.` lists, `**bold**`, `*italic*`, and `` `code` ``.
 
 ## Fullscreen behavior (MANDATORY)
 
@@ -71,9 +88,11 @@ Fullscreening `document.documentElement` or `document.body` while the deck has a
 
 ## Motion rules
 
-- Clarify transitions with subtle fade (200–250ms).
-- Respect `prefers-reduced-motion`.
-- No bounce, large zooms, or distracting effects.
+- Slide transitions and entrances come from the deck's [motion preset](motion-graphics.md). `M` (HTML deck, React component) or Tweaks (React project) changes it live.
+- Presenter input always wins: next, previous, and jumps finish running motion first, and rapid presses cut instantly.
+- Going back shows the previous slide complete; builds animate only the revealed target.
+- Respect `prefers-reduced-motion`; the engines cut instantly for it.
+- No bounce or distracting ambient effects; strong transitions are reserved for accent slides.
 
 ## Input handling
 

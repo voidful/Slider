@@ -11,14 +11,17 @@ The canonical template (`paper-presentation.html`) already contains:
 - embedded JavaScript with both classic renderer and contentBlocks composer,
 - a `slides` array placeholder at `// @render-slide-data`,
 - theme and venue config objects at `// @render-theme` and `// @render-venue`,
-- keyboard and control bindings, including play/pause auto-advance and SnapShare-style phone remote pairing with the bundled controller URL and multi-collaborator identity,
-- editor module (compact toolbar, faithful filmstrip, slide context actions, drag/keyboard reordering, slide clipboard, undo/redo, collapsible inspector, layout picker, theme panel, image upload, drafts, and JSON/HTML import/export),
+- Theme panel color overrides at `// @render-palette`: `null` in a fresh render, so the theme preset applies; `exportHTML()` writes the edited colors there so they survive reopening,
+- the talk brief at `// @render-brief` (`meta.brief`; `exportHTML()` writes edits back) and the Guide's wording table at `// @copy-rules` (`COPY_RULESET`, written by `scripts/audit_slide_copy.py --sync-template`),
+- keyboard and control bindings, including auto-advance (`A`), the presenter window (`P`), the command menu (Ctrl/⌘ K), deep links, print to PDF, and SnapShare-style phone remote pairing with the bundled controller URL and multi-collaborator identity,
+- editor module (compact toolbar, faithful filmstrip, slide context actions, drag/keyboard reordering, slide clipboard, undo/redo, collapsible inspector, layout picker, theme panel, image upload and figure-slot replacement, the Guide, comment mode, drafts, and JSON/HTML import/export),
 - correct fullscreen scaling via `scaleDeck()`,
 - density guard via `fitRenderedSlide()`,
-- gallery overview, laser pointer, annotation canvas, collaborator roster, shared note overlay, draft save/load, and self-contained export function,
+- thumbnail overview, notes drawer, blackout, laser pointer, annotation canvas, collaborator roster, shared note overlay, draft save/load, and self-contained export function,
+- no literal document-level end tags inside the script (the presenter window is built with DOM calls), because tools such as the browser audit splice markup before the first body end tag,
 - template identity marker: `<meta name="generator" content="slider/paper-presentation-v1"/>`.
 
-**To render a deck:** inject the `slides` JSON array at the `// @render-slide-data` marker. Do not rewrite any other part of the template.
+**To render a deck:** use `scripts/render_slideshow_artifact.py`; it serializes UTF-8 JSON into the `SLIDE_DATA_B64` payload. Content work reuses the engine. A requested renderer fix may change the template with verification of affected behavior.
 
 ## Required engine structure
 
@@ -234,7 +237,7 @@ Same as before — nav buttons, progress bar, notes, overview, presenter, fullsc
 - Use semantic label colors per slide type.
 - Apply metric value colors based on `delta` field.
 - The `<body>` tag must NOT have `class="edit-mode"` in the generated output. The deck loads in presentation mode by default. Users enter edit mode via the `E` key or the edit button.
-- All JavaScript string literals must preserve escape sequences as source-level characters. In particular, `.join("\n")` must appear as the four-character escape sequence, not a literal line break. A literal newline inside a JS string literal causes a blocking `SyntaxError`.
+- All JavaScript string literals must preserve escape sequences as source-level characters. In particular, `.join("\n")` must preserve the two source characters backslash and n, not a literal line break. A literal newline inside a JS string literal causes a blocking `SyntaxError`.
 
 ## Failure handling
 
@@ -253,4 +256,4 @@ Key integration points:
 
 ## Verification
 
-After rendering, the deck should pass the three-phase verification workflow defined in [verification-workflow.md](verification-workflow.md). See that document for the complete gated pipeline.
+After rendering, the deck should pass the three-phase verification workflow defined in [verification-workflow.md](verification-workflow.md). Select checks relevant to the change and reuse successful results until their inputs change.

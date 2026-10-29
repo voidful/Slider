@@ -12,7 +12,7 @@ Quality gates protect readability; they do not dictate layout."
 ### Principles
 
 1. **Evidence is the protagonist.** Paper figures, tables, and data dominate their slides.
-2. **One message per slide.** Every slide earns its place through a single clear claim.
+2. **One message per slide.** Every slide earns its place through a single clear claim, worded by the [slide copy rules](../../references/slide-copy-rules.md): a claim title, quantified gains, no placeholders, and Taiwan usage for zh-TW.
 3. **Compose, don't template.** Use primitives to build the best layout for each slide's content — not a fixed grid.
 4. **Atmosphere adapts to content.** A paper on visual generation deserves different slide energy than a paper on optimization theory.
 5. **Quality gates are non-negotiable.** Overflow protection, fullscreen behavior, projector safety, and semantic color are always enforced.
@@ -39,12 +39,12 @@ Lock the deck as a presentation before polishing individual slides:
 
 ## Non-negotiable quality gates
 
-These rules override ALL other guidance. They cannot be relaxed by creative decisions.
+Preserve readable evidence and the fixed-stage renderer contract. Aesthetic presets and numeric composition targets are defaults under the user's brief and SKILL.md; they do not override a requested palette, format, or scope.
 
 ### Overflow protection (MANDATORY)
 - All text containers must set `overflow-wrap: break-word` and `word-break: break-word`.
 - Titles must use `text-wrap: balance` and `hyphens: auto`.
-- Titles must use clamped font size: `clamp(1.75rem, 3vw, 2.5rem)` to prevent overflow.
+- Use a stage-independent title size, such as `2.5rem`, and inspect wrapping. Do not put viewport units inside `clamp()`.
 - Body text must have `max-width` set (56ch default).
 - Shrinkable flex and grid children must set `min-width: 0` or `min-height: 0` so long content can wrap instead of forcing overflow.
 - Metric labels must set `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`.
@@ -73,22 +73,22 @@ Because the deck uses stage-consistent scaling, all font sizes are defined once 
 
 - **Minimum font sizes** (1200×675 canvas) — these are the absolute floor:
   - Labels / section kickers: 15px, weight 700, uppercase
-  - Body text / bullets: `clamp(1.1rem, 1.6vw, 1.3rem)` → ~18–21px
-  - Callout text: `clamp(1.1rem, 1.6vw, 1.3rem)` → ~18–21px
+  - Body text / bullets: `1.2rem` → ~19px at a 16px root
+  - Callout text: `1.2rem` → ~19px at a 16px root
   - Table cells: 18px
   - Table headers: 18px, weight 600
   - Metric labels: 16px
   - Metric detail: 15px
   - Captions / evidence notes: 14px
   - **No text smaller than 14px anywhere in the deck.**
-- **Titles**: `clamp(2rem, 3.5vw, 2.8rem)` → ~32–45px
-- **Hero text**: `clamp(2.5rem, 4vw, 3.5rem)` → ~40–56px
+- **Titles**: `2.8rem` → ~45px at a 16px root
+- **Hero text**: `3.5rem` → ~56px at a 16px root
 - **Metric values**: 32–52px, weight 800
 - **Hero numbers**: 52–80px, weight 900
 - Projector-safe contrast ratios (at least 4.5:1 for body text).
 
 ### Semantic colors (MANDATORY)
-The deck must NOT be monochrome. These tokens must be defined and used:
+Keep semantic tokens available to the renderer. Use the requested palette; a monochrome talk can distinguish roles with weight, labels, and contrast. Defaults:
 
 | Token | Default | CSS var | Semantic role |
 |:---|:---|:---|:---|
@@ -336,15 +336,20 @@ contentBlocks: [
 
 ## Motion rules
 
-- Start from a static deck that already feels clear and composed.
-- Slide transitions may use short fades or slight upward motion (250–400ms).
-- Entrance motion should prefer `transform` and `opacity`.
+- Start from a static deck that already feels clear and composed. Motion presets layer on top, and every effect ends on that static layout.
+- Choose one deck preset from [motion graphics](../references/motion-graphics.md): `editorial` by default, `subtle` or `none` for formal or equation-heavy talks, and `kinetic`, `cinematic`, or `digital` when the brief asks for more energy. The user's brief takes precedence.
+- Stronger transitions play on accent slides only: opener, main result, limitation turn, and close. The engines apply this automatically.
+- Entrance motion uses `transform`, `opacity`, `filter`, `clip-path`, and masks. Text is split only when its line breaks stay identical.
+- Do not make the audience wait. Entrances settle in about 1–1.5 s at 1× speed, and any navigation finishes running motion immediately.
+- Use `motion: "subtle"` or `"none"` on dense tables, long equations, and number-heavy slides.
 - Hover states are only for chrome and optional interactive helpers, not for core evidence.
 - Ambient motion is optional and should appear on at most one or two rhetorical accent slides.
 - Always respect `prefers-reduced-motion: reduce`.
 - Never use `transition: all`.
 
 ### Required animation keyframes
+
+The bundled renderers animate entrances with the motion engine. A custom renderer without it can use these keyframes:
 
 ```css
 /* Slide entrance (MANDATORY on every slide transition) */
@@ -381,8 +386,9 @@ When navigating between slides with different moods, the background should trans
 
 ### Motion prohibitions
 - Do not use abrasive bounce or chaotic staggered delays that distract from presenting.
-- Do not make the audience wait for data (keep entrance animations < 500ms).
+- Do not make the audience wait for data. A slide's entrance should settle within about 1.5 s at 1×; a count-up must end on the exact reported value.
 - Do not animate layout, typography, or evidence scale as a substitute for better composition.
+- Do not use motion in place of progressive builds; builds set the pacing.
 
 ---
 
@@ -650,7 +656,7 @@ These common failures are expressly prohibited:
 
 ## Don't
 
-- Do not generate a monochrome or generic deck.
+- Use the requested palette with clear hierarchy and readable evidence.
 - Do not force every slide to change mood just to prove variety.
 - Do not let text overflow its container.
 - Do not shrink evidence figures below 50% of the content area.

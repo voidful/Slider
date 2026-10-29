@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import shutil
 import sys
 from pathlib import Path
@@ -25,6 +26,39 @@ REQUIRED_AGENT_FILES: dict[str, list[str]] = {
     "chatgpt": ["config.yaml", "system_prompt.md", "knowledge_manifest.json"],
     "claude": ["config.yaml", "CLAUDE.md"],
 }
+
+RESOURCE_DIRS = ("agents", "assets", "references", "scripts")
+ROOT_FILES = ("SKILL.md", "README.md", "ARCHITECTURE.md", "TEST_MATRIX.md", "CHANGELOG.md")
+GENERATED_FILES = shutil.ignore_patterns(
+    "node_modules", "dist", "build", "__pycache__", "*.pyc", ".DS_Store", ".git",
+)
+
+
+def config_references(config_path: Path) -> list[tuple[str, Path]]:
+    """Read the scalar and block-list paths used by our handoff metadata.
+
+    This is deliberately limited to the repository's config format, not a
+    general YAML loader. Quoted paths and trailing comments are supported.
+    """
+    references: list[tuple[str, Path]] = []
+    in_knowledge = False
+    for line in config_path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if not line[0].isspace():
+            in_knowledge = stripped == "knowledge_files:"
+        if stripped.startswith(("instructions_source:", "knowledge_manifest:")):
+            key, value = stripped.split(":", 1)
+        elif in_knowledge and stripped.startswith("- "):
+            key, value = "knowledge_files", stripped[2:]
+        else:
+            continue
+        tokens = shlex.split(value, comments=True)
+        if len(tokens) != 1:
+            raise ValueError(f"{config_path}: {key} needs one file path")
+        references.append((key, (config_path.parent / tokens[0]).resolve()))
+    return references
 
 
 def validate_skill_md() -> list[str]:
@@ -85,7 +119,7 @@ def validate_knowledge_manifest(platform: str) -> list[str]:
     for entry in files:
         rel_path = entry.get("path", "")
         full_path = SKILL_ROOT / rel_path
-        if not full_path.exists():
+        if not rel_path or not full_path.is_file():
             errors.append(f"agents/{platform}/knowledge_manifest.json: missing file: {rel_path}")
 
     max_files = manifest.get("max_files", 20)
@@ -108,6 +142,17 @@ def validate_config_yaml(platform: str) -> list[str]:
         errors.append(f"agents/{platform}/config.yaml: missing display_name")
     if "platform:" not in text:
         errors.append(f"agents/{platform}/config.yaml: missing platform field")
+    try:
+        references = config_references(config_path)
+    except ValueError as exc:
+        return errors + [str(exc)]
+    if not any(key == "instructions_source" for key, _ in references):
+        errors.append(f"agents/{platform}/config.yaml: missing instructions_source")
+    for key, path in references:
+        if not path.is_relative_to(SKILL_ROOT.resolve()) or not path.is_file():
+            errors.append(
+                f"agents/{platform}/config.yaml: {key} points outside the bundle or to a missing file: {path}"
+            )
     return errors
 
 
@@ -134,12 +179,11 @@ def validate_system_prompt() -> list[str]:
         return errors
 
     text = path.read_text(encoding="utf-8")
-    # Rough token estimate: ~4 chars per token
-    estimated_tokens = len(text) // 4
-    if estimated_tokens > 8000:
+    # Repository adapter budget, not a claim about an account's UI limits.
+    if len(text) > 8000:
         errors.append(
-            f"agents/chatgpt/system_prompt.md: estimated {estimated_tokens} tokens, "
-            "may exceed ChatGPT instruction limits"
+            f"agents/chatgpt/system_prompt.md: {len(text)} characters, "
+            "exceeds the bundle's 8000-character instruction budget"
         )
     return errors
 
@@ -150,10 +194,9 @@ def validate_platform(platform: str) -> list[str]:
     errors.extend(validate_agent_dir(platform))
     errors.extend(validate_config_yaml(platform))
     errors.extend(validate_knowledge_manifest(platform))
+    errors.extend(validate_skill_md())
 
-    if platform == "gemini":
-        errors.extend(validate_skill_md())
-    elif platform == "claude":
+    if platform == "claude":
         errors.extend(validate_claude_md())
     elif platform == "chatgpt":
         errors.extend(validate_system_prompt())
@@ -162,21 +205,29 @@ def validate_platform(platform: str) -> list[str]:
 
 
 def export_platform(platform: str, export_dir: Path) -> None:
-    """Export platform-specific files to a directory."""
+    """Copy a usable skill bundle while preserving all relative references."""
+    errors = validate_platform(platform)
+    if errors:
+        raise ValueError("\n".join(errors))
+    destination = export_dir.resolve()
+    source = SKILL_ROOT.resolve()
+    if (
+        source.is_relative_to(destination)
+        or any(destination.is_relative_to(source / name) for name in RESOURCE_DIRS)
+    ):
+        raise ValueError("Export destination overlaps the skill source resources")
+
     export_dir.mkdir(parents=True, exist_ok=True)
+    for name in ROOT_FILES:
+        shutil.copy2(SKILL_ROOT / name, export_dir / name)
+    for name in RESOURCE_DIRS:
+        shutil.copytree(
+            SKILL_ROOT / name, export_dir / name,
+            dirs_exist_ok=True, ignore=GENERATED_FILES,
+        )
 
     agent_dir = SKILL_ROOT / "agents" / platform
-    if not agent_dir.is_dir():
-        print(f"  ✗ agents/{platform}/ not found, skipping")
-        return
-
-    # Copy agent config files
-    for item in agent_dir.iterdir():
-        if item.is_file():
-            shutil.copy2(item, export_dir / item.name)
-            print(f"  → {item.name}")
-
-    # Copy knowledge files if manifest exists
+    # A flat knowledge selection supplements the complete runtime tree.
     manifest_path = agent_dir / "knowledge_manifest.json"
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -184,36 +235,14 @@ def export_platform(platform: str, export_dir: Path) -> None:
         knowledge_dir.mkdir(exist_ok=True)
         for entry in manifest.get("files", []):
             src = SKILL_ROOT / entry["path"]
-            if src.exists():
-                shutil.copy2(src, knowledge_dir / src.name)
-                print(f"  → knowledge/{src.name}")
+            shutil.copy2(src, knowledge_dir / src.name)
     elif platform == "claude":
-        # Copy knowledge files listed in config.yaml
-        config_path = agent_dir / "config.yaml"
-        if config_path.exists():
-            text = config_path.read_text(encoding="utf-8")
-            knowledge_dir = export_dir / "knowledge"
-            knowledge_dir.mkdir(exist_ok=True)
-            for line in text.splitlines():
-                line = line.strip()
-                if line.startswith("- ../../references/"):
-                    rel = line.lstrip("- ")
-                    src = (agent_dir / rel).resolve()
-                    if src.exists():
-                        shutil.copy2(src, knowledge_dir / src.name)
-                        print(f"  → knowledge/{src.name}")
-
-    # For Gemini, also copy SKILL.md and references
-    if platform == "gemini":
-        shutil.copy2(SKILL_ROOT / "SKILL.md", export_dir / "SKILL.md")
-        print("  → SKILL.md")
-        refs_dir = SKILL_ROOT / "references"
-        if refs_dir.is_dir():
-            dest_refs = export_dir / "references"
-            if dest_refs.exists():
-                shutil.rmtree(dest_refs)
-            shutil.copytree(refs_dir, dest_refs)
-            print(f"  → references/ ({len(list(dest_refs.iterdir()))} files)")
+        knowledge_dir = export_dir / "knowledge"
+        knowledge_dir.mkdir(exist_ok=True)
+        for key, src in config_references(agent_dir / "config.yaml"):
+            if key == "knowledge_files":
+                shutil.copy2(src, knowledge_dir / src.name)
+    print(f"  → Complete bundle; entrypoint: agents/{platform}/config.yaml")
 
 
 def main() -> None:
@@ -234,7 +263,7 @@ def main() -> None:
     parser.add_argument(
         "--export-dir",
         type=Path,
-        help="Export directory (default: dist/<platform>)",
+        help="Output directory; with --platform all, create a subdirectory per platform (default: dist/<platform>)",
     )
     args = parser.parse_args()
 
@@ -262,9 +291,15 @@ def main() -> None:
 
     # Export mode
     for platform in platforms:
-        base_dir = args.export_dir or (SKILL_ROOT / "dist" / platform)
+        base_dir = (
+            args.export_dir / platform if args.export_dir and args.platform == "all"
+            else args.export_dir or (SKILL_ROOT / "dist" / platform)
+        )
         print(f"\n═══ Exporting {platform} → {base_dir} ═══")
-        export_platform(platform, base_dir)
+        try:
+            export_platform(platform, base_dir)
+        except (ValueError, OSError) as exc:
+            parser.exit(1, f"Export failed: {exc}\n")
 
     print("\n✓ Export complete")
 

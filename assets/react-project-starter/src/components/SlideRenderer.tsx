@@ -13,6 +13,7 @@ function buildProps(slide: Slide, target: string, revealedBuilds?: number) {
   return {
     "data-build-target": target,
     "data-build-state": visible ? "revealed" : "pending",
+    "data-morph": slide.morph?.[target] || undefined,
     "aria-hidden": visible ? undefined : true,
   } as const;
 }

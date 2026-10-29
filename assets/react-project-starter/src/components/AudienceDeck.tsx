@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { MouseEvent, RefObject } from "react";
 import { SlideRenderer } from "./SlideRenderer";
+import { MotionStage, type NavKind } from "./MotionStage";
 import { ControlDock } from "./ControlDock";
 import { LaserPointer } from "./LaserPointer";
 import { ClickNavZones, HelpPanel, NotesPanel, OverviewPanel } from "./AudienceOverlays";
@@ -11,6 +12,7 @@ import { TweaksPanel } from "./TweaksPanel";
 import { deckDesign } from "../lib/deckDesign";
 import { openPresenterWindow, type BlackoutMode } from "../lib/presenterWindow";
 import type { Tweaks } from "../lib/useTweaks";
+import type { DeckMotion } from "../lib/motion";
 import type { ReviewComment, ReviewTarget, Slide, Theme, Venue } from "../types";
 import { themeLabels, venueLabels } from "../lib/presets";
 
@@ -51,6 +53,10 @@ export function AudienceDeck({
   setTweak,
   resetTweaks,
   exportTweaks,
+  motion,
+  navKind,
+  replayToken,
+  onReplayMotion,
   review,
   onDeckClick,
   onPrev,
@@ -93,6 +99,10 @@ export function AudienceDeck({
   setTweak: <K extends keyof Tweaks>(key: K, value: Tweaks[K]) => void;
   resetTweaks: () => void;
   exportTweaks: () => void;
+  motion: DeckMotion;
+  navKind: NavKind;
+  replayToken: number;
+  onReplayMotion: () => void;
   review: ReviewState;
   onDeckClick: (event: MouseEvent<HTMLDivElement>) => void;
   onPrev: () => void;
@@ -129,9 +139,17 @@ export function AudienceDeck({
           Slide {currentSlide + 1} of {slides.length}: {slide?.title}{buildCount ? `, build ${revealedBuilds} of ${buildCount}` : ""}
         </div>
 
-        <div className={`slide-stage ${showNotes ? "slide-stage-notes" : ""}`} key={currentSlide}>
+        <MotionStage
+          slides={slides}
+          index={currentSlide}
+          revealed={revealedBuilds}
+          motion={motion}
+          navKind={navKind}
+          replayToken={replayToken}
+          className={`slide-stage motion-managed ${showNotes ? "slide-stage-notes" : ""}`}
+        >
           <SlideRenderer slide={slide} theme={theme} revealedBuilds={revealedBuilds} />
-        </div>
+        </MotionStage>
 
         <ClickNavZones canPrev={canPrev} canNext={canNext} onPrev={onPrev} onNext={onNext} />
         {showHelp ? <HelpPanel onClose={onToggleHelp} /> : null}
@@ -140,7 +158,7 @@ export function AudienceDeck({
         {showReview ? <ReviewPanel comments={review.comments} current={currentSlide} target={review.target} value={review.draft} onValueChange={review.setDraft} onAdd={review.addComment} onDelete={review.deleteComment} onExport={review.exportComments} onClose={onToggleReview} /> : null}
         {showVisualAssets ? <VisualAssetPanel slides={slides} current={currentSlide} onSelect={onGoTo} onClose={onToggleVisualAssets} /> : null}
         {showDesignLock ? <DesignLockPanel design={deckDesign} onClose={onToggleDesignLock} /> : null}
-        {showTweaks ? <TweaksPanel tweaks={tweaks} setTweak={setTweak} reset={resetTweaks} exportTweaks={exportTweaks} onClose={onToggleTweaks} /> : null}
+        {showTweaks ? <TweaksPanel tweaks={tweaks} setTweak={setTweak} reset={resetTweaks} exportTweaks={exportTweaks} onReplayMotion={onReplayMotion} onClose={onToggleTweaks} /> : null}
         {blackout ? <div className={`blackout-overlay blackout-${blackout}`}>{blackout} screen</div> : null}
 
         <ControlDock

@@ -1,5 +1,5 @@
 {
-  "version": "23",
+  "version": "24",
   "platform": "chatgpt",
   "max_files": 20,
   "description": "Priority-ordered list of reference files for ChatGPT Custom GPT knowledge upload.",
@@ -55,6 +55,16 @@
       "description": "Faithful figure redraw constraints"
     },
     {
+      "path": "references/verification-workflow.md",
+      "priority": 1,
+      "description": "Verification scope, completion, and reporting limits"
+    },
+    {
+      "path": "SKILL.md",
+      "priority": 1,
+      "description": "Shared task scope, defaults, routing, and completion contract"
+    },
+    {
       "path": "references/slide-quality-rubric.md",
       "priority": 2,
       "description": "Slide quality audit checklist"
@@ -80,11 +90,6 @@
       "description": "Figure and table triage"
     },
     {
-      "path": "references/theme-presets.md",
-      "priority": 2,
-      "description": "Base theme options"
-    },
-    {
       "path": "references/venue-style-variants.md",
       "priority": 3,
       "description": "Venue-specific finishing layers"
@@ -95,19 +100,14 @@
       "description": "Visual candidate ranking criteria"
     },
     {
-      "path": "references/redundancy-suppression.md",
-      "priority": 3,
-      "description": "Redundant visual suppression rules"
-    },
-    {
       "path": "references/bug-and-conciseness-audit.md",
       "priority": 3,
       "description": "Final audit checklist"
     }
   ],
   "notes": [
-    "v23 reorders priorities: evidence and visual policy files are now priority 1.",
-    "DESIGN.md is included as a knowledge file for the first time.",
-    "Remaining reference files (panel detection, table parsing, separator geometry) are specialized."
+    "The 20-file selection is a bundle target; check the current host upload limits.",
+    "Use the complete runtime tree when code execution is available; knowledge text alone does not supply an executable renderer.",
+    "Specialized processing and theme references remain available in the complete bundle and are loaded only as needed."
   ]
 }

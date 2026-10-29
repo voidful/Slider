@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slider"
+  short_description: "Create and revise evidence-backed paper presentations"
+  default_prompt: "Use $slider to turn this paper into a talk for my audience and verify the resulting slides."

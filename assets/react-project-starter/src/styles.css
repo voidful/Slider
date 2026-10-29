@@ -250,6 +250,162 @@ button {
   }
 }
 
+/* Motion graphics (lib/motion.ts). The engine drives the audience stage, so its CSS entrances are off. */
+.motion-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.motion-under {
+  z-index: 0;
+}
+
+.motion-over {
+  z-index: 3;
+}
+
+.deck-frame > .slide-stage {
+  z-index: 1;
+  background: var(--frame);
+}
+
+.motion-managed,
+.motion-managed .stagger-1,
+.motion-managed .stagger-2,
+.motion-managed .stagger-3,
+.motion-managed .stagger-4 {
+  animation: none;
+}
+
+.motion-managed [data-build-target] {
+  transition: none;
+}
+
+.motion-piece {
+  position: absolute;
+  inset: 0;
+}
+
+.mo-curtain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.mo-wipe-edge {
+  position: absolute;
+  left: 0;
+  top: -8%;
+  bottom: -8%;
+  width: 6px;
+  margin-left: -3px;
+  background: var(--accent);
+  box-shadow: 0 0 22px var(--accent);
+}
+
+.mo-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 4px solid var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 24px var(--accent), inset 0 0 24px var(--accent);
+}
+
+.mo-pixels {
+  position: absolute;
+  inset: 0;
+}
+
+.mo-pixels i {
+  position: absolute;
+  width: calc(100% / 16 + 1px);
+  height: calc(100% / 9 + 1px);
+  background: var(--text);
+}
+
+.mo-pixels i.hot {
+  background: var(--accent);
+}
+
+.mo-w,
+.mo-c,
+.mo-m {
+  display: inline-block;
+}
+
+.mo-w {
+  white-space: nowrap;
+}
+
+.mo-m {
+  clip-path: inset(-0.22em -0.12em -0.3em -0.12em);
+}
+
+.mo-l,
+.mo-li,
+.mo-half {
+  display: block;
+}
+
+.mo-lm {
+  clip-path: inset(-0.25em -1em -0.35em -1em);
+}
+
+.mo-li {
+  transform-origin: 0 100%;
+}
+
+.mo-merge {
+  position: relative;
+}
+
+.mo-top {
+  clip-path: inset(-0.4em -0.6em calc(50% - 0.5px) -0.6em);
+}
+
+.mo-bottom {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  clip-path: inset(calc(50% - 0.5px) -0.6em -0.5em -0.6em);
+}
+
+.mo-scr {
+  position: relative;
+  -webkit-text-fill-color: transparent;
+}
+
+.mo-scr::after {
+  content: attr(data-g);
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--accent);
+  -webkit-text-fill-color: var(--accent);
+}
+
+.mo-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.mo-masking {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--mo-p, 130%) - 26%), transparent var(--mo-p, 130%));
+  mask-image: linear-gradient(90deg, #000 calc(var(--mo-p, 130%) - 26%), transparent var(--mo-p, 130%));
+}
+
 .slide-stage-notes {
   padding-bottom: 176px;
 }
@@ -1115,6 +1271,42 @@ button {
 .tweak-row input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
+}
+
+.tweak-row select {
+  grid-column: 2 / 4;
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--frame);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 0 8px;
+}
+
+.tweak-motion-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.tweak-motion-grid .tweak-theme-button {
+  padding: 0 8px;
+  text-align: center;
+}
+
+.tweak-replay {
+  width: 100%;
+}
+
+.tweak-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .tweak-row-toggle {

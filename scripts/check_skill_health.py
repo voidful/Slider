@@ -75,13 +75,7 @@ def assert_theme_adaptive_toolbars() -> list[str]:
         'assets/react-slideshow-starter/App.tsx': ['toolbarTone: "light" | "dark"', '--toolbar-bg', 'toolbarPalettes'],
         'assets/react-project-starter/src/styles.css': ['--dock-bg', '.theme-deep-navy-academic', 'background: var(--dock-bg)'],
     }
-    failures = []
-    for rel, tokens in requirements.items():
-        text = (ROOT / rel).read_text(encoding='utf-8')
-        missing = [token for token in tokens if token not in text]
-        if missing:
-            failures.append(f'Theme-adaptive toolbar contract is incomplete in {rel}: missing {missing}')
-    return failures
+    return [f'Theme-adaptive toolbar contract is incomplete in {rel}: missing {m}' for rel, tokens in requirements.items() if (m := [t for t in tokens if t not in (ROOT / rel).read_text(encoding='utf-8')])]
 
 def assert_editor_contract() -> list[str]:
     template = (ROOT / 'assets/html-slideshow-starter/paper-presentation.html').read_text(encoding='utf-8')
@@ -91,13 +85,34 @@ def assert_editor_contract() -> list[str]:
         'slide clipboard': ['function copyCurrentSlide', 'function pasteSlide', 'data-editor-action="paste"'],
         'history snapshots': ['function captureEditorSnapshot', 'function restoreEditorSnapshot'],
         'Google Slides-style shortcuts': ["e.ctrlKey&&!e.metaKey&&key==='m'", "modifier&&key==='d'", "modifier&&key==='z'"],
+        'presenting tools': ['function attachPresenter', 'function buildPrintRoot', 'function toggleCommandMenu', 'function applyStartLocation', 'function openGallery'],
+        'guide and comments': ['// @render-brief', 'function collectGuideFindings', 'function toggleCommentMode', 'function replaceSlotImage', 'function exportComments'],
     }
+    return [f'HTML editor contract is missing {label}: {m}' for label, tokens in requirements.items() if (m := [t for t in tokens if t not in template])]
+
+def assert_guide_contract() -> list[str]:
+    sys.path.insert(0, str(SCRIPTS_DIR)); import audit_slide_copy as copy, render_slideshow_artifact as renderer
+    html = (ROOT / 'assets/html-slideshow-starter/paper-presentation.html').read_text(encoding='utf-8')
+    script, line = max(re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.S), key=len), re.search(r'^const COPY_RULESET=(.*); // @copy-rules$', html, re.M)
+    failures = [] if line and json.loads(line.group(1)) == copy.ruleset() else ['HTML Guide COPY_RULESET differs from audit_slide_copy.py RULES; run audit_slide_copy.py --sync-template']
+    failures += [f'HTML template script contains a literal {tag}; tools that splice markup before it break the deck' for tag in ('</body>', '</html>') if tag in script]
+    engines = {rel: (ROOT / rel).read_text(encoding='utf-8') for rel in ('assets/html-slideshow-starter/paper-presentation.html', 'assets/react-project-starter/src/lib/motion.ts', 'assets/react-slideshow-starter/App.tsx')}
+    return failures + [f'{rel} has no effect for transition {t}' for rel, text in engines.items() for t in renderer.MOTION_TRANSITIONS if t != 'none' and not re.search(rf'^\s+{t}\(c\)\s*\{{', text, re.M)]
+
+def assert_motion_contract() -> list[str]:
+    sys.path.insert(0, str(SCRIPTS_DIR)); import render_slideshow_artifact as renderer
+    ids = lambda text, pattern: (lambda m: re.findall(r'"([\w-]+)"', m.group(1)) if m else None)(re.search(pattern + r'\s*=?\s*\[([^\]]*)\]', text))
+    expected = {'transitions': list(renderer.MOTION_TRANSITIONS), 'text effects': list(renderer.MOTION_TEXT_EFFECTS), 'presets': list(renderer.MOTION_PRESETS),
+                **{f'{k} effects': list(renderer.MOTION_CHANNELS[k]) for k in ('media', 'data', 'group', 'emphasis')}}
     failures = []
-    for label, tokens in requirements.items():
-        missing = [token for token in tokens if token not in template]
-        if missing:
-            failures.append(f'HTML editor contract is missing {label}: {missing}')
-    return failures
+    for label, rel in {'HTML engine': 'assets/html-slideshow-starter/paper-presentation.html', 'React engine': 'assets/react-project-starter/src/lib/motion.ts', 'React component': 'assets/react-slideshow-starter/App.tsx'}.items():
+        text = (ROOT / rel).read_text(encoding='utf-8')
+        found = {'transitions': ids(text, r'MOTION_TRANSITIONS'), 'text effects': ids(text, r'MOTION_TEXT_EFFECTS'), 'presets': re.findall(r'^\s{2}(\w+):\s?\{\s?name:', text, re.M),
+                 **{f'{k} effects': ids(text, rf'\b{k}:') for k in ('media', 'data', 'group', 'emphasis')}}
+        failures += [f'{label} motion {k} {found[k]} differ from render_slideshow_artifact.py {v}' for k, v in expected.items() if found[k] != v]
+    tokens = {'assets/html-slideshow-starter/paper-presentation.html': ['// @render-motion', 'function finishMotion()', 'id="motion-panel"', 'renderMotionInspector'], 'scripts/browser_slide_audit.py': ["readFunction('finishMotion')"],
+              'assets/react-project-starter/src/lib/presentationConfig.ts': ['// @render-motion'], 'assets/react-slideshow-starter/App.tsx': ['// @render-motion', 'getSnapshotBeforeUpdate', 'Motion.finish()'], 'assets/react-project-starter/src/components/MotionStage.tsx': ['getSnapshotBeforeUpdate', 'finishMotion()'], 'assets/react-project-starter/scripts/export-static.mjs': ['?motion=none']}
+    missing = {rel: [t for t in needed if t not in (ROOT / rel).read_text(encoding='utf-8')] for rel, needed in tokens.items()}; return failures + [f'Motion contract is incomplete in {rel}: missing {m}' for rel, m in missing.items() if m]
 
 def validate_typescript_files(paths: list[Path]) -> tuple[list[str], list[str]]:
     node = shutil.which('node')
@@ -196,6 +211,7 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
             react_out,
             project_dir/'src/App.tsx',
             project_dir/'src/components/AudienceDeck.tsx',
+            project_dir/'src/components/MotionStage.tsx', project_dir/'src/components/TweaksPanel.tsx',
             project_dir/'src/components/SlideRenderer.tsx',
             project_dir/'src/components/PresenterPanel.tsx',
             project_dir/'src/components/ReviewPanel.tsx',
@@ -209,6 +225,7 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
             project_dir/'src/lib/usePresentationInput.ts',
             project_dir/'src/lib/reviewComments.ts',
             project_dir/'src/lib/deckDesign.ts',
+            project_dir/'src/lib/motion.ts', project_dir/'src/lib/useTweaks.ts',
         ]
         ts_files = [path for path in ts_files if path.exists()]
         ts_failures, ts_warnings = validate_typescript_files(ts_files)
@@ -309,6 +326,7 @@ def run_roundtrip() -> tuple[list[str], list[str]]:
             failures.append('Generated plan is missing the progressive-build contract')
         if 'getRevealOrder' not in html_text or 'advance()' not in html_text:
             failures.append('Rendered HTML is missing beat-aware progressive navigation')
+        if 'let deckMotion={"preset": "editorial"}' not in html_text or any('deckMotion: DeckMotion = {"preset": "editorial"}' not in t for t in (react_text, (project_dir/'src/lib/presentationConfig.ts').read_text(encoding='utf-8'))): failures.append('Rendered artifacts do not carry the default deck motion preset')
         plan = json.loads(plan_json.read_text(encoding='utf-8'))
         main_slides = [slide for slide in plan.get('slideData', []) if not slide.get('appendix')]
         if len(main_slides) < 15:
@@ -326,12 +344,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='Run health checks for the slider skill')
     parser.add_argument('--strict', action='store_true')
     args = parser.parse_args()
-    failures = assert_python_syntax() + assert_skill_references() + assert_release_docs() + assert_theme_adaptive_toolbars() + assert_editor_contract()
+    failures = assert_python_syntax() + assert_skill_references() + assert_release_docs() + assert_theme_adaptive_toolbars() + assert_editor_contract() + assert_motion_contract() + assert_guide_contract()
     try:
         roundtrip_failures, roundtrip_warnings = run_roundtrip()
     except subprocess.CalledProcessError as exc:
-        detail = (exc.stderr or exc.stdout or str(exc)).strip()
-        roundtrip_failures, roundtrip_warnings = [f'Roundtrip command failed: {detail}'], []
+        roundtrip_failures, roundtrip_warnings = [f'Roundtrip command failed: {(exc.stderr or exc.stdout or str(exc)).strip()}'], []
     failures.extend(roundtrip_failures)
     warnings = roundtrip_warnings + line_count_warnings()
     report = {'failures': failures, 'warnings': warnings, 'ok': not failures and (not warnings or not args.strict)}

@@ -2,8 +2,7 @@
 
 ## Goal
 
-Score the deck before finalizing.
-Revise any slide that falls below threshold.
+Use these dimensions for substantive deck review. Numerical scores and style targets are heuristics under the user's brief; source errors, missing required evidence, and unreadable content still require correction.
 
 ## Scale
 
@@ -31,8 +30,8 @@ Score each dimension from 0 to 2.
 
 ### 4. Visual hierarchy
 - 2: title, focal point, and support structure are immediately legible. Semantic colors used correctly.
-- 1: hierarchy exists but emphasis is weak or deck looks monochrome.
-- 0: eye path is unclear, clutter dominates, or no color differentiation at all.
+- 1: hierarchy exists but emphasis is weak or emphasis is hard to distinguish.
+- 0: eye path is unclear, clutter dominates, or essential distinctions are unclear.
 
 ### 5. Evidence-role match
 - 2: the UI format matches the rhetorical role. Evidence figures are visually dominant (≥65% area).
@@ -50,9 +49,9 @@ Score each dimension from 0 to 2.
 - 0: text overflows, title collides with body, table breaks layout, or captions cover figures.
 
 ### 8. Color and contrast
-- 2: semantic colors used meaningfully. Result labels use green, limitation uses red, method uses accent blue. Not monochrome.
+- 2: semantic colors used meaningfully. Roles remain distinguishable through the requested palette, labels, and contrast.
 - 1: some color usage but inconsistent or too subtle.
-- 0: deck is near monochrome (all gray/black) or uses distracting decorative colors.
+- 0: essential distinctions are unreadable or distracting decoration dominates.
 
 ## Deck-level rubric
 
@@ -79,7 +78,7 @@ Score each dimension from 0 to 2.
 ### 5. UI coherence
 - 2: consistent style, semantic colors used across the deck, interactions work including fullscreen with stage-consistent scaling.
 - 1: mostly coherent with a few mismatches.
-- 0: inconsistent style, fullscreen broken, or monochrome output.
+- 0: inconsistent style, fullscreen broken, or unclear hierarchy.
 
 ### 6. Editability
 - 2: slide content is structured and easy to revise.
@@ -107,7 +106,7 @@ If a slide fails, revise in this order:
 1. fix text overflow and layout breakage,
 2. remove unsupported claims,
 3. simplify to one message,
-4. add semantic color (fix monochrome),
+4. clarify semantic roles through labels, contrast, or suitable color,
 5. increase figure size to ≥65%,
 6. reduce density,
 7. improve visual hierarchy,
@@ -125,4 +124,4 @@ Before final output, confirm:
 - figures are ≥65% of content area on evidence slides,
 - fullscreen fills the viewport correctly,
 - at least one slide states limitations clearly,
-- the deck is not monochrome.
+- the requested palette preserves contrast and semantic distinctions.

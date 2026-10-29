@@ -39,6 +39,7 @@ Unknown and duplicate targets are ignored at runtime, preventing empty presenter
 - Left navigation hides revealed targets in reverse order before returning to the previous slide.
 - Backward entry and direct jumps from overview, Home/End, or slide number show the final composed state.
 - Presenter previews mirror the audience's current build; thumbnails and next-slide previews show the complete state.
+- A reveal updates the rendered slide in place and animates only the revealed target with its [motion](motion-graphics.md) channel effect, such as soft lines for a bullet or a staggered card. Hiding a target on Left is instant.
 - Reduced-motion mode removes the reveal transition without changing the navigation contract.
 
 ## Authoring rules

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, MouseEvent } from "react";
 import { AudienceDeck } from "./components/AudienceDeck";
+import type { NavKind } from "./components/MotionStage";
 import { PresenterPanel } from "./components/PresenterPanel";
 import { slideData } from "./data/slideData";
 import { deckTitle, runtimeThemePreset as themePreset, semanticPalette, venuePreset } from "./lib/presentationConfig";
@@ -9,7 +10,7 @@ import { createPresenterChannel, isPresenterWindow, openPresenterWindow, readPre
 import { clampRevealed, getBuildCount } from "./lib/presentationBuilds";
 import { usePresentationKeyboard, useTouchSwipe, useWheelPageNavigation } from "./lib/usePresentationInput";
 import { useReviewComments } from "./lib/reviewComments";
-import { useTweaks } from "./lib/useTweaks";
+import { tweakedMotion, useTweaks } from "./lib/useTweaks";
 
 const STAGE_WIDTH = 1200;
 const STAGE_HEIGHT = 675;
@@ -49,6 +50,9 @@ export default function App() {
   const [showTweaks, setShowTweaks] = useState(false);
   const [laserEnabled, setLaserEnabled] = useState(false);
   const tweaks = useTweaks(themePreset);
+  const motion = useMemo(() => tweakedMotion(tweaks.tweaks), [tweaks.tweaks]);
+  const [replayToken, setReplayToken] = useState(0);
+  const navKindRef = useRef<NavKind>("goto");
   const [stageScale, setStageScale] = useState(calculateStageScale);
   const deckWrapperRef = useRef<HTMLDivElement>(null);
   const presenterChannelRef = useRef<ReturnType<typeof createPresenterChannel> | null>(null);
@@ -81,6 +85,7 @@ export default function App() {
   }, []);
 
   const applyPresenterCommand = useCallback((command: PresenterCommand) => {
+    if (command.type === "prev" || command.type === "next" || command.type === "goto") navKindRef.current = command.type;
     if (command.type === "prev") {
       setPosition((value) => {
         const revealed = clampRevealed(slideData[value.index], value.revealed);
@@ -296,6 +301,10 @@ export default function App() {
         setTweak={tweaks.setTweak}
         resetTweaks={tweaks.reset}
         exportTweaks={tweaks.exportTweaks}
+        motion={motion}
+        navKind={navKindRef.current}
+        replayToken={replayToken}
+        onReplayMotion={() => setReplayToken((value) => value + 1)}
         review={review}
         onDeckClick={handleDeckClick}
         onPrev={goPrev}

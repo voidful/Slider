@@ -53,9 +53,14 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 | `titleFontSize` | number (px) | 24–56 | Slide titles |
 | `moodFamily` | enum | editorial, cinematic, minimal, glass, warm, navy | Primary deck mood |
 | `backgroundTreatment` | enum | solid, gradient, noise | Background surface style |
-| `slideTransitionMs` | number (ms) | 0–800 | Slide entrance animation duration |
+| `slideTransitionMs` | number (ms) | 0–800 | Chrome transitions such as the progress bar (slide motion uses the motion tweaks) |
 | `showProgressBar` | boolean | true/false | Progress bar visibility |
-| `slideEntranceAnimation` | enum | fadeUp, fade, none | Entrance animation type |
+| `slideEntranceAnimation` | enum | fadeUp, fade, none | Legacy; superseded by `motionPreset` |
+| `motionPreset` | enum | none, subtle, editorial, kinetic, cinematic, digital | Slide transitions and entrances; see [motion graphics](motion-graphics.md) |
+| `motionTransition` | enum or empty | a transition id | Overrides the preset's regular transition |
+| `motionSpeed` | number | 0.5–2 | Divides every motion duration |
+
+The React project's Tweaks panel implements the three motion tweaks. The HTML deck stores deck motion in its exported `deckMotion` config instead, edited from the motion panel (`M`).
 
 ### Locked properties (not tweakable)
 

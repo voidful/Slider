@@ -1,13 +1,13 @@
 interface:
-  display_name: "ArXiv Talk Web"
-  short_description: "Turn an arXiv paper into an interactive research slideshow website."
+  display_name: "Slider"
+  short_description: "Create and revise evidence-backed paper presentations."
   icon: "presentation"
   color: "#0f172a"
 
 platform: openai
 version: "24"
 
-instructions_source: "system_prompt.md"
+instructions_source: "../../SKILL.md"
 
 knowledge_files:
   - ../../references/presentation-logic.md

@@ -20,6 +20,106 @@ REACT_TEMPLATE = REPO_ROOT / "assets" / "react-slideshow-starter" / "App.tsx"
 HTML_TEMPLATE = REPO_ROOT / "assets" / "html-slideshow-starter" / "paper-presentation.html"
 REACT_PROJECT_TEMPLATE = REPO_ROOT / "assets" / "react-project-starter"
 
+# Motion catalog shared with the HTML and React project engines (see references/motion-graphics.md).
+# check_skill_health.py verifies that these ids match both templates.
+MOTION_PRESETS = ("none", "subtle", "editorial", "kinetic", "cinematic", "digital")
+MOTION_TRANSITIONS = ("none", "fade", "rise", "push", "wipe", "curtain", "circle", "doors", "slices", "zoom", "glitch", "pixel", "morph")
+MOTION_TEXT_EFFECTS = ("none", "fade-up", "rise", "blur", "spread", "merge", "scramble", "typewriter", "lines", "soft")
+MOTION_CHANNELS = {
+    "kicker": MOTION_TEXT_EFFECTS,
+    "title": MOTION_TEXT_EFFECTS,
+    "hero": MOTION_TEXT_EFFECTS,
+    "text": MOTION_TEXT_EFFECTS,
+    "media": ("none", "fade-up", "clip", "mask", "zoom"),
+    "data": ("none", "count", "scramble"),
+    "group": ("none", "fade-up", "stagger"),
+    "emphasis": ("none", "sweep"),
+}
+DEFAULT_MOTION_PRESET = "editorial"
+
+
+def normalize_motion(value: Any) -> dict[str, Any]:
+    """Validate a deck motion setting (preset name or object) into the template's config shape."""
+    if value is None:
+        return {"preset": DEFAULT_MOTION_PRESET}
+    if isinstance(value, str):
+        value = {"preset": value}
+    if not isinstance(value, dict):
+        raise ValueError("motion must be a preset name or an object")
+    preset = value.get("preset", DEFAULT_MOTION_PRESET)
+    if preset not in MOTION_PRESETS:
+        raise ValueError(f"Unknown motion preset {preset!r}; choose one of {', '.join(MOTION_PRESETS)}")
+    motion: dict[str, Any] = {"preset": preset}
+    for key in ("transition", "accent"):
+        if key in value:
+            if value[key] not in MOTION_TRANSITIONS:
+                raise ValueError(f"Unknown motion {key} {value[key]!r}; choose one of {', '.join(MOTION_TRANSITIONS)}")
+            motion[key] = value[key]
+    for key, allowed in MOTION_CHANNELS.items():
+        if key in value:
+            if value[key] not in allowed:
+                raise ValueError(f"Unknown motion {key} effect {value[key]!r}; choose one of {', '.join(allowed)}")
+            motion[key] = value[key]
+    if "speed" in value:
+        speed = float(value["speed"])
+        if not 0.25 <= speed <= 4:
+            raise ValueError("motion speed must be between 0.25 and 4")
+        motion["speed"] = speed
+    return motion
+
+
+def copy_warnings(slides: list[dict[str, Any]], brief: dict[str, Any] | None = None) -> list[str]:
+    """Major and moderate wording findings (references/slide-copy-rules.md); the CLI lists minor ones too."""
+    from audit_slide_copy import audit_slides, summarize
+
+    findings = audit_slides(slides, include_notes=False, deck_ignore=(brief or {}).get("guideIgnore", ()))
+    return summarize([finding for finding in findings if finding.severity != "minor"])
+
+
+BRIEF_TEXT_LIMITS = {"audience": 200, "venue": 120, "takeaway": 400, "language": 40}
+
+
+def normalize_brief(source: Any) -> dict[str, Any]:
+    """meta.brief for the HTML Guide: talk length, audience, venue, takeaway (mirrors sanitizeBrief() in the template)."""
+    if not isinstance(source, dict):
+        return {}
+    brief: dict[str, Any] = {}
+    try:
+        minutes = float(source.get("minutes") or 0)
+    except (TypeError, ValueError):
+        minutes = 0
+    if 0 < minutes <= 240:
+        minutes = round(minutes * 2) / 2
+        brief["minutes"] = int(minutes) if minutes.is_integer() else minutes
+    for key, limit in BRIEF_TEXT_LIMITS.items():
+        value = source.get(key)
+        if isinstance(value, str) and value.strip():
+            brief[key] = value.strip()[:limit]
+    ignore = [item for item in source.get("guideIgnore") or [] if isinstance(item, str) and re.fullmatch(r"[A-Z]{2}-[\w-]+", item)]
+    if ignore:
+        brief["guideIgnore"] = list(dict.fromkeys(ignore))
+    return brief
+
+
+def motion_warnings(slides: list[dict[str, Any]]) -> list[str]:
+    """Flag per-slide motion fields the engines would ignore."""
+    warnings = []
+    for idx, slide in enumerate(slides, 1):
+        transition = slide.get("transition")
+        if transition is not None and transition not in MOTION_TRANSITIONS:
+            warnings.append(f"motion: s{idx:02d} transition {transition!r} is unknown; the deck default plays instead.")
+        morph = slide.get("morph")
+        if morph is not None and not (isinstance(morph, dict) and all(isinstance(k, str) and isinstance(v, str) and v for k, v in morph.items())):
+            warnings.append(f"motion: s{idx:02d} morph must map build targets to id strings, e.g. {{\"visual\": \"fig-2\"}}; it is ignored.")
+        own = slide.get("motion")
+        if own is None:
+            continue
+        try:
+            normalize_motion(own)
+        except (TypeError, ValueError) as exc:
+            warnings.append(f"motion: s{idx:02d} {exc}; the deck motion applies instead.")
+    return warnings
+
 
 def load_payload(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -49,7 +149,7 @@ def strip_render_markers(text: str) -> str:
     return re.sub(r"\s*//\s*@render-[\w-]+", "", text)
 
 
-def render_react(slides: list[dict[str, Any]], theme: str, venue: str) -> str:
+def render_react(slides: list[dict[str, Any]], theme: str, venue: str, motion: dict[str, Any] | None = None) -> str:
     template = REACT_TEMPLATE.read_text(encoding="utf-8")
     rendered = json.dumps(slides, indent=2, ensure_ascii=False)
     template = replace_regex_optional(
@@ -61,6 +161,11 @@ def render_react(slides: list[dict[str, Any]], theme: str, venue: str) -> str:
         template,
         r'const venuePreset: Venue = "[^"]+";\s*// @render-venue',
         f'const venuePreset: Venue = "{venue}";',
+    )
+    template = replace_regex(
+        template,
+        r"const deckMotion: DeckMotion = \{.*?\};\s*// @render-motion",
+        f"const deckMotion: DeckMotion = {json.dumps(normalize_motion(motion), ensure_ascii=False)};",
     )
     template = replace_regex(
         template,
@@ -149,7 +254,7 @@ def normalize_latex_in_slides(slides: list[dict[str, Any]]) -> list[dict[str, An
     return slides
 
 
-def render_html(slides: list[dict[str, Any]], theme: str, venue: str, title: str | None) -> str:
+def render_html(slides: list[dict[str, Any]], theme: str, venue: str, title: str | None, motion: dict[str, Any] | None = None, brief: dict[str, Any] | None = None) -> str:
     import base64
     template = HTML_TEMPLATE.read_text(encoding="utf-8")
     slides = normalize_latex_in_slides(slides)
@@ -165,6 +270,19 @@ def render_html(slides: list[dict[str, Any]], theme: str, venue: str, title: str
         r'const venuePreset\s*=\s*"[^"]+";\s*// @render-venue',
         f'const venuePreset="{venue}";',
     )
+    template = replace_regex(
+        template,
+        r"let deckMotion\s*=\s*\{.*?\};\s*// @render-motion",
+        f"let deckMotion={json.dumps(normalize_motion(motion), ensure_ascii=False)};",
+    )
+    # Theme panel overrides start empty so the --theme preset applies; exportHTML() writes edited colors back.
+    template = replace_regex(
+        template,
+        r"const deckPalette\s*=\s*(?:null|\{.*?\});\s*// @render-palette",
+        "const deckPalette=null;",
+    )
+    brief_json = json.dumps(normalize_brief(brief), ensure_ascii=False).replace("<", chr(92) + "u003c")
+    template = replace_regex(template, r"let deckBrief\s*=\s*\{.*?\};\s*// @render-brief", f"let deckBrief={brief_json};")
 
     # Base64 transport (primary) — eliminates ALL escaping issues.
     # json.dumps produces clean JSON, base64 encodes it to [A-Za-z0-9+/=].
@@ -214,7 +332,7 @@ def to_deck_design_module(deck_design: dict[str, Any] | None) -> str:
         '  deck_mood_family?: string;\n'
         '  theme_preset?: string;\n'
         '  semantic_palette?: { accent?: string; positive?: string; negative?: string; neutral?: string };\n'
-        '  motion_policy?: { mode?: string; transition_ms?: number; respect_reduced_motion?: boolean };\n'
+        '  motion_policy?: { mode?: string; preset?: string; transition_ms?: number; respect_reduced_motion?: boolean };\n'
         '};\n\n'
         f"export const deckDesign: DeckDesign | null = {rendered};\n\n"
         'export function resolveThemePreset(fallback: Theme): Theme {\n'
@@ -225,7 +343,7 @@ def to_deck_design_module(deck_design: dict[str, Any] | None) -> str:
     )
 
 
-def render_react_project(slides: list[dict[str, Any]], theme: str, venue: str, title: str | None, output_dir: Path, deck_design: dict[str, Any] | None = None) -> list[Path]:
+def render_react_project(slides: list[dict[str, Any]], theme: str, venue: str, title: str | None, output_dir: Path, deck_design: dict[str, Any] | None = None, motion: dict[str, Any] | None = None) -> list[Path]:
     if output_dir.exists() and output_dir.is_file():
         raise ValueError("react-project output must be a directory path")
     shutil.copytree(
@@ -259,6 +377,11 @@ def render_react_project(slides: list[dict[str, Any]], theme: str, venue: str, t
         r'export const deckTitle = ".*?";\s*// @render-title',
         f'export const deckTitle = {json.dumps(safe_title)};',
     )
+    config_text = replace_regex(
+        config_text,
+        r"export const deckMotion: DeckMotion = \{.*?\};\s*// @render-motion",
+        f"export const deckMotion: DeckMotion = {json.dumps(normalize_motion(motion), ensure_ascii=False)};",
+    )
     config_path.write_text(strip_render_markers(config_text), encoding="utf-8")
 
     index_path = output_dir / "index.html"
@@ -277,6 +400,11 @@ def main() -> None:
     parser.add_argument("--venue", help="Override venue preset")
     parser.add_argument("--title", help="Override title for HTML or project output")
     parser.add_argument("--deck-design", type=Path, help="Optional deck_design.json to embed in React project output")
+    parser.add_argument(
+        "--motion",
+        help=f"Deck motion preset ({', '.join(MOTION_PRESETS)}) or a JSON object such as "
+        '\'{"preset":"kinetic","transition":"push","speed":1.2}\'; overrides meta.motion',
+    )
     parser.add_argument("--output", type=Path, required=True, help="Output file path for react/html or output directory for react-project")
     args = parser.parse_args()
 
@@ -292,16 +420,27 @@ def main() -> None:
         deck_design = meta["deckDesign"]
     elif isinstance(meta.get("deck_design"), dict):
         deck_design = meta["deck_design"]
+    motion_source: Any = meta.get("motion")
+    if args.motion:
+        motion_source = json.loads(args.motion) if args.motion.lstrip().startswith("{") else args.motion
+    elif motion_source is None and isinstance(deck_design, dict):
+        motion_source = (deck_design.get("motion_policy") or {}).get("preset")
+    try:
+        motion = normalize_motion(motion_source)
+    except (TypeError, ValueError) as exc:
+        parser.error(str(exc))
 
     if args.mode == "react":
-        rendered = render_react(slide_data, theme=theme, venue=venue)
+        rendered = render_react(slide_data, theme=theme, venue=venue, motion=motion)
+        for warning in motion_warnings(slide_data) + copy_warnings(slide_data):
+            print(f"[WARN] {warning}", file=sys.stderr)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(rendered, encoding="utf-8")
         print(str(args.output))
         return
 
     if args.mode == "html":
-        rendered = render_html(slide_data, theme=theme, venue=venue, title=title)
+        rendered = render_html(slide_data, theme=theme, venue=venue, title=title, motion=motion, brief=meta.get("brief"))
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(rendered, encoding="utf-8")
 
@@ -310,6 +449,8 @@ def main() -> None:
         from browser_slide_audit import run_browser_slide_audit
 
         post_result = AuditResult()
+        post_result.warnings.extend(motion_warnings(slide_data))
+        post_result.warnings.extend(copy_warnings(slide_data, meta.get("brief")))
         audit_svg_text(slide_data, post_result)
         audit_rendered_html(args.output, post_result)
         browser_report = run_browser_slide_audit(
@@ -500,7 +641,9 @@ def main() -> None:
         print(str(args.output))
         return
 
-    touched = render_react_project(slide_data, theme=theme, venue=venue, title=title, output_dir=args.output, deck_design=deck_design)
+    touched = render_react_project(slide_data, theme=theme, venue=venue, title=title, output_dir=args.output, deck_design=deck_design, motion=motion)
+    for warning in motion_warnings(slide_data) + copy_warnings(slide_data):
+        print(f"[WARN] {warning}", file=sys.stderr)
     print(json.dumps({"output_dir": str(args.output), "files": [str(path) for path in touched]}, ensure_ascii=False, indent=2))
 
 

@@ -2,7 +2,13 @@
 
 ## Goal
 
-`slider` turns a paper into a ready-to-present conference talk through an evidence-first, audit-backed pipeline. Output is a single self-contained HTML file.
+`slider` turns a paper into a research talk through source selection, structured slide data, rendering, and verification. Default output is a browser-openable HTML file; offline readiness requires the asset/network checks in [output contracts](references/output-contracts.md).
+
+## Instruction structure
+
+`SKILL.md` defines the shared evidence/rendering contract and routes creation, revision, planning, audit, and maintenance tasks. Supporting references are read when relevant. Platform adapters preserve that scope, while `agents/openai.yaml` supplies native skill UI metadata.
+
+The pipeline below describes data dependencies for a new deck. Local revisions reuse existing artifacts; planning and audit-only work do not require rendering.
 
 ## Pipeline
 
@@ -28,7 +34,7 @@
    - `scripts/compile_deck_design.py`
    - Compile paper type → mood family → theme preset → semantic palette → type scale → motion policy → page-role bindings into `deck_design.json`.
    - Contract defined in `references/deck-design-control-plane.md`.
-   - This locks the deck's visual direction before any individual slide is composed.
+   - Useful for coordinated React project settings; reuse an existing design for content edits.
 
 6. **Slide planning**
    - `scripts/generate_slide_data.py`
@@ -51,7 +57,7 @@
    - **Phase 1 (Quick Check):** Structural validity, console errors, template identity marker.
    - **Phase 2 (Static Audit):** Design comfort (`scripts/audit_design_comfort.py`) + evidence fidelity (`scripts/audit_research_slides.py`) + anti-slop check.
    - **Phase 3 (Browser Audit):** Pixel-level overflow verification (`scripts/browser_slide_audit.py`) when Chromium is available.
-   - Each phase gates the next. See `references/verification-workflow.md`.
+   - Select checks for the affected scope and reuse results from unchanged output. See `references/verification-workflow.md`.
 
 10. **Health audit**
     - `scripts/check_skill_health.py`
@@ -59,7 +65,7 @@
 
 11. **Platform export**
     - `scripts/export_platform_configs.py`
-    - Validate and export for Gemini, ChatGPT, Claude.
+   - Validate and export for Gemini, OpenAI, ChatGPT, and Claude, preserving the runtime tree and relative paths in separate bundles.
 
 ## Post-render capabilities
 
@@ -71,6 +77,14 @@ The rendered HTML includes a customization panel (`references/live-tweaks-protoc
 
 ### Speaker notes protocol
 Speaker notes are stored as a structured JSON `<script>` block. The template emits `postMessage({slideIndexChanged})` on every slide change for external tool integration.
+
+### Motion graphics
+
+The HTML deck, React project, and single-file React component share a Web Animations engine for slide transitions and text, figure, card, and number entrances. Deck presets come from `meta.motion`, `--motion`, or `motion_policy.preset`; per-slide `transition`, `motion`, and `accent` fields override them, and `morph` ids pair elements for the `morph` transition. Effects end on the static layout, navigation finishes running motion first, and audits measure the final frame through `finishMotion()`. See `references/motion-graphics.md`.
+
+### Presenting tools and guided finishing
+
+The HTML deck adds a presenter window that receives pre-rendered beats as HTML (so the popup runs no deck code), an overview of real thumbnails, a command menu, deep links, and a print root built on `beforeprint`. Its editor adds a Guide whose checks combine offscreen probe renders (overflow and figure slots), structural research-talk checks, the talk brief in `meta.brief`, review comments in `slide.comments`, and the wording table from `scripts/audit_slide_copy.py`, embedded as `COPY_RULESET`. See `references/presenter-ux.md` and `references/guided-deck-workflow.md`.
 
 ### Progressive builds
 

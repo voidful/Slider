@@ -1,82 +1,60 @@
-# Artifact Rendering
+# Artifact rendering
 
-## Goal
+Read this when producing or fixing an artifact. Use [output contracts](output-contracts.md) for format selection and offline/network limits.
 
-Turn validated slide data into a ready-to-open HTML file (default) or React artifact.
+## HTML build
 
-This is the last implementation step. Do not skip the slide data layer.
+Prepare valid slide JSON, then run:
 
-## Preferred workflow
+```bash
+python3 scripts/render_slideshow_artifact.py \
+  --slide-data slide-plan.json --mode html --output deck.html
+```
 
-1. Generate or revise slide data (see slide-data-generation.md).
-2. Run design audit and evidence audit against the slide plan.
-3. Fix any audit failures.
-4. **Render by injecting slide data into the canonical template** (`assets/html-slideshow-starter/paper-presentation.html`). Use `render_slideshow_artifact.py` if script execution is available. Otherwise, inject the `slides` JSON at the `// @render-slide-data` marker manually.
-5. Verify the artifact opens correctly in a browser.
+The renderer accepts either a slide array or an object containing `slideData`. It uses the canonical HTML template, injects a base64-encoded UTF-8 payload, and attempts static/browser checks. It preserves supplied image references; it does not bundle local files automatically.
 
-**⚠️ Never generate HTML from scratch.** The canonical template provides navigation, auto-play, SnapShare-style phone remote, multi-collaborator roster, shared annotations/notes, editor, inspector, import/export, density guard, fullscreen, gallery, export, and keyboard shortcuts. Rewriting any of this code is prohibited.
+Normal deck creation changes slide data and theme/venue choices. Read [HTML engine internals](html-engine-template.md) only when debugging or extending rendering. Template maintenance is permitted when requested; verify the changed behavior and preserve working controls.
 
-## Default output: built HTML
+## JSON and math
 
-The default artifact is a single self-contained HTML file **produced from the canonical template**:
-- All CSS and JavaScript come from the template — not rewritten by the LM.
-- The `slides` array is injected at `// @render-slide-data`.
-- Contains `<meta name="generator" content="slider/paper-presentation-v1"/>`.
-- Opens directly in Chrome, Firefox, Safari without any server for presentation/editing.
-- Opens with presenter controls and can switch into edit mode via the Edit button or `E`.
-- The phone remote uses the controller bundled in the same HTML by default: the QR URL is the deck URL plus `?token=...`. For real phone pairing, serve the HTML over an `http`/`https` URL the phone can reach, or set `data-remote-controller-url` on `<html>` to your own static controller/deck URL. No custom control backend is required, but PeerJS signaling/STUN network access is still required.
+Serialize structured data with a JSON library. In hand-written JSON, a LaTeX backslash must be escaped:
 
-## LM creative freedom
+```json
+{"type": "equation", "content": "$$\\beta = \\frac{1}{2}$$"}
+```
 
-**The LM should compose each slide to best communicate its specific content.** The fixed layout types are efficient defaults for common patterns, but the contentBlocks system is preferred when the paper demands a custom arrangement.
+In the decoded equation, each command has one backslash. The base64 layer prevents JavaScript string interpolation from consuming escapes, but it cannot correct arbitrary malformed JSON, unsupported formulas, or source inaccuracies.
 
-Guidelines for the LM:
-- **Analyze the slide content first.** What is the primary evidence? What supports it?
-- **Choose the best arrangement.** Use contentBlocks when the standard layouts don't fit the content well.
-- **Mix modes freely.** Some slides can use classic layout, others contentBlocks, within the same deck.
-- **Adapt atmosphere to paper domain.** A CV paper may benefit from more visual space; a theory paper from equation prominence.
-- **Custom layouts are preferred** over generic patterns when the paper content demands it.
+The HTML renderer decodes its emitted payload and verifies a nonempty array. Do not switch to manual `String.raw` injection, hand-encoded base64, or a mental parse check when the bundled renderer can execute.
 
-## Research element rendering priority
+Math is rendered by KaTeX. For offline requirements, follow the [output contract](output-contracts.md) and inspect the final equation rendering, not merely the presence of a script tag.
 
-Render these research-specific elements as first-class content:
+## Images and provenance
 
-1. **Method figure** — the figure occupies ≥65% of the content area. Title and ≤3 annotation labels only.
-2. **Result table** — table at ≥50% of content area. Header styled, key cells highlighted.
-3. **Equation + intuition** — centered equation, plain-language explanation below.
-4. **Qualitative comparison** — equal-sized side-by-side panels with clear labels.
-5. **Ablation** — compact table or chart. Full-method row highlighted.
-6. **Limitation** — warning-tinted background. Crisp limitation statements.
+For portable HTML, convert selected image bytes to data URIs and put them in `visual.src` or figure-block `content.src`. Preserve captions, source references, and the distinction between original crops and redrawn evidence.
 
-Do not default to generic bullet layouts when a research-specific layout applies.
+Inspect the selected crop before embedding: cropping away an axis, legend, baseline, or panel label can change the meaning. See [faithful redraw](faithful-redraw-policy.md) and [figure embedding](paper-figure-embedding.md).
 
-## Rendering rules
+Use actual source content for every required visual. A placeholder, filename, or high binding score is not evidence.
 
-- Keep theme and venue presets editable.
-- Preserve the structured `slides` array in the final output.
-- Do not collapse the deck into manually hardcoded DOM strings.
-- Follow all rules from assets/design/DESIGN.md.
-- Support both `layout` and `contentBlocks` rendering modes.
+## Composition and integrity
 
-## Quality checks before finalizing
+Use classic layouts or `contentBlocks` according to the evidence. Keep the same 1200×675 stage at every viewport scale; fullscreen does not change its typography or structure.
 
-- Verify `mustIncludeVisual=true` slides actually render with visuals.
-- Verify titles are argumentative, not generic section names.
-- Verify no placeholder starter text remains.
-- Verify key numbers have metric, baseline, and dataset context.
-- Verify appendix content stays outside the main narrative.
-- Verify the HTML file opens correctly without a server.
-- Verify minification did not break functionality.
-- Verify contentBlocks slides render all block types correctly.
-- Verify atmosphere modifiers apply without breaking readability.
-- Verify the `<body>` tag does NOT have `class="edit-mode"`. The deck must load in presentation mode.
-- Verify JavaScript string literals are syntactically valid: no unescaped newlines inside quoted strings. If generating HTML directly (without the render script), extract the `<script>` block and mentally verify `\n` sequences are two-character escapes, not literal line feeds.
-- Verify visual coverage: count slides with real visuals (base64 src or table data). Must be ≥50% of non-cover/takeaway slides.
+- Give primary figures enough area for readable labels. A dedicated figure slide is often clearer than squeezing it below metrics.
+- Avoid tall combinations of a table, metric grid, and explanatory paragraphs on one slide.
+- For the existing result-table layouts, preserve the stacked metrics/figure structure. See [HTML engine internals](html-engine-template.md).
+- Keep equations readable without scrollbars. Shorten notation, use aligned lines, or split a crowded slide.
+- Use stage-independent type sizes and predictable flex/grid containment. If the two density-fit classes cannot fit the content legibly, revise the content.
+- Preserve presentation mode on initial load, editor access, notes, and navigation. Do not display internal audit/planning fields as slide prose.
+- Allow reduced-motion behavior and load embedded images reliably before measuring.
 
-## React output (when explicitly requested)
+The template identity marker, controls, and data payload are useful integrity signals; their presence alone does not establish a usable deck.
 
-Follow references/react-implementation-rules.md. Same evidence and design rules apply.
+## Verification
 
-## React project output (when explicitly requested)
+Use [verification workflow](verification-workflow.md) for the requested scope. Review the renderer's existing report. Inspect source alignment, rendered evidence, long titles, tables, equations, and any changed controls. Report warnings in context and distinguish a browser skip from a passed browser audit.
 
-Follow references/multi-file-react-project.md. Same evidence and design rules apply.
+## React modes
+
+For `--mode react`, use [React implementation rules](react-implementation-rules.md). For `--mode react-project`, use [multi-file React project](multi-file-react-project.md). Compile and embed a deck design when coordinated React project settings are needed. Do not claim a component is a built, browser-openable artifact until the relevant project build succeeds.

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Theme } from "../types";
+import { MOTION_PRESETS, MOTION_TRANSITIONS, normalizeDeckMotion, type DeckMotion, type MotionPresetId } from "./motion";
+import { deckMotion } from "./presentationConfig";
 
 const STORAGE_KEY = "paper-slide-tweaks";
 
@@ -10,12 +12,16 @@ export type Tweaks = {
   positive: string;
   negative: string;
   typeScale: number; // 0.85 – 1.25, multiplies slide text sizes
-  transitionMs: number; // 0 – 800, slide entrance + progress speed
+  transitionMs: number; // 0 – 800, progress-bar easing (slide motion uses motionSpeed)
   showProgressBar: boolean;
+  motionPreset: MotionPresetId;
+  motionTransition: string; // empty string = the preset's transition
+  motionSpeed: number; // 0.5 – 2, multiplies motion speed
 };
 
 export const TYPE_SCALE_RANGE = { min: 0.85, max: 1.25, step: 0.05 } as const;
 export const TRANSITION_RANGE = { min: 0, max: 800, step: 20 } as const;
+export const MOTION_SPEED_RANGE = { min: 0.5, max: 2, step: 0.1 } as const;
 
 export function defaultTweaks(themePreset: Theme): Tweaks {
   return {
@@ -26,7 +32,16 @@ export function defaultTweaks(themePreset: Theme): Tweaks {
     typeScale: 1,
     transitionMs: 320,
     showProgressBar: true,
+    motionPreset: deckMotion.preset,
+    motionTransition: "",
+    motionSpeed: deckMotion.speed ?? 1,
   };
+}
+
+/* The rendered deck motion applies until a different preset is picked; then that preset applies whole. */
+export function tweakedMotion(tweaks: Tweaks): DeckMotion {
+  const base: DeckMotion = tweaks.motionPreset === deckMotion.preset ? deckMotion : { preset: tweaks.motionPreset };
+  return normalizeDeckMotion({ ...base, ...(tweaks.motionTransition ? { transition: tweaks.motionTransition } : {}), speed: tweaks.motionSpeed });
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -44,6 +59,9 @@ function loadTweaks(base: Tweaks): Tweaks {
       typeScale: clamp(Number(merged.typeScale) || 1, TYPE_SCALE_RANGE.min, TYPE_SCALE_RANGE.max),
       transitionMs: clamp(Number(merged.transitionMs) ?? 320, TRANSITION_RANGE.min, TRANSITION_RANGE.max),
       showProgressBar: merged.showProgressBar !== false,
+      motionPreset: merged.motionPreset in MOTION_PRESETS ? merged.motionPreset : base.motionPreset,
+      motionTransition: (MOTION_TRANSITIONS as readonly string[]).includes(merged.motionTransition) ? merged.motionTransition : "",
+      motionSpeed: clamp(Number(merged.motionSpeed) || base.motionSpeed, MOTION_SPEED_RANGE.min, MOTION_SPEED_RANGE.max),
     };
   } catch {
     return base;

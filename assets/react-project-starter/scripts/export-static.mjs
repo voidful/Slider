@@ -52,5 +52,6 @@ run(chrome, [
   "--no-default-browser-check",
   "--print-to-pdf-no-header",
   `--print-to-pdf=${pdfPath}`,
-  `file://${resolve(outDir, "index.html")}`,
+  // Static capture: motion=none renders the final layout without transitions or entrances.
+  `file://${resolve(outDir, "index.html")}?motion=none`,
 ]);

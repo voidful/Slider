@@ -165,7 +165,7 @@ Preserve generous margins and projector-safe layout.
 - Avoid bounce and overscaled transitions.
 - The presentation should feel calm, precise, and premium.
 
-See [assets/design/DESIGN.md](../../assets/design/DESIGN.md) for full animation specifications.
+See [assets/design/DESIGN.md](../assets/design/DESIGN.md) for full animation specifications.
 
 ## Overview mode
 

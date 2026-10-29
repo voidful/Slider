@@ -2,7 +2,7 @@
 
 ## Core rule
 
-If the paper contains a method figure, architecture diagram, pipeline figure, training objective diagram, algorithm flow, or key result table, at least one must appear in the main deck. No exceptions.
+For a full paper talk, include the key method/result visuals that support its thesis. Match the selection to the user's scope and available evidence. A narrow briefing, plan, or local edit does not require the full paper's visual inventory.
 
 ## Mandatory inclusion triggers
 
@@ -10,7 +10,7 @@ If the paper contains a method figure, architecture diagram, pipeline figure, tr
 Main deck must include at least one system architecture or method flow diagram. This diagram becomes the anchor slide of the talk.
 
 ### Optimization / objective-heavy paper
-Main deck must include at least one objective visualization, training pipeline schematic, or method schematic. Displaying only an equation without a supporting diagram is insufficient.
+Main deck must include at least one objective visualization, training pipeline schematic, or method schematic. Add a supporting diagram when it clarifies the objective; do not invent one merely to satisfy a visual quota.
 
 ### Benchmark-heavy paper
 Main deck must include at least one core result table or a faithfully redrawn comparison chart. The key delta must be annotated.
@@ -19,7 +19,7 @@ Main deck must include at least one core result table or a faithfully redrawn co
 Main deck must include at least one representative qualitative example or side-by-side qualitative comparison if it is critical to the paper's claim.
 
 ### Theory-heavy paper
-Main deck must include at least one intuition diagram or simplified conceptual figure. Long derivations go to appendix.
+Use an intuition diagram when it helps. Equations, definitions, and concise explanation may be sufficient for an expert talk. Move optional derivations to notes or appendix.
 
 ## Redraw allowance
 
@@ -28,7 +28,7 @@ If the original figure is too dense for a slide, faithful redraw is allowed unde
 ## Fallback when no usable figure exists
 
 If no paper figure can be directly used or faithfully redrawn:
-1. Output a clearly labeled "faithful reconstructed diagram."
+1. Reconstruct only when the source provides enough structure/data; label and cite it. Otherwise identify the missing evidence and keep the affected output a draft.
 2. In the speaker note, state the source section, original figure number, and what was reconstructed.
 3. Never present a decorative placeholder as if it were evidence.
 
@@ -48,7 +48,7 @@ Every slide that includes a paper visual must have a speaker note explaining:
 
 ## Figure legibility rule
 
-Evidence figures must be rendered large enough that axis labels, legends, data points, and annotations are clearly readable. The minimum rendered height is **200px** in windowed mode.
+Evidence figures must be rendered large enough that axis labels, legends, data points, and annotations are clearly readable. Use **200px on the unscaled 1200×675 stage** as an initial sizing target, then inspect label readability. Window resizing scales the whole stage without changing its layout.
 
 **Split-slide approach:** When a slide combines metrics, text, and a figure and the figure would shrink below 200px, split the content into two slides:
 1. **Result summary slide** — title, key message, metric cards. No figure.

@@ -21,6 +21,9 @@ import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from render_slideshow_artifact import MOTION_PRESETS  # noqa: E402  (single motion catalog)
+
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -43,6 +46,14 @@ MOOD_TO_PRESET = {
     "technical-minimal":    "monochrome-impeccable",
     "cinematic-evidence":   "deep-navy-academic",
     "lab-notebook-premium": "zinc-editorial",
+}
+
+# Mood family → default motion preset (references/motion-graphics.md)
+MOOD_TO_MOTION = {
+    "editorial-research":   "editorial",
+    "technical-minimal":    "subtle",
+    "cinematic-evidence":   "cinematic",
+    "lab-notebook-premium": "editorial",
 }
 
 # Default semantic palette
@@ -72,8 +83,8 @@ VENUE_ACCENT_SHIFT = {
 
 # Default type scale (all in rem/px/clamp — never vh/vw)
 DEFAULT_TYPE_SCALE = {
-    "hero":         "clamp(2.5rem, 4vw, 3.5rem)",
-    "title":        "clamp(2rem, 3.5vw, 2.8rem)",
+    "hero":         "3.5rem",
+    "title":        "2.8rem",
     "subtitle":     "1.35rem",
     "body":         "1.2rem",
     "caption":      "0.9rem",
@@ -145,9 +156,11 @@ DEFAULT_STYLE_BALANCE = {
 
 DEFAULT_MOTION_POLICY = {
     "mode": "static-first",
-    "transition_ms": 320,
+    "preset": "editorial",          # slide transitions + entrances; final frame is the static layout
+    "finish_on_input": True,        # navigation completes running motion before it continues
+    "transition_ms": 320,           # chrome transitions (progress bar, panels)
     "max_transition_ms": 400,
-    "allowed_properties": ["transform", "opacity", "background-color", "color", "box-shadow", "border-color"],
+    "allowed_properties": ["transform", "opacity", "filter", "clip-path", "mask-image", "background-color", "color", "box-shadow", "border-color"],
     "forbid": ["transition: all", "bounce", "3d", "parallax", "fullscreen-only reflow"],
     "respect_reduced_motion": True,
 }
@@ -180,6 +193,7 @@ def compile_deck_design(
     mood_override: str = "",
     preset_override: str = "",
     palette_overrides: dict | None = None,
+    motion_override: str = "",
 ) -> dict:
     """Compile a deck_design.json from paper metadata."""
 
@@ -214,7 +228,7 @@ def compile_deck_design(
         "type_scale":           dict(DEFAULT_TYPE_SCALE),
         "spacing_scale":        dict(DEFAULT_SPACING),
         "style_balance":        dict(DEFAULT_STYLE_BALANCE),
-        "motion_policy":        dict(DEFAULT_MOTION_POLICY),
+        "motion_policy":        {**DEFAULT_MOTION_POLICY, "preset": motion_override or MOOD_TO_MOTION.get(mood, "editorial")},
         "content_handling":     dict(DEFAULT_CONTENT_HANDLING),
         "cohesion_rules":       dict(DEFAULT_COHESION_RULES),
         "page_role_families":   dict(PAGE_ROLE_FAMILIES),
@@ -262,6 +276,11 @@ def main():
              "monochrome-impeccable)"
     )
     parser.add_argument(
+        "--motion",
+        choices=MOTION_PRESETS,
+        help="Override the motion preset (default follows the mood family)"
+    )
+    parser.add_argument(
         "--metadata",
         default="",
         help="Path to paper metadata JSON (overrides --paper-type and --venue)"
@@ -291,6 +310,7 @@ def main():
         venue=venue,
         mood_override=args.mood,
         preset_override=args.preset,
+        motion_override=args.motion or "",
     )
 
     output_json = json.dumps(design, indent=2, ensure_ascii=False)

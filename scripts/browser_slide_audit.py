@@ -96,9 +96,15 @@ PROBE_SCRIPT = f"""
     }}
     return broken;
   }}
+  function finishMotion(){{
+    const finish=readFunction('finishMotion');
+    if(finish)finish();
+  }}
   async function settle(scope){{
     const scaleDeck=readFunction('scaleDeck');
     const renderMath=readFunction('renderMath');
+    // Motion graphics end on the static layout; measure that final frame.
+    finishMotion();
     if(scaleDeck)scaleDeck();
     if(renderMath&&scope)renderMath(scope);
     await afterPaint();

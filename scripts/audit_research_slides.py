@@ -905,11 +905,14 @@ def audit_rendered_html(
                 "Consider using fixed units for stage consistency.",
             )
 
-    # 4. scaleDeck must use unified scaling (stage model check)
+    # 4. scaleDeck must use unified scaling (stage model check). Inspect scaleDeck itself:
+    # motion keyframes elsewhere in the script legitimately animate to transform:"none".
     script_match = re.search(r"<script>(.*)</script>", html, re.DOTALL)
     if script_match:
         script = script_match.group(1)
-        if "transform:'none'" in script or 'transform:"none"' in script or "transform:none" in script.replace(" ", ""):
+        scale_fn = re.search(r"function scaleDeck\s*\([^)]*\)\s*\{(.*?)\n\}", script, re.DOTALL)
+        scale_body = scale_fn.group(1) if scale_fn else ""
+        if re.search(r"""transform\s*[:=]\s*['"`]?none""", scale_body):
             result.error(
                 "output",
                 "scaleDeck sets transform:none in fullscreen. "

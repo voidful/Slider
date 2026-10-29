@@ -1,5 +1,7 @@
 # Paper Type Policy
 
+These policies guide evidence selection for a full talk. Apply the parts relevant to the requested scope and source; a short briefing or local revision does not need every paper-type workflow.
+
 ## Classification
 
 Before slide planning, classify the paper into one or more types:
