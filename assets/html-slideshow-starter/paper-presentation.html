@@ -26,8 +26,8 @@ body{min-height:100vh;display:grid;place-items:center;background:var(--bg);color
 /* Fullscreen body background */
 body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 /* Fullscreen controls: auto-hide */
-#deck-wrapper:fullscreen .controls,#deck-wrapper:-webkit-full-screen .controls,.deck-wrapper.simulated-fs .controls{bottom:0;padding-bottom:20px;opacity:0;transition:opacity 300ms ease,background-color 240ms ease,border-color 240ms ease,color 240ms ease}
-#deck-wrapper:fullscreen .controls.controls-visible,#deck-wrapper:-webkit-full-screen .controls.controls-visible,.deck-wrapper.simulated-fs .controls.controls-visible{opacity:1}
+#deck-wrapper:fullscreen .controls,#deck-wrapper:-webkit-full-screen .controls,.deck-wrapper.simulated-fs .controls{bottom:24px;opacity:0;transition:opacity 300ms ease,background-color 240ms ease,border-color 240ms ease,color 240ms ease}
+#deck-wrapper:fullscreen .controls.controls-visible,#deck-wrapper:-webkit-full-screen .controls.controls-visible,.deck-wrapper.simulated-fs .controls.controls-visible,#deck-wrapper:fullscreen .controls:focus-within,.deck-wrapper.simulated-fs .controls:focus-within{opacity:1}
 
 /* ── Progress ── */
 .progress{position:absolute;inset:0 auto auto 0;height:4px;background:var(--accent);transition:width 320ms ease;z-index:5}
@@ -196,17 +196,34 @@ body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 .evidence{display:none}
 body.edit-mode .evidence{display:block;margin-top:12px;font-size:14px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px;opacity:0.6;font-style:italic}
 
-/* ── Controls ── */
-.controls{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--toolbar-border);border-radius:999px;background:var(--toolbar-bg);box-shadow:var(--toolbar-shadow);backdrop-filter:blur(8px);color:var(--toolbar-text);z-index:20;font-size:13px;opacity:.18;transition:opacity 160ms ease,background-color 240ms ease,border-color 240ms ease,color 240ms ease}
-.deck:not(:fullscreen):not(.simulated-fs):hover .controls,.deck:not(:fullscreen):not(.simulated-fs):focus-within .controls{opacity:1}
+/* ── Controls: one pill of grouped icon buttons; labels and keys show as tooltips ── */
 button{border:none;background:transparent;cursor:pointer;color:var(--text);padding:6px 8px;border-radius:999px;font-size:13px}
 button:hover{background:rgba(0,0,0,.05)}
-.controls button{color:var(--toolbar-text)}
-.controls button:hover{background:var(--toolbar-hover)}
 button.active{background:rgba(220,38,38,.12);color:#dc2626}
+.controls{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:5px;border:1px solid var(--toolbar-border);border-radius:999px;background:color-mix(in srgb,var(--toolbar-bg) 86%,transparent);box-shadow:var(--toolbar-shadow),inset 0 1px 0 color-mix(in srgb,var(--toolbar-text) 6%,transparent);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);color:var(--toolbar-text);z-index:20;font:600 13px/1 system-ui,-apple-system,"Segoe UI",sans-serif;opacity:.2;transition:opacity 180ms ease,background-color 240ms ease,border-color 240ms ease,color 240ms ease}
+.deck:not(:fullscreen):not(.simulated-fs):hover .controls,.deck:not(:fullscreen):not(.simulated-fs):focus-within .controls{opacity:1}
+.ctl-group{display:flex;align-items:center;gap:2px}
+.ctl-sep{flex:none;width:1px;height:18px;margin:0 5px;background:var(--toolbar-border)}
+.controls button{position:relative;display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border-radius:999px;color:var(--toolbar-text);transition:background-color 140ms ease,color 140ms ease,opacity 140ms ease,transform 90ms ease}
+.controls button:hover{background:var(--toolbar-hover)}
+.controls button:active{transform:scale(.93)}
+.controls button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .controls button.active,.controls button.active:hover{background:var(--toolbar-active-bg);color:var(--toolbar-active)}
-.counter{min-width:56px;text-align:center;font-size:13px;font-weight:600;color:var(--toolbar-muted)}
-.play-state{min-width:54px;text-align:center;font-size:12px;font-weight:700;color:var(--toolbar-muted);font-variant-numeric:tabular-nums}
+.controls button:disabled{opacity:.3;cursor:default;background:transparent;transform:none}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.ic .solid{fill:currentColor;stroke:none}
+#play-btn .ic-pause,#play-btn.active .ic-play,#fullscreen .ic-min,body.fs-active #fullscreen .ic-max{display:none}
+#play-btn.active .ic-pause,body.fs-active #fullscreen .ic-min{display:block}
+.controls button[data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 10px);transform:translate(-50%,4px);padding:6px 9px;border-radius:7px;background:#111827;color:#f9fafb;font:600 11.5px/1 system-ui,-apple-system,sans-serif;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity 120ms ease,transform 120ms ease}
+.controls button[data-tip]:hover::after,.controls button[data-tip]:focus-visible::after{opacity:1;transform:translate(-50%,0);transition-delay:300ms}
+.controls button:disabled::after{display:none}
+.counter{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:70px;padding:0 6px;font-size:13px;color:var(--toolbar-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.counter strong{color:var(--toolbar-text);font-weight:750}
+.build-dots{display:inline-flex;gap:3px}
+.build-dots i{width:5px;height:5px;border-radius:50%;background:var(--toolbar-border)}
+.build-dots i.on{background:var(--toolbar-text)}
+.play-state{display:none;padding:0 8px 0 2px;font-size:12px;font-weight:700;color:var(--toolbar-active);font-variant-numeric:tabular-nums}
+.controls.is-playing .play-state{display:inline}
 
 /* ── Phone remote / annotations ── */
 .annotation-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:14}
@@ -436,7 +453,6 @@ body:not(.edit-mode) .guide-panel{display:none!important}
 .guide-brief-row{display:grid;grid-template-columns:70px 1fr;gap:8px;font-size:12.5px}
 .guide-brief-row span{overflow-wrap:anywhere}.guide-brief-row em{color:var(--muted)}
 .guide-flash{outline:3px solid #f59e0b!important;outline-offset:3px;border-radius:4px}
-.controls #presenter-btn.active{background:var(--toolbar-active-bg);color:var(--toolbar-active)}
 @media (min-width:861px){body.edit-mode.guide-open .editor-main{right:380px!important}}
 
 /* ── Print / PDF (one 1200×675 page per slide at its final build) and offscreen snapshots ── */
@@ -672,20 +688,29 @@ body.edit-mode .progress{display:none}
   <div class="remote-note" id="remote-note"></div>
   <div class="collab-strip" id="collab-strip"></div>
 
-  <div class="controls" id="controls-bar">
-    <button id="prev" aria-label="Previous slide">←</button>
-    <button id="home" aria-label="First slide">⌂</button>
-    <span class="counter" id="counter">1 / 1</span>
-    <button id="next" aria-label="Next slide">→</button>
-    <button id="play-btn" aria-label="Auto-advance" title="Auto-advance (A)">▶</button>
-    <span class="play-state" id="play-state">00:00</span>
-    <button id="phone-btn" aria-label="Phone remote" title="Phone remote (R)">Phone</button>
-    <button id="laser-btn" aria-label="Laser pointer" title="Laser pointer (L)">🪄</button>
-    <button id="gallery-btn" aria-label="Slide overview" title="Slide overview (G)">⊞</button>
-    <button id="motion-btn" aria-label="Motion graphics" title="Motion graphics (M)">✦</button>
-    <button id="presenter-btn" aria-label="Presenter view" title="Presenter view with notes and timer (P)">Speaker</button>
-    <button id="command-btn" aria-label="Command menu" title="Search slides and actions (Ctrl/⌘ K)">⌘K</button>
-    <button id="fullscreen" aria-label="Fullscreen">Full</button>
+  <div class="controls" id="controls-bar" role="toolbar" aria-label="Presentation controls">
+    <div class="ctl-group">
+      <button id="home" aria-label="First slide" data-tip="First slide · Home"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.5 19 9.5 12l9-7v14Z"/><path d="M5.5 5v14"/></svg></button>
+      <button id="prev" aria-label="Previous slide" data-tip="Previous · ←"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <span class="counter" id="counter">1 / 1</span>
+      <button id="next" aria-label="Next slide" data-tip="Next · → or Space"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+    <span class="ctl-sep" aria-hidden="true"></span>
+    <div class="ctl-group">
+      <button id="play-btn" aria-label="Auto-advance" aria-pressed="false" data-tip="Auto-advance · A"><svg class="ic ic-play" viewBox="0 0 24 24" aria-hidden="true"><path class="solid" d="M8 5.6v12.8a1 1 0 0 0 1.53.85l10.2-6.4a1 1 0 0 0 0-1.7L9.53 4.75A1 1 0 0 0 8 5.6Z"/></svg><svg class="ic ic-pause" viewBox="0 0 24 24" aria-hidden="true"><rect class="solid" x="6.5" y="5" width="4" height="14" rx="1.2"/><rect class="solid" x="13.5" y="5" width="4" height="14" rx="1.2"/></svg></button>
+      <span class="play-state" id="play-state">00:00</span>
+      <button id="gallery-btn" aria-label="Slide overview" data-tip="Overview · O"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg></button>
+      <button id="presenter-btn" aria-label="Presenter view" data-tip="Presenter view · P"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 3.5h19"/><path d="M20.5 3.5v10a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-10"/><path d="m8 21 4-5.5 4 5.5"/></svg></button>
+      <button id="laser-btn" aria-label="Laser pointer" data-tip="Laser pointer · L"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle class="solid" cx="12" cy="12" r="2.5"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg></button>
+      <button id="motion-btn" aria-label="Motion graphics" data-tip="Motion · M"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3.5 12.9 8.6 18 10.5 12.9 12.4 11 17.5 9.1 12.4 4 10.5 9.1 8.6 11 3.5Z"/><path d="M18.5 15v5M16 17.5h5"/></svg></button>
+      <button id="phone-btn" aria-label="Phone remote" data-tip="Phone remote · R"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18h3"/></svg></button>
+    </div>
+    <span class="ctl-sep" aria-hidden="true"></span>
+    <div class="ctl-group">
+      <button id="command-btn" aria-label="Search slides and actions" data-tip="Search · ⌘K"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg></button>
+      <button id="edit-mode-btn" aria-label="Edit slides" data-tip="Edit · E"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4.2L19.3 8.9a2.6 2.6 0 0 0-3.7-3.7L4.5 16.3 4 20Z"/><path d="m14 6.8 3.7 3.7"/></svg></button>
+      <button id="fullscreen" aria-label="Fullscreen" data-tip="Fullscreen · F"><svg class="ic ic-max" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 3.5h-3a2 2 0 0 0-2 2v3M20.5 8.5v-3a2 2 0 0 0-2-2h-3M3.5 15.5v3a2 2 0 0 0 2 2h3M15.5 20.5h3a2 2 0 0 0 2-2v-3"/></svg><svg class="ic ic-min" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 3.5v3a2 2 0 0 1-2 2h-3M20.5 8.5h-3a2 2 0 0 1-2-2v-3M3.5 15.5h3a2 2 0 0 1 2 2v3M15.5 20.5v-3a2 2 0 0 1 2-2h3"/></svg></button>
+    </div>
   </div>
   <div class="blackout" id="blackout" aria-hidden="true"></div>
   <div class="notes-drawer" id="notes-drawer" role="region" aria-label="Speaker notes" aria-live="polite"></div>
@@ -1854,13 +1879,13 @@ function stopPlayback(){
   state.playing=false;
   clearInterval(playTimer);clearInterval(elapsedTimer);
   playTimer=null;elapsedTimer=null;
-  playBtn.textContent="▶";playBtn.classList.remove("active");
+  playBtn.classList.remove("active");playBtn.setAttribute("aria-pressed","false");controlsBar.classList.remove("is-playing");
   syncRemoteState();
 }
 function startPlayback(){
   if(!slides.length)return;
   state.playing=true;state.elapsed=0;
-  playBtn.textContent="❚❚";playBtn.classList.add("active");
+  playBtn.classList.add("active");playBtn.setAttribute("aria-pressed","true");controlsBar.classList.add("is-playing");
   playState.textContent=formatElapsed(state.elapsed);
   clearInterval(playTimer);clearInterval(elapsedTimer);
   elapsedTimer=setInterval(()=>{state.elapsed++;playState.textContent=formatElapsed(state.elapsed)},1000);
@@ -2016,7 +2041,10 @@ function fitSlideElement(slideEl){
 }
 function updateDeckChrome(s){
   const buildCount=getRevealOrder(s).length;
-  counter.textContent=`${state.currentSlide+1} / ${slides.length}${buildCount?` · ${state.currentBuild}/${buildCount}`:""}`;
+  const builds=!buildCount?"":buildCount<=8?`<span class="build-dots" aria-hidden="true">${Array.from({length:buildCount},(_,i)=>`<i${i<state.currentBuild?' class="on"':""}></i>`).join("")}</span>`:`<span>${state.currentBuild}/${buildCount}</span>`;
+  counter.innerHTML=`<span><strong>${state.currentSlide+1}</strong> / ${slides.length}</span>${builds}${buildCount?`<span class="mo-sr">, step ${state.currentBuild} of ${buildCount}</span>`:""}`;
+  const atStart=state.currentSlide===0&&state.currentBuild===0,atEnd=state.currentSlide===slides.length-1&&state.currentBuild>=buildCount;
+  for(const [id,off] of [["home",atStart],["prev",atStart],["next",atEnd]]){const el=document.getElementById(id);if(el)el.disabled=off}
   progressBar.style.width=`${((state.currentSlide+1)/slides.length)*100}%`;
   syncDeckLocation();syncNotesDrawer();syncPresenter();
 }
@@ -2099,7 +2127,7 @@ document.addEventListener('mousemove',e=>{
   }
   /* Fullscreen controls: show when mouse near bottom */
   if(isAnyFullscreen()){
-    if(e.clientY > window.innerHeight - 60){
+    if(e.clientY > Math.min(window.innerHeight - 60, controlsBar.getBoundingClientRect().top - 40)){
       controlsBar.classList.add('controls-visible');
     } else {
       controlsBar.classList.remove('controls-visible');
@@ -2355,7 +2383,7 @@ function startRemoteHost(){
   });
   remoteState.peer.on("error",err=>{remoteState.error=err;updateRemoteStatus(`Peer error: ${err.message||err}`)});
 }
-function toggleRemotePanel(){remotePanel.classList.toggle("show");if(remotePanel.classList.contains("show"))startRemoteHost()}
+function toggleRemotePanel(){remotePanel.classList.toggle("show");phoneBtn.classList.toggle("active",remotePanel.classList.contains("show"));if(remotePanel.classList.contains("show"))startRemoteHost()}
 phoneBtn.addEventListener("click",toggleRemotePanel);
 document.getElementById("remote-clear-ink").addEventListener("click",()=>clearAnnotations());
 document.getElementById("remote-clear-notes").addEventListener("click",()=>clearCollaborativeNotes());
@@ -3246,7 +3274,9 @@ function exportHTML(){
   const page=document.documentElement.cloneNode(true);
   page.querySelectorAll('.motion-layer').forEach(el=>el.remove());
   page.querySelectorAll('.motion-panel').forEach(el=>{el.classList.remove('show');el.replaceChildren()});
-  page.querySelectorAll('#command-menu,#print-root,#slide-snapshot-host,#print-page-style,#comment-composer,.slider-toast,.comment-pin').forEach(el=>el.remove());
+  page.querySelectorAll('#command-menu,#print-root,#slide-snapshot-host,#print-page-style,#comment-composer,#slot-file-input,.slider-toast,.comment-pin').forEach(el=>el.remove());
+  page.querySelectorAll('.controls button.active').forEach(el=>el.classList.remove('active'));
+  page.querySelector('#controls-bar')?.classList.remove('is-playing','controls-visible');
   page.querySelectorAll('#gallery-grid,#notes-drawer,#guide-panel').forEach(el=>el.replaceChildren());
   page.querySelectorAll('.help,.notes-drawer,.gallery-overlay,.guide-panel,.remote-panel').forEach(el=>el.classList.remove('show'));
   page.querySelector('#blackout')?.setAttribute('class','blackout');
@@ -3718,7 +3748,7 @@ function closePresentLayer(){
   if(helpPanel.classList.contains("show"))toggleHelp(false);
   else if(motionPanel.classList.contains("show"))toggleMotionPanel(motionPanel,false);
   else if(galleryOverlay.classList.contains("show"))closeGallery();
-  else if(remotePanel.classList.contains("show"))remotePanel.classList.remove("show");
+  else if(remotePanel.classList.contains("show"))toggleRemotePanel();
   else if(deckBlackout)setBlackout(null);
   else if(notesDrawerOpen)toggleNotesDrawer(false);
   else if(state.playing)stopPlayback();
@@ -4033,7 +4063,7 @@ window.addEventListener("keydown",e=>{
 },true);
 const commandButton=document.getElementById("command-btn");
 commandButton.addEventListener("click",()=>toggleCommandMenu(true));
-if(!IS_MAC)commandButton.textContent="Ctrl K";
+if(!IS_MAC)commandButton.dataset.tip="Search · Ctrl K";
 
 /* ── Review comments (editor C): pin a note to any text. Comments live in slide.comments
    ({id, path, text, createdAt, resolved}); File › Export comments writes them for an agent to apply. ── */
@@ -4143,7 +4173,7 @@ document.getElementById("tb-print-notes").addEventListener("click",()=>printDeck
 
 /* ── Figure slots: drop an image on a placeholder, or choose one from the inspector or the Guide ── */
 const slotFileInput=document.createElement("input");
-slotFileInput.type="file";slotFileInput.accept="image/*";slotFileInput.hidden=true;
+slotFileInput.id="slot-file-input";slotFileInput.type="file";slotFileInput.accept="image/*";slotFileInput.hidden=true;
 document.body.appendChild(slotFileInput);
 var slotTarget=null;
 function readImageFile(file,done){
@@ -4582,12 +4612,8 @@ window.addEventListener('keydown',e=>{
 /* ── Resize observer for edit deck ── */
 window.addEventListener('resize',()=>{if(state.editMode){scaleEditDeck();layoutThumbnailStages()}});
 
-/* ── Add "Edit" button to present-mode controls ── */
-const editBtn=document.createElement('button');
-editBtn.id='edit-mode-btn';editBtn.textContent='✏️';editBtn.title='Edit mode (E)';
-editBtn.setAttribute('aria-label','Edit mode');
-controlsBar.insertBefore(editBtn,document.getElementById('fullscreen'));
-editBtn.addEventListener('click',enterEditMode);
+/* ── Edit button in the present-mode controls (static markup, so exports do not duplicate it) ── */
+document.getElementById('edit-mode-btn').addEventListener('click',enterEditMode);
 
 </script>
 </body>
