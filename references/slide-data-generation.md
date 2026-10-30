@@ -103,7 +103,7 @@ Each item in `contentBlocks[]`:
 | `revealOrder` | string[] | Optional semantic targets revealed one presenter beat at a time; use only when order improves comprehension. See [progressive builds](progressive-builds.md). |
 
 ### Motion fields (optional)
-Deck motion belongs in `meta.motion` (preset name or object) or the renderer's `--motion` flag. Per-slide fields override it. See [motion graphics](motion-graphics.md).
+Deck motion belongs in `meta.motion` (preset name or object) or the renderer's `--motion` flag. Per-slide fields override it; choose them from the slide's content with the content map in [motion graphics](motion-graphics.md), and leave most slides on the preset.
 
 | Field | Type | Description |
 |:---|:---|:---|

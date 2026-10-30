@@ -70,6 +70,7 @@ The roundtrip uses synthetic paper text and images; it verifies integration, not
   - Confirm the next press during a transition finishes it, Left shows the previous slide complete, and each build animates only its target.
   - After motion settles, confirm the slide matches `?motion=none`: no shifted words, leftover blur, or clipped figures. Check a CJK title.
   - Turn on the OS reduced-motion setting and confirm slides cut instantly.
+  - Render a plan with a seven-row table, five metrics, a figure repeated on consecutive slides, and three non-accent `glitch`/`pixel` slides; the renderer should print one `motion:` hint for each, and none with `--motion none`.
   - Set the transition to `morph` and move between two slides that share a title or figure: the shared element flies to its new place, the rest crossfades, and the end frame matches `?motion=none`.
 
 ## Manual Editor Smoke Test

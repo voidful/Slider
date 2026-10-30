@@ -95,9 +95,9 @@
       "description": "Venue-specific finishing layers"
     },
     {
-      "path": "references/visual-selection-scoring.md",
-      "priority": 3,
-      "description": "Visual candidate ranking criteria"
+      "path": "references/motion-graphics.md",
+      "priority": 2,
+      "description": "Motion presets and the content map for per-slide transitions, entrances, and morph"
     },
     {
       "path": "references/bug-and-conciseness-audit.md",

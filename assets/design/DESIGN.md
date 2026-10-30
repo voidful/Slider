@@ -341,7 +341,7 @@ contentBlocks: [
 - Stronger transitions play on accent slides only: opener, main result, limitation turn, and close. The engines apply this automatically.
 - Entrance motion uses `transform`, `opacity`, `filter`, `clip-path`, and masks. Text is split only when its line breaks stay identical.
 - Do not make the audience wait. Entrances settle in about 1–1.5 s at 1× speed, and any navigation finishes running motion immediately.
-- Use `motion: "subtle"` or `"none"` on dense tables, long equations, and number-heavy slides.
+- Match motion to content slide by slide with the content map in [motion graphics](../references/motion-graphics.md): calm dense tables, long equations, and number-heavy slides (`motion: "subtle"` or `"none"`), carry a figure that stays across slides with `morph`, and stagger method steps.
 - Hover states are only for chrome and optional interactive helpers, not for core evidence.
 - Ambient motion is optional and should appear on at most one or two rhetorical accent slides.
 - Always respect `prefers-reduced-motion: reduce`.

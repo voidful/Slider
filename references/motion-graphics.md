@@ -91,6 +91,28 @@ Set deck motion in the plan's `meta`, or pass `--motion` to `render_slideshow_ar
 
 The renderer rejects unknown deck-level ids and warns about unknown per-slide ids, which the engines ignore.
 
+## Match motion to content
+
+The deck preset is a baseline, not the whole plan. Once the static slides read well, walk the deck once and give a slide its own `transition`, `motion`, or `morph` where its content calls for one. Most slides keep the preset; a quarter of them or fewer usually need an override. When the brief asks for no motion, use preset `none` and add no overrides.
+
+| Slide content | Set | Why |
+|:---|:---|:---|
+| Opener, main result, limitations turn, close | Nothing; the accent rule plays the stronger transition | Strong motion marks the talk's turns |
+| One headline number | Keep the preset's number effect (`count` in `editorial`, `kinetic`, and `cinematic`) | The count ends on the exact reported value and draws the eye |
+| Five or more numbers, or a table of six or more rows | `"motion": "subtle"` or `{"data": "none"}` | Values must read at once, not tick or trickle in |
+| The figure that carries the claim | The preset's `media` reveal; `{"media": "zoom"}` for a photo-like qualitative result | The reveal directs attention without moving the data |
+| The same figure on consecutive slides (overview, then detail) | `"transition": "morph"`, with `morph` ids when the crop differs | The audience keeps their place in the figure |
+| Same title, next part ("continued") | `"transition": "morph"` | Only the new content seems to change |
+| Method pipeline, timeline, numbered steps | `revealOrder` for pacing and `{"group": "stagger"}` | Appearance order mirrors the method's order |
+| Before and after, or baseline against ours | `"transition": "wipe"` | The sweep reads as a change |
+| Long equation or derivation | `"motion": "none"` or `"subtle"` | Symbols should not move while being read |
+| Definition, quotation, or one-sentence claim | `{"text": "soft", "emphasis": "sweep"}` | Reading pace, then emphasis on the callout |
+| Section divider | `"transition": "curtain"` or `"zoom"`, once or twice per talk | Signals a new part without becoming a pattern |
+| Systems, demo, or code slide | `{"title": "typewriter"}` for a short command; `"scramble"` only for short labels (64 characters or fewer) | Fits terminal-like content; long text would make people wait |
+| Appendix and backup slides | `"motion": "none"` | Fast lookup during questions |
+
+The renderer prints advisory `motion:` hints for the clearest mismatches: a large table or many numbers with animated values, the same figure on consecutive slides without `morph`, strong transitions stacked on ordinary slides, and a long deck with no per-slide choices at all. Treat them as prompts to look, not rules; the brief and the content decide.
+
 ## Controls
 
 - **HTML deck:** press `M` or ✦ while presenting to open the motion panel: presets, per-channel overrides, speed, and replay. In the editor, **Motion** opens the same panel. The inspector's **Motion** section sets the slide's transition, preset, and accent flag, and **Preview** plays it in present mode. Changes are undoable and saved in drafts, JSON export (`meta.motion`), and HTML export.
@@ -100,9 +122,8 @@ The renderer rejects unknown deck-level ids and warns about unknown per-slide id
 
 ## Authoring guidance
 
+- Pick the deck preset from the venue and audience. Use `editorial` for most talks and `subtle` or `none` for formal or equation-heavy talks. Reserve `digital` and `kinetic` for briefs that ask for energy. Then tune individual slides with the content map above.
 - Use `morph` where consecutive slides share an object: zooming from an overview figure into one panel, a metric that carries over, or a title that stays while the content changes. Give the shared element a `morph` id when automatic pairing would miss it.
-- Match the venue and audience. Use `editorial` for most talks and `subtle` or `none` for formal or equation-heavy talks. Reserve `digital` and `kinetic` for briefs that ask for energy.
-- Set `motion: "subtle"` or `"none"` on dense tables, long equations, and slides with many numbers. Use `data: "none"` when values must stay readable during the entrance.
 - Builds (`revealOrder`) control pacing. Motion controls only how revealed content appears. An entrance settles in about 1–1.5 s at 1×, and an early press finishes it immediately.
 - Avoid stacking strong transitions. The accent rule already highlights the opener, main result, limitation turn, and close.
 

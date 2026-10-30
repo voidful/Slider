@@ -44,6 +44,11 @@ knowledge_files:
   - ../../references/ui-patterns.md
   - ../../references/artifact-rendering.md
   - ../../references/live-tweaks-protocol.md
+  - ../../references/motion-graphics.md
+
+  # Wording and guided builds
+  - ../../references/slide-copy-rules.md
+  - ../../references/guided-deck-workflow.md
 
   # Verification and audit
   - ../../references/verification-workflow.md

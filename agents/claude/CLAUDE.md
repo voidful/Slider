@@ -12,6 +12,7 @@ Preserve the user's audience, language, duration, slide count, format, and task 
 - Preserve source values, units, datasets, baselines, uncertainty, and limitations. Mark illustrative explanations separately from paper findings.
 - Include key method/result visuals when relevant to the talk. Cite their figure/table/section in notes. Inspect crops; a placeholder or invented diagram never substitutes for unavailable evidence.
 - Keep one main message per slide and internal planning/audit metadata off the slide face.
+- After the static slides work, match motion to each slide's content with per-slide `transition`, `motion`, and `morph` (content map in motion-graphics.md): calm dense tables and equations, `morph` for a figure that carries over, strong transitions only on accent slides. A no-motion brief means preset `none` and no overrides.
 - Use the canonical template and scripts/render_slideshow_artifact.py for HTML generation when execution is available. Keep serialized UTF-8 JSON in base64 transport and preserve the 1200×675 stage in windowed/fullscreen modes.
 - Embed paper images. Check output-contracts.md before claiming offline readiness: math and phone features can require network resources.
 - Use tools and any delegation according to the current host's capabilities and permissions. A local artifact request does not authorize publication or external uploads.

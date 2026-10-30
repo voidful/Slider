@@ -63,7 +63,7 @@ Preserve these renderer invariants:
 - Generated decks start in presentation mode and retain navigation, notes, and editor access.
 - Embed paper images for portable output. The bundled template still references network services for math and phone features; apply the offline guidance in the output contract before claiming offline readiness.
 
-For design work, read [DESIGN.md](assets/design/DESIGN.md). Use existing themes and layouts as defaults, with changes driven by the user's brief and the evidence. Slide transitions and entrances follow a [motion preset](references/motion-graphics.md), `editorial` by default. Set `meta.motion` or per-slide `transition`/`motion` when the brief asks for more, less, or no motion. Compile a [deck design](references/deck-design-control-plane.md) when coordinated design settings are useful; routine text edits do not require recompilation.
+For design work, read [DESIGN.md](assets/design/DESIGN.md). Use existing themes and layouts as defaults, with changes driven by the user's brief and the evidence. Slide transitions and entrances follow a [motion preset](references/motion-graphics.md), `editorial` by default. Once the static slides work, match motion to each slide's content with per-slide `transition`, `motion`, and `morph`, using that reference's content map: calm dense tables and equations, carry a shared figure across slides with `morph`, stagger a pipeline, and leave strong transitions to the accent slides. A brief that asks for more, less, or no motion takes precedence. Compile a [deck design](references/deck-design-control-plane.md) when coordinated design settings are useful; routine text edits do not require recompilation.
 
 ## Verification and handoff
 

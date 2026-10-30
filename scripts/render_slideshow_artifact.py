@@ -121,6 +121,52 @@ def motion_warnings(slides: list[dict[str, Any]]) -> list[str]:
     return warnings
 
 
+STRONG_TRANSITIONS = {"curtain", "circle", "doors", "slices", "zoom", "glitch", "pixel"}
+ACCENT_LAYOUTS = {"cover", "takeaway", "experiment-headline", "limitations"}
+ACCENT_ROLES = {"title", "main-result", "limitation", "takeaway"}
+
+
+def _figure_keys(slide: dict[str, Any]) -> set[str]:
+    """Image sources and figure references; consecutive slides that share one are morph candidates."""
+    visual = slide.get("visual") if isinstance(slide.get("visual"), dict) else {}
+    keys = {visual.get("src"), slide.get("visualBinding") if isinstance(slide.get("visualBinding"), str) else None}
+    for block in slide.get("contentBlocks") or []:
+        if isinstance(block, dict) and block.get("type") == "figure" and isinstance(block.get("content"), dict):
+            keys.add(block["content"].get("src"))
+    return {key for key in keys if key}
+
+
+def motion_suggestions(slides: list[dict[str, Any]], motion: dict[str, Any] | None) -> list[str]:
+    """Advisory content-fit hints from references/motion-graphics.md ("Match motion to content")."""
+    deck = motion or {}
+    if deck.get("preset", DEFAULT_MOTION_PRESET) == "none":
+        return []
+    hints, strong, tuned = [], [], 0
+    for idx, slide in enumerate(slides, 1):
+        if not isinstance(slide, dict):
+            continue
+        own = slide.get("motion")
+        tuned += bool(own or slide.get("transition") or slide.get("morph"))
+        blocks = [block for block in slide.get("contentBlocks") or [] if isinstance(block, dict)]
+        rows = max([len((block.get("content") or {}).get("rows") or []) for block in blocks if block.get("type") == "table"] + [0])
+        numbers = len(slide.get("metrics") or []) + sum(len(block.get("content") or []) if block.get("type") == "metric-grid" else int(block.get("type") == "metric") for block in blocks)
+        if own is None and rows >= 6 and deck.get("preset") != "subtle":
+            hints.append(f'motion: s{idx:02d} has a {rows}-row table; consider "motion": "subtle" so rows arrive together and read at once.')
+        if own is None and numbers >= 5 and deck.get("data") != "none" and deck.get("preset") != "subtle":
+            hints.append(f'motion: s{idx:02d} shows {numbers} numbers; consider "motion": {{"data": "none"}} so values read at once.')
+        accent = slide.get("accent") is True or slide.get("layout") in ACCENT_LAYOUTS or slide.get("pageRole") in ACCENT_ROLES
+        if slide.get("transition") in STRONG_TRANSITIONS and not accent:
+            strong.append(idx)
+        previous = slides[idx - 2] if idx > 1 and isinstance(slides[idx - 2], dict) else None
+        if previous and slide.get("transition") is None and _figure_keys(previous) & _figure_keys(slide):
+            hints.append(f'motion: s{idx:02d} shows the same figure as s{idx - 1:02d}; "transition": "morph" carries it across.')
+    if len(strong) > 2:
+        hints.append(f"motion: strong transitions on non-accent slides {strong}; keep them for the opener, main result, limitations turn, and close.")
+    if len(slides) >= 8 and not tuned:
+        hints.append('motion: every slide uses the deck preset; match motion to content where it helps (references/motion-graphics.md, "Match motion to content").')
+    return hints
+
+
 def load_payload(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(data, dict):
@@ -432,7 +478,7 @@ def main() -> None:
 
     if args.mode == "react":
         rendered = render_react(slide_data, theme=theme, venue=venue, motion=motion)
-        for warning in motion_warnings(slide_data) + copy_warnings(slide_data):
+        for warning in motion_warnings(slide_data) + motion_suggestions(slide_data, motion) + copy_warnings(slide_data):
             print(f"[WARN] {warning}", file=sys.stderr)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(rendered, encoding="utf-8")
@@ -449,7 +495,7 @@ def main() -> None:
         from browser_slide_audit import run_browser_slide_audit
 
         post_result = AuditResult()
-        post_result.warnings.extend(motion_warnings(slide_data))
+        post_result.warnings.extend(motion_warnings(slide_data) + motion_suggestions(slide_data, motion))
         post_result.warnings.extend(copy_warnings(slide_data, meta.get("brief")))
         audit_svg_text(slide_data, post_result)
         audit_rendered_html(args.output, post_result)
@@ -642,7 +688,7 @@ def main() -> None:
         return
 
     touched = render_react_project(slide_data, theme=theme, venue=venue, title=title, output_dir=args.output, deck_design=deck_design, motion=motion)
-    for warning in motion_warnings(slide_data) + copy_warnings(slide_data):
+    for warning in motion_warnings(slide_data) + motion_suggestions(slide_data, motion) + copy_warnings(slide_data):
         print(f"[WARN] {warning}", file=sys.stderr)
     print(json.dumps({"output_dir": str(args.output), "files": [str(path) for path in touched]}, ensure_ascii=False, indent=2))
 

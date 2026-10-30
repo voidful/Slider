@@ -8,7 +8,7 @@ For a new talk, identify the source/version, select a thesis and supporting evid
 
 Preserve claims, exact values, metric/dataset/baseline context, limitations, and the distinction between paper findings and illustrative explanations. Use key paper visuals when they support the talk. Cite figures, tables, and sections in notes. A placeholder or invented reconstruction never satisfies missing evidence. If only an abstract is available, produce only supported content and identify the source limitation.
 
-Give each slide one main message. Keep evidence readable and internal planning/audit fields off the slide face. Treat layouts, teaching sequences, visual-coverage targets, and style presets as defaults rather than quotas.
+Give each slide one main message. Keep evidence readable and internal planning/audit fields off the slide face. Treat layouts, teaching sequences, visual-coverage targets, and style presets as defaults rather than quotas. Once the static slides work, match motion to each slide's content with per-slide transition, motion, and morph fields (the content map in motion-graphics.md): calm dense tables and equations, carry a shared figure across slides with morph, and keep strong transitions for accent slides. A request for no motion means preset none and no overrides.
 
 When code execution and the runtime bundle are available, create valid UTF-8 JSON and use scripts/render_slideshow_artifact.py with the canonical HTML template. Preserve base64 transport, the fixed 1200×675 stage, and its scale-only fullscreen behavior. Embed image assets. The template's math and phone features have network dependencies; consult output-contracts.md for offline delivery.
 

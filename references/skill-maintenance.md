@@ -44,6 +44,8 @@ These are representative requests and outcomes to inspect, not text-matching ass
 | “Summarize this paper in one paragraph.” | Ordinary summarization; do not automatically invoke deck generation |
 | “引導我一步一步完成這份投影片。” | Guided workflow: one main question per turn with brief feedback, an outline approval, a status label from the guided workflow; no questionnaire, no slides before the length and takeaway |
 | “Just make the deck, no questions.” | Build from defaults; the guided interview is not a precondition |
+| “Make the motion fit the slides.” | Static deck first, then per-slide overrides from the content map: calm tables and equations, `morph` for a figure that carries over, strong transitions only on accent slides; no override that delays evidence |
+| “No animation, please.” | Preset `none` and no per-slide overrides |
 | “Clean up the wording on these slides.” | Copy rules: protect numbers, names, and citations; fix the biggest problem first; report `audit only` or `delivery pass / validation not run` honestly |
 | “Apply the comments in slide-comments.json.” | Edit each commented field, resolve it, re-render, and list any comment left unapplied with the reason |
 
