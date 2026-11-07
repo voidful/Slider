@@ -1,6 +1,6 @@
 ---
 name: slider
-description: Create, revise, or audit research-paper talks as browser slides from a PDF, arXiv link, DOI, or paper text. Use for evidence-backed presentations, not general paper summaries or websites.
+description: Create, revise, or audit research-paper talks as browser slides from a PDF, arXiv link, DOI, paper text, or the user's own research results, built directly or step by step in a guided conversation, with explanations that are clear and complete. Use for evidence-backed presentations, not general paper summaries or websites.
 ---
 
 # Slider
@@ -27,7 +27,8 @@ Read only the row relevant to the task and follow further links as needed. Paths
 | Revise an existing deck | [Task workflows](references/task-workflows.md), revision section | Requested changes with affected content and rendering checked |
 | Audit a deck | [Verification workflow](references/verification-workflow.md) | Prioritized findings with slide/source locations; edit only if requested |
 | Plan a talk | [Presentation logic](references/presentation-logic.md) | Talk thesis, slide sequence, evidence choices, open source gaps |
-| Build a talk with the user step by step | [Guided deck workflow](references/guided-deck-workflow.md) | One question per turn, an approved outline, and an honest status label |
+| Build a talk with the user step by step | [Guided deck workflow](references/guided-deck-workflow.md) | One question per turn, three storylines, a cheap prototype, an approved outline, and an honest status label |
+| Make a talk's explanation clear and complete | [Explain clearly](references/explain-clearly.md) | A connected thread, one punchline, motivated methods, and a passed completeness check |
 | Change Slider itself or platform packaging | [Skill maintenance](references/skill-maintenance.md) | Scoped implementation/docs changes and applicable checks |
 
 ## Evidence contract
@@ -37,6 +38,12 @@ Read only the row relevant to the task and follow further links as needed. Paths
 - A faithful redraw needs inspectable source data or structure and a citation. A missing source is not permission to invent a chart. See [faithful redraw](references/faithful-redraw-policy.md).
 - A placeholder never satisfies a required visual. For incomplete sources, identify the gap and deliver only the supported plan or clearly labeled draft; do not describe it as fully verified.
 - Give each slide one main message, with wording that follows the [slide copy rules](references/slide-copy-rules.md). Put source references, visual rationale, caveats, and speaking cues in speaker notes. Keep internal audit/planning metadata off the slide face.
+
+## Explain clearly, and talk it through when asked
+
+- Build every talk as a thread: each slide answers the question the previous one raised, one punchline carries the takeaway with its evidence, and a method arrives as the fix for a problem the audience has seen. Use [explain clearly](references/explain-clearly.md) for the plan, method slides, speaker notes, and its completeness check. The slide face keeps claim titles; a teaching voice, including a 李宏毅式 voice on request, lives in speaker notes.
+- When the user wants to build the talk together, follow the [guided deck workflow](references/guided-deck-workflow.md): one main question per turn with brief feedback, reframe what is stuck, three storylines of equal standing, a cheap prototype, then the outline approval. Without that request, build from defaults.
+- When the material is the user's own unpublished work, their files and answers are the source. Ask for the number or figure instead of estimating it, and record where each claim came from in speaker notes.
 
 ## Build the requested artifact
 

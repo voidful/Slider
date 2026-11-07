@@ -14,7 +14,7 @@ A useful backbone is:
 4. What the evidence supports and where it stops.
 5. The conclusion the audience should retain.
 
-Merge or expand these roles according to the talk. Source section order can help locate evidence; it need not determine slide order.
+Merge or expand these roles according to the talk. Source section order can help locate evidence; it need not determine slide order. Connect the roles as a thread: each slide answers the question the previous one raised. [Explain clearly](explain-clearly.md) has the thread check, the punchline, how to motivate a method, and a completeness check.
 
 ## Pacing
 

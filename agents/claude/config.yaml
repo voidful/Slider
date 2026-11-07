@@ -49,6 +49,8 @@ knowledge_files:
   # Wording and guided builds
   - ../../references/slide-copy-rules.md
   - ../../references/guided-deck-workflow.md
+  - ../../references/explain-clearly.md
+  - ../../assets/guided/storyline-options.md
 
   # Verification and audit
   - ../../references/verification-workflow.md

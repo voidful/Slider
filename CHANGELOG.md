@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Guided conversation and clear explanations
+
+- The [guided deck workflow](references/guided-deck-workflow.md) now follows the full conversation design of [life-design-compass](https://github.com/voidful/life-design-compass): an opening contract, a stuck-point reframe that separates fixed limits (slot, venue, what the paper shows) from design choices, three storylines of equal standing (problem first, result first, one example end to end), a cheap prototype before the full build, follow-up questions that close with a short summary, and new modes `reframe`, `storylines`, `prototype`, and `clarity pass`. A new agent-only status, `storylines proposed`, sits before `outline proposed`.
+- Guided builds work for the user's own unpublished results: their files and answers are the source, missing results are reported as gaps, and claim origins go into speaker notes.
+- New [explain clearly](references/explain-clearly.md) reference adapted from [hung-yi-lee-skill](https://github.com/voidful/hung-yi-lee-skill): a thread of questions instead of a list, one load-bearing punchline, methods motivated by the problem they fix (怎麼辦), relevance first, analogies that say where they break, numbers that land without changing, a completeness check, and a teaching voice for speaker notes that still passes the copy rules.
+- New templates [storyline card](assets/guided/storyline-options.md) and [session state](assets/guided/session-state.yaml), and review cases in [evals/guided-and-clarity.json](evals/guided-and-clarity.json). SKILL.md, the Claude, ChatGPT, and OpenAI adapters, and the ChatGPT knowledge manifest now route to both references (the manifest drops two priority-3 files to stay at 20).
+
 ### Presenting, guided finishing, and wording (open-slide v2.3.1 review)
 
 - HTML deck: presenter window (`P`) with the current beat, the next build, Markdown-lite notes, a timer paced against the talk brief, and black screen; auto-advance moves to `A`. Pop-up blockers fall back to an on-deck notes drawer (`N`).

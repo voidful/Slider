@@ -11,6 +11,8 @@ instructions_source: "../../SKILL.md"
 
 knowledge_files:
   - ../../references/presentation-logic.md
+  - ../../references/explain-clearly.md
+  - ../../references/guided-deck-workflow.md
   - ../../references/design-system.md
   - ../../references/output-contracts.md
   - ../../references/ui-patterns.md

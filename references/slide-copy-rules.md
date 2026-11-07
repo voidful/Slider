@@ -56,7 +56,7 @@ These are the families that appear most on slides. A single hit is a prompt to r
 - Use full-width punctuation in Chinese sentences （，。：；？！） and 「」 for quotations.
 - Spacing between Chinese and English or numbers is a deck-wide choice. A space (`使用 GPT-4 模型`) is the common Taiwan technical style; whichever you pick, apply it everywhere.
 - Avoid literal-translation frames such as 通過……來完成 and long modifier chains. Use 透過 or the main verb.
-- Speaker notes may be conversational, but they keep Taiwan terms and avoid performed warmth.
+- Speaker notes may be conversational, but they keep Taiwan terms and avoid performed warmth. A teaching voice in notes (see [explain clearly](explain-clearly.md)) still passes these rules: 好，那我們來看… rather than 讓我們來看看, 總之 rather than 總而言之.
 
 ## English
 

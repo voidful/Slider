@@ -44,11 +44,18 @@ These are representative requests and outcomes to inspect, not text-matching ass
 | “Summarize this paper in one paragraph.” | Ordinary summarization; do not automatically invoke deck generation |
 | “引導我一步一步完成這份投影片。” | Guided workflow: one main question per turn with brief feedback, an outline approval, a status label from the guided workflow; no questionnaire, no slides before the length and takeaway |
 | “Just make the deck, no questions.” | Build from defaults; the guided interview is not a precondition |
+| “六個實驗都要放，不然不完整，可是只有十分鐘。” | Guided reframe: separate the fixed slot from the design choice (main table versus backup slides), one question, no cuts made for the user |
+| “時間和結論都定了，要怎麼講？” | Three storylines of equal standing that differ in at least two dimensions, each with a sketch, punchline, costs, and scores; no ranking; status `storylines proposed` |
+| “我沒有論文，是實驗室進度報告。” | The user's files and answers are the source; ask for actual numbers, mark missing results as gaps, record claim origins in notes |
+| “方法那幾張很跳，幫我講清楚。” | Explain clearly: problem, obvious attempt, where it breaks, 怎麼辦, the idea, evidence; thread check written out; numbers unchanged |
+| “用李宏毅老師上課的方式寫講稿。” | Teaching voice in `speakerNote` only; slide faces stay claim titles; notes pass the copy rules; no claim to be him |
 | “Make the motion fit the slides.” | Static deck first, then per-slide overrides from the content map: calm tables and equations, `morph` for a figure that carries over, strong transitions only on accent slides; no override that delays evidence |
 | “No animation, please.” | Preset `none` and no per-slide overrides |
 | “Clean up the wording on these slides.” | Copy rules: protect numbers, names, and citations; fix the biggest problem first; report `audit only` or `delivery pass / validation not run` honestly |
 | “Apply the comments in slide-comments.json.” | Edit each commented field, resolve it, re-render, and list any comment left unapplied with the reason |
 
 When `RULES` in `scripts/audit_slide_copy.py` change, run `python3 scripts/audit_slide_copy.py --sync-template assets/html-slideshow-starter/paper-presentation.html` so the Guide runs the same table; `check_skill_health.py` fails until they match.
+
+[`evals/guided-and-clarity.json`](../evals/guided-and-clarity.json) expands the guided and explain-clearly rows into review cases with expected and must-not behavior. They are prompts for a reviewer or grader model, not a completed benchmark; the `evals/` folder is not part of platform exports.
 
 If a future evaluation exposes a failure, fix the narrow decision boundary or missing invariant that caused it. Do not expand the entrypoint into another universal checklist.

@@ -10,6 +10,8 @@
 
 The pipeline below describes data dependencies for a new deck. Local revisions reuse existing artifacts; planning and audit-only work do not require rendering.
 
+Two instruction layers sit above the pipeline and need no code. When the user asks to build the talk together, `references/guided-deck-workflow.md` runs the conversation (brief, reframe, three storylines, a prototype, outline approval) and writes its result into `meta.brief` and the outline; its working state follows `assets/guided/session-state.yaml`. `references/explain-clearly.md` shapes the argument and speaker notes for every talk: a thread of questions, one punchline, motivated methods, and a completeness check.
+
 ## Pipeline
 
 1. **Ingestion**

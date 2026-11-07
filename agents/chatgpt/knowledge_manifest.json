@@ -90,19 +90,19 @@
       "description": "Figure and table triage"
     },
     {
-      "path": "references/venue-style-variants.md",
-      "priority": 3,
-      "description": "Venue-specific finishing layers"
-    },
-    {
       "path": "references/motion-graphics.md",
       "priority": 2,
       "description": "Motion presets and the content map for per-slide transitions, entrances, and morph"
     },
     {
-      "path": "references/bug-and-conciseness-audit.md",
-      "priority": 3,
-      "description": "Final audit checklist"
+      "path": "references/explain-clearly.md",
+      "priority": 2,
+      "description": "Thread of questions, punchline, method motivation, completeness check, and teaching voice for notes"
+    },
+    {
+      "path": "references/guided-deck-workflow.md",
+      "priority": 2,
+      "description": "Step-by-step guided conversation: one question per turn, reframing, three storylines, prototype, outline approval"
     }
   ],
   "notes": [

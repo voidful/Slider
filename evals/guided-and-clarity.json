@@ -1,0 +1,186 @@
+{
+  "description": "Behavioral review cases for the guided deck workflow (references/guided-deck-workflow.md) and explain clearly (references/explain-clearly.md). Each case lists what a good response does and must not do. These are review prompts for a person or grader model, not text-matching assertions or a completed benchmark.",
+  "cases": [
+    {
+      "id": "guided-opening-one-question",
+      "mode": "guided-build",
+      "prompt": "引導我一步一步把這篇論文做成投影片。（附上 PDF）",
+      "expected": [
+        "Gives the opening contract in a few sentences: a talk is designed rather than copied from section order, the path, one question at a time, the user decides, 'just build it' works anytime.",
+        "Asks exactly one main question, such as the slot and minutes, because the paper is already supplied.",
+        "Reports or implies status brief needed."
+      ],
+      "must_not": [
+        "Ask a list of questions in one turn.",
+        "Produce an outline or slides before the length and takeaway are known.",
+        "Lecture on design thinking or life design."
+      ]
+    },
+    {
+      "id": "skip-known-brief",
+      "mode": "guided-build",
+      "prompt": "陪我做這篇的報告：ACL oral，12 分鐘含問答，聽眾是 NLP 研究者，中文投影片。",
+      "expected": [
+        "Does not re-ask venue, minutes, audience, or language.",
+        "Feedback converts the slot into a consequence (about ten main slides).",
+        "Asks for the takeaway, offering two or three candidates drawn from the paper's results with the result each rests on if the user seems unsure."
+      ],
+      "must_not": [
+        "Repeat questions the message already answered.",
+        "Propose a takeaway that is a topic rather than a claim with evidence."
+      ]
+    },
+    {
+      "id": "no-questions-build",
+      "mode": "quick-build",
+      "prompt": "不要問我問題，直接做出投影片。",
+      "expected": [
+        "Builds from defaults and the paper without an interview.",
+        "States the assumed length, audience, and takeaway in one or two lines and reports an honest status."
+      ],
+      "must_not": [
+        "Insist on the guided interview.",
+        "Invent venue rules, audience details, or results to make the deck look settled."
+      ]
+    },
+    {
+      "id": "reframe-every-experiment",
+      "mode": "reframe",
+      "prompt": "六個實驗我都要放上去，不然審稿人會覺得不完整。可是只有 10 分鐘。",
+      "expected": [
+        "Acknowledges the worry about reviewer questions without dismissing it.",
+        "Separates the fixed limit (10 minutes) from the design choice (which result carries the takeaway, which go to backup slides).",
+        "Asks one question, such as which table carries the takeaway."
+      ],
+      "must_not": [
+        "Cut experiments on the user's behalf.",
+        "Shame the user or call the concern irrational.",
+        "Squeeze six tables into the main deck."
+      ]
+    },
+    {
+      "id": "evidence-over-declaration",
+      "mode": "guided-build",
+      "context": "Every results table in the paper reports accuracy; speed appears only in one appendix table.",
+      "prompt": "這篇的重點是它很快。",
+      "expected": [
+        "Points out plainly that the paper's main tables measure accuracy and speed appears only in the appendix.",
+        "Asks which the talk is about, or how the speed claim is supported."
+      ],
+      "must_not": [
+        "Build a speed-centered storyline without noting the gap.",
+        "Overstate the speed result beyond the appendix evidence."
+      ]
+    },
+    {
+      "id": "three-equal-storylines",
+      "mode": "storylines",
+      "prompt": "時間、聽眾、結論都講好了，你覺得要怎麼講？",
+      "expected": [
+        "Offers three storylines that differ in at least two of: opening hook, order, where the method appears, method depth, running example, evidence emphasis, closing.",
+        "Each has a title, premise, slide sketch with time budget, punchline, costs, and four 0-10 scores.",
+        "Presents them without ranking and asks which one the user leans toward; status storylines proposed."
+      ],
+      "must_not": [
+        "Present one real option plus two fillers.",
+        "Offer three orderings of the same slides.",
+        "Choose for the user."
+      ]
+    },
+    {
+      "id": "prototype-before-build",
+      "mode": "prototype",
+      "prompt": "我選 A，但我不確定聽眾聽不聽得懂方法那段。",
+      "expected": [
+        "Proposes a cheap, reversible test such as the five-sentence 怎麼辦 chain or a three-slide render.",
+        "States what the test answers and what changes for either result."
+      ],
+      "must_not": [
+        "Render the full deck before testing the unknown.",
+        "Treat a confusing prototype as the user's failure."
+      ]
+    },
+    {
+      "id": "own-material-no-paper",
+      "mode": "guided-build",
+      "prompt": "我沒有論文，是下週實驗室進度報告，結果還在跑，幫我一步步做投影片。",
+      "expected": [
+        "Treats the user's files and answers as the source and asks for the actual numbers or figures.",
+        "Marks results that do not exist yet as gaps (source blocked for those slides) instead of filling them.",
+        "Records claim origins in speaker notes."
+      ],
+      "must_not": [
+        "Estimate or invent results, baselines, or figures.",
+        "Refuse because there is no paper."
+      ]
+    },
+    {
+      "id": "method-origin",
+      "mode": "clarity-pass",
+      "prompt": "方法那三張我自己看都覺得很跳，幫我講清楚。",
+      "expected": [
+        "Rebuilds the sequence as problem, obvious attempt, where it breaks, 怎麼辦, the paper's idea, evidence.",
+        "Shows input, output, and objective before internals; explains every symbol.",
+        "Writes the question each slide answers so the thread can be checked."
+      ],
+      "must_not": [
+        "Open with 'X is a method that...'.",
+        "Change any number or strengthen a claim to make the story smoother."
+      ]
+    },
+    {
+      "id": "hung-yi-lee-voice-notes",
+      "mode": "clarity-pass",
+      "prompt": "用李宏毅老師上課的方式幫我寫講稿。",
+      "expected": [
+        "Writes the teaching voice into speakerNote: short sentences, self-answered questions, 比如說, 你可能會想說, 怎麼辦呢, 其實就是…而已, a short recap and stop.",
+        "Keeps slide faces as claim titles with numbers and no oral particles.",
+        "Notes still pass the copy rules (no 讓我們來看看 or 總而言之)."
+      ],
+      "must_not": [
+        "Claim to be Hung-yi Lee or attribute quotes to him.",
+        "Use 熱騰騰, dated 獵人 references, or sexual or political jokes.",
+        "Let mannerisms crowd out the explanation."
+      ]
+    },
+    {
+      "id": "critique-method-not-people",
+      "mode": "clarity-pass",
+      "prompt": "幫我在投影片上寫 baseline 那篇根本做錯了。",
+      "expected": [
+        "Rewrites the point as a measured difference or a condition where the baseline's method fails, with the evidence.",
+        "Explains briefly why the slide critiques the method, metric, or condition rather than the authors."
+      ],
+      "must_not": [
+        "Put a verdict on the authors, lab, or company on the slide."
+      ]
+    },
+    {
+      "id": "analogy-and-numbers",
+      "mode": "clarity-pass",
+      "prompt": "WER 降 2.1 點，聽眾不是語音專家，幫我讓他們有感。",
+      "expected": [
+        "Keeps 2.1 WER points, the test set, and the baseline exact on the slide.",
+        "Adds an illustrative comparison computed from the reported value (about two fewer wrong words per hundred) and labels it illustrative.",
+        "If an analogy is used, says where it breaks."
+      ],
+      "must_not": [
+        "Round, inflate, or convert the gain into a relative percentage without labeling it.",
+        "Use an analogy the audience does not share."
+      ]
+    },
+    {
+      "id": "completeness-audit",
+      "mode": "clarity-pass",
+      "prompt": "這份投影片講得夠完整嗎？",
+      "expected": [
+        "Runs the completeness check: problem and relevance, what failed before, one-sentence idea, mechanism, test conditions, decisive evidence, limits, close.",
+        "Reports each missing answer as a gap with its slide location."
+      ],
+      "must_not": [
+        "Fill gaps with generic text.",
+        "Edit the deck when the user only asked for an assessment."
+      ]
+    }
+  ]
+}

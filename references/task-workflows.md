@@ -10,11 +10,11 @@ Resolve the paper and version from the supplied PDF, arXiv URL, DOI, title, or t
 
 Use the user's audience, language, duration, and format. If these are unspecified, use the defaults in [SKILL.md](../SKILL.md) and state material assumptions briefly. Do not turn routine planning choices into approval checkpoints.
 
-When the user asks to build the talk together, step by step, use the [guided deck workflow](guided-deck-workflow.md): one question per turn, an outline approval, then the deck's Guide. Record the answers in `meta.brief`.
+When the user asks to build the talk together, step by step, use the [guided deck workflow](guided-deck-workflow.md): one question per turn, three storylines to choose from, a cheap prototype, an outline approval, then the deck's Guide. Record the answers in `meta.brief`. When there is no paper and the talk presents the user's own results, their files and answers are the source; ask for missing numbers instead of estimating them.
 
 ### Select the argument and evidence
 
-Build a talk thesis and a sequence of claims, then map each to a paper section, equation, figure, or table. Use [presentation logic](presentation-logic.md) for pacing and [paper type policy](paper-type-policy.md) when selecting evidence.
+Build a talk thesis and a sequence of claims, then map each to a paper section, equation, figure, or table. Use [presentation logic](presentation-logic.md) for pacing, [explain clearly](explain-clearly.md) for the thread of questions, the punchline, method motivation, and the completeness check, and [paper type policy](paper-type-policy.md) when selecting evidence.
 
 A compact brief, slide sequence, visual mapping, and theme choice are enough. They may live in the working notes or slide JSON; separate planning documents are optional.
 

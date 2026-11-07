@@ -6,7 +6,8 @@ Use this index to locate a resource for the current task. Do not read it or ever
 
 - [Task workflows](task-workflows.md): create or revise a talk, or complete plan/audit-only work.
 - [Skill maintenance](skill-maintenance.md): maintain instructions, adapters, and documentation; includes source rationale and review scenarios.
-- [Guided deck workflow](guided-deck-workflow.md): build a talk with the user one question at a time, then finish it with the deck's Guide.
+- [Guided deck workflow](guided-deck-workflow.md): build a talk with the user one question at a time, with reframing, three storylines, and a cheap prototype, then finish it with the deck's Guide (adapted from life-design-compass). Templates: [storyline card](../assets/guided/storyline-options.md), [session state](../assets/guided/session-state.yaml).
+- [Explain clearly](explain-clearly.md): the thread of questions, one punchline, methods motivated by the problem they fix, a completeness check, and a teaching voice for speaker notes (adapted from hung-yi-lee-skill).
 - [Slide copy rules](slide-copy-rules.md): zh-TW and English wording for titles, bullets, captions, and notes (adapted from Michelin).
 
 

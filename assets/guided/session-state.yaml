@@ -1,0 +1,71 @@
+# Internal working state for the guided deck workflow (references/guided-deck-workflow.md).
+# Keep it in the conversation; show it only when the user asks. Only `brief` goes into the slide plan's
+# meta.brief (minutes, venue, audience, takeaway, language); the renderer drops other keys.
+mode: guided-build          # guided-build | quick-brief | reframe | storylines | prototype | outline-review | clarity-pass | finish | rehearse
+stage: source               # source | slot-and-room | takeaway | reframe | evidence | storylines | prototype | outline | build | finish | rehearse
+status: brief-needed        # source-blocked | brief-needed | storylines-proposed | outline-proposed | draft | ready-to-rehearse | ready-to-present
+main_questions_asked: 0     # aim for six to nine; follow-ups do not count
+
+source:
+  kind: null                # paper | own-material
+  id: null                  # PDF path, arXiv id, DOI, or file list
+  version: null             # preprint | camera-ready | date
+  gaps: []                  # missing figures or results the talk needs
+
+brief:
+  venue: null
+  minutes: null
+  audience: null
+  language: null
+  takeaway: null            # a claim with its evidence, not a topic
+
+relevance_hook: null        # something this room already uses or has hit; the opening starts here
+audience_prerequisites: []  # what each hard slide assumes the room knows
+
+stuck_points:
+  stated: null
+  fixed_limits: []          # slot, venue rules, what the paper does and does not show
+  constraints_with_room: [] # advisor expectations, missing figure, required language or template
+  design_problems: []       # order, depth, evidence choice, running example
+  beliefs: []               # e.g. "every experiment must be on a slide"
+
+must_show: []               # figure or table ids that carry the takeaway
+skeptic_question: null
+backup_slides: []
+
+storylines:
+  - id: A
+    title: null
+    premise: null
+    punchline: null
+    sketch: []
+    costs: null
+    unknown: null
+    scores: {time_fit: null, audience_fit: null, evidence_strength: null, presenter_confidence: null}
+  - id: B
+    title: null
+    premise: null
+    punchline: null
+    sketch: []
+    costs: null
+    unknown: null
+    scores: {time_fit: null, audience_fit: null, evidence_strength: null, presenter_confidence: null}
+  - id: C
+    title: null
+    premise: null
+    punchline: null
+    sketch: []
+    costs: null
+    unknown: null
+    scores: {time_fit: null, audience_fit: null, evidence_strength: null, presenter_confidence: null}
+chosen_storyline: null
+
+prototype:
+  type: null                # thirty-second | explain-to-labmate | three-slide-render | skeptic-drill | timed-read
+  question: null
+  result: null
+  next_change: null
+
+outline: []                 # numbered slide claims with evidence and time budget
+approved: false
+open_questions: []
