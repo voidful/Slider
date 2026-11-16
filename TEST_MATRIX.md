@@ -87,7 +87,7 @@ The roundtrip uses synthetic paper text and images; it verifies integration, not
 - Insert an image.
 - Save/load a browser draft.
 - Export JSON and self-contained HTML.
-- Change a Theme panel color, export HTML, reopen the exported file, and confirm the color is kept.
+- Change a Theme panel color, export HTML, reopen the exported file, and confirm the color is kept. Export JSON, import it into a fresh deck, and render it with `scripts/render_slideshow_artifact.py`; confirm the color is kept both times.
 
 ## Phone Remote Smoke Test
 
@@ -101,3 +101,8 @@ The roundtrip uses synthetic paper text and images; it verifies integration, not
 - Connect a second phone and confirm both users appear in the collaborator roster.
 - Confirm ink and notes are labeled by collaborator name/color.
 - Confirm phone next/previous controls advance and retreat presenter builds before changing slides, and the live preview mirrors the build state.
+- Put the phone on mobile data while the computer stays on Wi-Fi. With a TURN relay in `meta.remote`, it pairs; without one, the phone shows the "No network path" hint and retries instead of staying on Connecting.
+- Reload the desktop deck in the same tab. The QR token stays the same and paired phones reconnect without a new scan.
+- Lock the phone for a minute, then unlock it. It reconnects by itself, or after one tap on its status button.
+- Turn the computer's Wi-Fi off and on. The panel reports that it is reconnecting, then returns to "Waiting for phone..." or "Connected" with the same QR code.
+- Without a phone: pair a second browser tab, run `remoteState.peer.socket._socket.close()` in the desktop tab, and confirm the desktop reconnects under the same token and a new tab can still pair. Two tabs on one machine never test the network path.

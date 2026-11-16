@@ -122,6 +122,8 @@ The HTML editor writes these; agents may read and update them.
 
 Deck-level `meta.brief` holds the talk brief the Guide and presenter timer read: `{"minutes": 12, "venue": "ACL oral", "audience": "NLP researchers", "takeaway": "One sentence with its evidence", "language": "zh-TW"}`. Its optional `guideIgnore` dismisses deck-level checks such as `SC-P04-spacing`. See [guided deck workflow](guided-deck-workflow.md).
 
+Deck-level `meta.palette` holds HTML Theme panel colors layered on the theme preset (`meta.themePreset`, or `--theme` when given), such as `{"accent": "#7c3aed", "toolbar": "dark"}`. Keys are `bg`, `frame`, `text`, `muted`, `border`, `accent`, `positive`, `negative`, `neutral`, and `panel` with hex values, plus `toolbar` (`light` or `dark`); the renderer rejects anything else. The editor's JSON export writes `meta.palette` with `meta.themePreset`, and JSON import applies it.
+
 ### Optional content fields (classic mode)
 | Field | Type | Description |
 |:---|:---|:---|

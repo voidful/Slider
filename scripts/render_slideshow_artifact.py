@@ -101,6 +101,26 @@ def normalize_brief(source: Any) -> dict[str, Any]:
     return brief
 
 
+PALETTE_KEYS = ("bg", "frame", "text", "muted", "border", "accent", "positive", "negative", "neutral", "panel")
+
+
+def normalize_palette(value: Any) -> dict[str, str]:
+    """Validate meta.palette, the HTML Theme panel colors layered on the theme preset (sanitizePalette() in the template)."""
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError("palette must be an object of color overrides")
+    palette: dict[str, str] = {}
+    for key, color in value.items():
+        if key == "toolbar" and color in ("light", "dark"):
+            palette[key] = color
+        elif key in PALETTE_KEYS and isinstance(color, str) and re.fullmatch(r"#(?:[0-9a-fA-F]{3}){1,2}", color):
+            palette[key] = re.sub(r"^#(.)(.)(.)$", r"#\1\1\2\2\3\3", color).lower()
+        else:
+            raise ValueError(f"Invalid palette entry {key!r}: {color!r}; use hex colors for {', '.join(PALETTE_KEYS)} and toolbar light/dark")
+    return palette
+
+
 def motion_warnings(slides: list[dict[str, Any]]) -> list[str]:
     """Flag per-slide motion fields the engines would ignore."""
     warnings = []
@@ -193,6 +213,82 @@ def replace_regex_optional(text: str, pattern: str, replacement: str) -> str:
 
 def strip_render_markers(text: str) -> str:
     return re.sub(r"\s*//\s*@render-[\w-]+", "", text)
+
+
+REMOTE_KEYS = ("iceServers", "iceServersUrl", "controllerUrl")
+ICE_URL_PATTERN = re.compile(r"(?:stuns?|turns?):\S+", re.IGNORECASE)
+
+
+def normalize_remote(value: Any) -> dict[str, Any]:
+    """Validate meta.remote, the HTML phone remote's network settings (sanitizeIceServers() in the template).
+
+    iceServers lists STUN/TURN servers; iceServersUrl returns that list as JSON at pairing time (for short-lived
+    credentials); controllerUrl replaces the deck URL in the QR code. See references/artifact-rendering.md.
+    """
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError(f"remote must be an object with {', '.join(REMOTE_KEYS)}")
+    unknown = sorted(set(value) - set(REMOTE_KEYS))
+    if unknown:
+        raise ValueError(f"Unknown remote setting(s) {', '.join(unknown)}; use {', '.join(REMOTE_KEYS)}")
+    remote: dict[str, Any] = {}
+    servers = value.get("iceServers")
+    if servers is not None:
+        if not isinstance(servers, list):
+            raise ValueError("remote.iceServers must be a list of ICE server objects")
+        cleaned = []
+        for server in servers:
+            urls = server.get("urls") if isinstance(server, dict) else None
+            urls = [urls] if isinstance(urls, str) else urls
+            if not urls or not isinstance(urls, list) or not all(isinstance(url, str) and ICE_URL_PATTERN.fullmatch(url.strip()) for url in urls):
+                raise ValueError(f"Invalid remote.iceServers entry {server!r}; urls must start with stun:, stuns:, turn:, or turns:")
+            entry: dict[str, Any] = {"urls": [url.strip() for url in urls]}
+            for key in ("username", "credential"):
+                if key in server:
+                    if not isinstance(server[key], str):
+                        raise ValueError(f"remote.iceServers {key} must be a string")
+                    entry[key] = server[key]
+            cleaned.append(entry)
+        if cleaned:
+            remote["iceServers"] = cleaned
+    for key in ("iceServersUrl", "controllerUrl"):
+        url = value.get(key)
+        if url is None:
+            continue
+        if not isinstance(url, str) or not re.fullmatch(r"https?://\S+", url.strip()):
+            raise ValueError(f"remote.{key} must be an http(s) URL")
+        remote[key] = url.strip()
+    return remote
+
+
+def remote_warnings(remote: dict[str, Any]) -> list[str]:
+    """Advisory notes on meta.remote: a deck without a relay pairs only over direct routes, and inline credentials are public."""
+    servers = remote.get("iceServers", [])
+    has_relay = bool(remote.get("iceServersUrl")) or any(url.lower().startswith("turn") for server in servers for url in server["urls"])
+    if not has_relay:
+        return ["remote: no TURN relay configured; phones pair only when they can reach this computer directly (same Wi-Fi without client isolation). Set meta.remote.iceServers or iceServersUrl for mobile data or venue Wi-Fi."]
+    if any("credential" in server for server in servers):
+        return ["remote: meta.remote.iceServers credentials are readable by anyone who opens the deck; prefer iceServersUrl with short-lived credentials, or a TURN account with a low quota."]
+    return []
+
+
+def apply_remote_attributes(html_text: str, remote: dict[str, Any]) -> str:
+    """Write meta.remote onto <html> as the data-remote-* attributes the template reads."""
+    from html import escape
+
+    attrs = {
+        "data-remote-ice-servers": json.dumps(remote["iceServers"], ensure_ascii=False) if remote.get("iceServers") else None,
+        "data-remote-ice-servers-url": remote.get("iceServersUrl"),
+        "data-remote-controller-url": remote.get("controllerUrl"),
+    }
+    rendered = "".join(f' {name}="{escape(value, quote=True)}"' for name, value in attrs.items() if value)
+    if not rendered:
+        return html_text
+    updated, count = re.subn(r"<html\b([^>]*)>", lambda m: f"<html{m.group(1)}{rendered}>", html_text, count=1)
+    if count != 1:
+        raise ValueError("Template replacement failed: no <html> tag for meta.remote")
+    return updated
 
 
 def render_react(slides: list[dict[str, Any]], theme: str, venue: str, motion: dict[str, Any] | None = None) -> str:
@@ -300,7 +396,7 @@ def normalize_latex_in_slides(slides: list[dict[str, Any]]) -> list[dict[str, An
     return slides
 
 
-def render_html(slides: list[dict[str, Any]], theme: str, venue: str, title: str | None, motion: dict[str, Any] | None = None, brief: dict[str, Any] | None = None) -> str:
+def render_html(slides: list[dict[str, Any]], theme: str, venue: str, title: str | None, motion: dict[str, Any] | None = None, brief: dict[str, Any] | None = None, palette: dict[str, str] | None = None) -> str:
     import base64
     template = HTML_TEMPLATE.read_text(encoding="utf-8")
     slides = normalize_latex_in_slides(slides)
@@ -321,11 +417,12 @@ def render_html(slides: list[dict[str, Any]], theme: str, venue: str, title: str
         r"let deckMotion\s*=\s*\{.*?\};\s*// @render-motion",
         f"let deckMotion={json.dumps(normalize_motion(motion), ensure_ascii=False)};",
     )
-    # Theme panel overrides start empty so the --theme preset applies; exportHTML() writes edited colors back.
+    # meta.palette layers Theme panel colors on the --theme preset; null keeps the preset. exportHTML() writes edits back.
+    palette = normalize_palette(palette)
     template = replace_regex(
         template,
         r"const deckPalette\s*=\s*(?:null|\{.*?\});\s*// @render-palette",
-        "const deckPalette=null;",
+        f"const deckPalette={json.dumps(palette) if palette else 'null'};",
     )
     brief_json = json.dumps(normalize_brief(brief), ensure_ascii=False).replace("<", chr(92) + "u003c")
     template = replace_regex(template, r"let deckBrief\s*=\s*\{.*?\};\s*// @render-brief", f"let deckBrief={brief_json};")
@@ -472,7 +569,9 @@ def main() -> None:
     elif motion_source is None and isinstance(deck_design, dict):
         motion_source = (deck_design.get("motion_policy") or {}).get("preset")
     try:
+        remote = normalize_remote(meta.get("remote"))
         motion = normalize_motion(motion_source)
+        palette = normalize_palette(meta.get("palette"))
     except (TypeError, ValueError) as exc:
         parser.error(str(exc))
 
@@ -486,9 +585,9 @@ def main() -> None:
         return
 
     if args.mode == "html":
-        rendered = render_html(slide_data, theme=theme, venue=venue, title=title, motion=motion, brief=meta.get("brief"))
+        rendered = render_html(slide_data, theme=theme, venue=venue, title=title, motion=motion, brief=meta.get("brief"), palette=palette)
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(rendered, encoding="utf-8")
+        args.output.write_text(apply_remote_attributes(rendered, remote), encoding="utf-8")
 
         # Post-render audit gate
         from audit_research_slides import AuditResult, audit_svg_text, audit_rendered_html
@@ -497,6 +596,8 @@ def main() -> None:
         post_result = AuditResult()
         post_result.warnings.extend(motion_warnings(slide_data) + motion_suggestions(slide_data, motion))
         post_result.warnings.extend(copy_warnings(slide_data, meta.get("brief")))
+        if remote:
+            post_result.warnings.extend(remote_warnings(remote))
         audit_svg_text(slide_data, post_result)
         audit_rendered_html(args.output, post_result)
         browser_report = run_browser_slide_audit(

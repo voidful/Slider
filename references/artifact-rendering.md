@@ -15,6 +15,22 @@ The renderer accepts either a slide array or an object containing `slideData`. I
 
 Normal deck creation changes slide data and theme/venue choices. Read [HTML engine internals](html-engine-template.md) only when debugging or extending rendering. Template maintenance is permitted when requested; verify the changed behavior and preserve working controls.
 
+### Phone remote relay
+
+The phone remote pairs through the public PeerJS server, then sends control data from phone to computer over WebRTC. STUN finds direct routes only, so a phone on mobile data, on venue or guest Wi-Fi that isolates devices, or behind a VPN needs a TURN relay. Configure it in the slide JSON:
+
+```json
+{"meta": {"remote": {
+  "iceServersUrl": "https://turn.example.com/ice-servers",
+  "iceServers": [{"urls": ["turns:relay.example.com:443?transport=tcp"], "username": "…", "credential": "…"}],
+  "controllerUrl": "https://example.com/talk/deck.html"
+}}}
+```
+
+Every key is optional. The desktop and each phone fetch `iceServersUrl` when pairing starts; it must return ICE servers as JSON (a list, or `{"iceServers": …}`), which suits short-lived credentials from a TURN provider's API or a small worker in front of one. Inline `iceServers` credentials are readable by anyone who opens the deck, so use an account with a low quota. Include a `turns:` URL on port 443 to pass strict firewalls. `controllerUrl` replaces the deck URL in the QR code. The renderer writes these to the `data-remote-ice-servers`, `data-remote-ice-servers-url`, and `data-remote-controller-url` attributes on `<html>`; edit those attributes directly in a deck that is already built.
+
+Pairing recovers on its own. The desktop reconnects to the signaling server under the same QR token and resumes pairing after a reload in the same tab. Phones retry with backoff, reconnect when they wake, and say whether the desktop is missing, the pairing server is unreachable, or no network path exists.
+
 ## JSON and math
 
 Serialize structured data with a JSON library. In hand-written JSON, a LaTeX backslash must be escaped:

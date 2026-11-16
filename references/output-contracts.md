@@ -26,7 +26,7 @@ python3 scripts/offline_katex.py deck.html
 
 writes `deck_offline.html`. It fetches KaTeX scripts, styles, and fonts during preparation; it does not make phone signaling or every external resource offline. Inspect its download results and the final file before claiming offline readiness. If strict zero-network behavior is requested, remove or disable unused network features and test the result.
 
-Real phone pairing needs a reachable HTTP(S) deck/controller URL plus signaling/STUN connectivity. A `file://` URL, desktop-only `localhost`, or a simulated-fullscreen test does not verify phone access. The bundled controller uses the deck URL with `?token=...`; a custom controller URL is a user delivery choice.
+Real phone pairing needs a reachable HTTP(S) deck/controller URL, the public PeerJS signaling server, and a network path between the phone and the computer. With STUN alone that path must be direct (same Wi-Fi without client isolation, no VPN); phones on mobile data or venue Wi-Fi need a TURN relay set through `meta.remote` (see [phone remote relay](artifact-rendering.md#phone-remote-relay)). A `file://` URL, desktop-only `localhost`, pairing two tabs on one machine, or a simulated-fullscreen test does not verify phone access. The bundled controller uses the deck URL with `?token=...`; a custom controller URL (`meta.remote.controllerUrl`) is a user delivery choice.
 
 ## React component
 

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Phone remote reliability
+
+- Phones that cannot reach the computer directly (mobile data, venue Wi-Fi with client isolation, VPN) can pair through a TURN relay set in `meta.remote` or on `<html data-remote-ice-servers>` / `data-remote-ice-servers-url`. The template had replaced PeerJS's default ICE config with STUN only, and PeerJS's own TURN hosts no longer resolve, so these phones stayed on "Connecting" until they failed. See [phone remote relay](references/artifact-rendering.md#phone-remote-relay).
+- The desktop reconnects to the PeerJS signaling server under the same QR token after a drop, retries with backoff, and resumes pairing after a reload in the same tab. Before, a dropped server connection left a dead QR code on screen until the page was reloaded, and the reload issued a new token.
+- Phones time out a stuck attempt after 15 seconds, retry with backoff, reconnect after the screen wakes or the network returns, and explain the failure (desktop missing, pairing server unreachable, no network path). After eight failed tries the status button retries on tap.
+- The roster keeps one entry per phone across reconnects, and the second default STUN server is now `stun.cloudflare.com` (dual-stack) instead of Twilio's IPv4-only host.
+
 ### Guided conversation and clear explanations
 
 - The [guided deck workflow](references/guided-deck-workflow.md) now follows the full conversation design of [life-design-compass](https://github.com/voidful/life-design-compass): an opening contract, a stuck-point reframe that separates fixed limits (slot, venue, what the paper shows) from design choices, three storylines of equal standing (problem first, result first, one example end to end), a cheap prototype before the full build, follow-up questions that close with a short summary, and new modes `reframe`, `storylines`, `prototype`, and `clarity pass`. A new agent-only status, `storylines proposed`, sits before `outline proposed`.

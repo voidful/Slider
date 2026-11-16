@@ -262,8 +262,10 @@ button.active{background:rgba(220,38,38,.12);color:#dc2626}
 .mobile-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .mobile-title{font-size:20px;font-weight:850;letter-spacing:0}
 .mobile-subtitle{margin-top:4px;color:rgba(248,250,252,.68);font-size:13px;line-height:1.45}
-.mobile-status{font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 10px;color:#fde68a;background:rgba(250,204,21,.1);white-space:nowrap}
-.mobile-status.connected{color:#86efac;background:rgba(34,197,94,.12)}
+.mobile-status{font:inherit;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 10px;color:#fde68a;background:rgba(250,204,21,.1);white-space:nowrap;cursor:pointer;-webkit-appearance:none;appearance:none}
+.mobile-status.connected{color:#86efac;background:rgba(34,197,94,.12);cursor:default}
+.mobile-conn-hint{margin-top:12px;border:1px solid rgba(250,204,21,.28);border-radius:10px;background:rgba(250,204,21,.08);color:#fde68a;padding:10px 12px;font-size:13px;line-height:1.45}
+.mobile-conn-hint[hidden]{display:none}
 .mobile-identity{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px}
 .mobile-identity input{width:100%;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(15,23,42,.45);color:#f8fafc;padding:9px 10px;font:14px/1.3 system-ui,sans-serif}
 .mobile-identity input[type=color]{width:46px;padding:3px}
@@ -757,8 +759,9 @@ body.edit-mode .progress{display:none}
           <div class="mobile-title">Slide Remote</div>
           <div class="mobile-subtitle" id="mobile-subtitle">Connecting to desktop...</div>
         </div>
-        <div class="mobile-status" id="mobile-status">Connecting</div>
+        <button type="button" class="mobile-status" id="mobile-status" title="Reconnect">Connecting</button>
       </div>
+      <div class="mobile-conn-hint" id="mobile-conn-hint" role="status" aria-live="polite" hidden></div>
       <div class="mobile-identity">
         <input id="mobile-name-input" type="text" maxlength="24" autocomplete="name" placeholder="Your name">
         <input id="mobile-color-input" type="color" aria-label="Your collaboration color">
@@ -1131,9 +1134,48 @@ function deleteByPath(obj,path){
 }
 function dataBind(path){return` data-bind="${esc(path)}" data-editable`}
 function normalizeUrl(url){return /^https?:\/\//i.test(url)?url:`https://${url}`}
-function generateRemoteId(){return`snap-${Math.random().toString(36).slice(2,8)}`}
+function randomRemoteToken(length){const bytes=new Uint8Array(length);try{crypto.getRandomValues(bytes)}catch(_e){for(let i=0;i<length;i++)bytes[i]=Math.floor(Math.random()*256)}return Array.from(bytes,b=>(b%36).toString(36)).join("")}
+function generateRemoteId(){return`snap-${randomRemoteToken(10)}`}
 function getTokenFromUrl(){return new URLSearchParams(window.location.search).get("token")||new URLSearchParams(window.location.search).get("remote")}
-function peerOptions(){return{debug:1,host:"0.peerjs.com",port:443,path:"/",secure:true,config:{iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:global.stun.twilio.com:3478"}]}}}
+/* Phone remote network. STUN only finds a direct route, so a phone that cannot reach this computer directly
+   (mobile data behind carrier NAT, Wi-Fi client isolation, VPN, UDP firewalls) needs a TURN relay. Set one on <html>:
+   data-remote-ice-servers='[{"urls":"turns:relay.example.com:443?transport=tcp","username":"…","credential":"…"}]', or
+   data-remote-ice-servers-url pointing at JSON (that list or {"iceServers":[…]}), e.g. a worker that issues short-lived credentials.
+   PeerJS's own TURN hosts (eu-0/us-0.turn.peerjs.com) no longer resolve, so there is no relay unless one is configured here. */
+const DEFAULT_ICE_SERVERS=[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun.cloudflare.com:3478"}];
+function sanitizeIceServers(list){
+  if(!Array.isArray(list))return[];
+  return list.map(server=>{
+    if(!server||typeof server!=="object")return null;
+    const urls=[].concat(server.urls||server.url||[]).filter(url=>typeof url==="string"&&/^(stuns?|turns?):\S+$/i.test(url.trim())).map(url=>url.trim());
+    if(!urls.length)return null;
+    const clean={urls};
+    if(typeof server.username==="string")clean.username=server.username;
+    if(typeof server.credential==="string")clean.credential=server.credential;
+    return clean;
+  }).filter(Boolean);
+}
+function parseIceServers(value){// a list, {"iceServers": list or one server}, or one server object
+  try{const parsed=typeof value==="string"?JSON.parse(value):value;const list=Array.isArray(parsed)?parsed:parsed&&(parsed.iceServers||(parsed.urls?parsed:null));return sanitizeIceServers([].concat(list||[]))}catch(_e){return[]}
+}
+function iceHasRelay(servers){return servers.some(server=>[].concat(server.urls).some(url=>/^turns?:/i.test(url)))}
+async function resolveIceServers(){
+  const attrs=document.documentElement.dataset,inline=(attrs.remoteIceServers||"").trim(),url=(attrs.remoteIceServersUrl||"").trim();
+  let servers=parseIceServers(inline);
+  if(inline&&!servers.length)console.warn("data-remote-ice-servers is not a valid ICE server list; the phone remote uses STUN only.");
+  if(url){
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),6000);
+    try{
+      const res=await fetch(url,{cache:"no-store",signal:ctrl.signal});
+      const fetched=parseIceServers(await res.json());
+      if(!fetched.length)throw new Error(`no ICE servers in the response (HTTP ${res.status})`);
+      servers=fetched.concat(servers);
+    }catch(err){console.warn("data-remote-ice-servers-url failed; continuing without it:",err)}
+    finally{clearTimeout(timer)}
+  }
+  return DEFAULT_ICE_SERVERS.concat(servers);
+}
+function peerOptions(iceServers=DEFAULT_ICE_SERVERS){return{debug:1,host:"0.peerjs.com",port:443,path:"/",secure:true,config:{iceServers}}}
 function configuredRemoteControllerUrl(){return(document.documentElement.dataset.remoteControllerUrl||"").trim()}
 function buildRemoteUrl(peerId){
   const base=configuredRemoteControllerUrl()||window.location.href;
@@ -1142,12 +1184,13 @@ function buildRemoteUrl(peerId){
   u.hash="";
   return u.href;
 }
-function remotePairingHint(url){
+function remotePairingHint(url,relay=false){
   const u=new URL(url,window.location.href);
   const localHosts=new Set(["localhost","127.0.0.1","::1"]);
   if(u.protocol==="file:")return"This controller is bundled in the deck. To pair a phone, open the deck from an http/https URL the phone can reach, or set data-remote-controller-url to your own static controller/deck URL.";
   if(localHosts.has(u.hostname))return"This URL uses localhost, which points to the phone itself. Use this computer's LAN IP or your own static hosted deck URL for phone pairing.";
-  return"No custom backend is used for slide control. Phones load this controller page, then connect through PeerJS/WebRTC.";
+  if(relay)return"A TURN relay is configured, so phones can pair from mobile data or another network. Control data flows over PeerJS/WebRTC; no app control server is used.";
+  return"No TURN relay is configured, so a phone must reach this computer directly: same Wi-Fi without client isolation, no VPN. For phones on mobile data or venue Wi-Fi, set data-remote-ice-servers or data-remote-ice-servers-url on <html>.";
 }
 function colorFromText(text){let h=0;for(const ch of String(text||"guest"))h=(h*31+ch.charCodeAt(0))>>>0;const palette=["#ef4444","#f59e0b","#22c55e","#06b6d4","#6366f1","#ec4899","#84cc16"];return palette[h%palette.length]}
 function nowTime(){return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
@@ -1824,7 +1867,8 @@ window.addEventListener("beforeprint",finishMotion);
 function slideNeedsMath(slide){return/\$|\\\(|\\\[/.test(JSON.stringify(slide||{}))}
 
 /* ── Theme ──
-   deckPalette holds the Theme panel colors that differ from the preset; exportHTML() writes it back. */
+   deckPalette holds the Theme panel colors that differ from the preset; exportHTML() writes it back,
+   and JSON export carries it as meta.palette next to meta.themePreset. */
 const PALETTE_KEYS=["bg","frame","text","muted","border","accent","positive","negative","neutral","panel"];
 function sanitizePalette(src){
   const out={};
@@ -1833,7 +1877,7 @@ function sanitizePalette(src){
   if(src.toolbar==="dark"||src.toolbar==="light")out.toolbar=src.toolbar;
   return out;
 }
-function presetColors(){return themeTokens[themePreset]||themeTokens["zinc-editorial"]}
+function presetColors(name){return themeTokens[Object.keys(themeTokens).includes(name)?name:themePreset]||themeTokens["zinc-editorial"]}
 function paletteOverrides(){const base=presetColors();return Object.fromEntries(Object.entries(sanitizePalette(getCurrentColors())).filter(([key,value])=>value!==base[key]))}
 function applyTheme(){
   const t={...presetColors(),...sanitizePalette(deckPalette)};const r=document.documentElement.style;
@@ -2197,12 +2241,21 @@ scaleDeck();window.addEventListener('resize',scaleDeck);document.addEventListene
 /* ═══════════════════════════════════════════════
    SNAPSHARE-STYLE PHONE REMOTE
    ═══════════════════════════════════════════════ */
-const remoteState={peer:null,peerId:null,connections:[],collaborators:{},started:false,connected:false,error:null};
+const remoteState={peer:null,peerId:null,connections:[],collaborators:{},started:false,connected:false,error:null,iceServers:DEFAULT_ICE_SERVERS,relay:false,retries:0,retryTimer:null,openTimer:null};
 
 function getCurrentStrokes(){return annotations[state.currentSlide]||(annotations[state.currentSlide]=[])}
 function getCollaborator(id){return remoteState.collaborators[id]||{id,name:"Guest",color:colorFromText(id),online:false}}
+/* A phone that reconnects opens a new data connection, sometimes from a new peer id. Its clientId (sent as connection
+   metadata) keeps one roster entry per phone; older controllers without metadata fall back to the peer id. */
+function collaboratorKey(conn,data={}){
+  if(conn&&conn.slideCollabKey)return conn.slideCollabKey;
+  const clientId=conn&&conn.metadata&&conn.metadata.clientId;
+  const key=typeof clientId==="string"&&/^m-[a-z0-9]{3,20}$/i.test(clientId)?clientId:conn?.peer||data.clientId||"local";
+  if(conn)conn.slideCollabKey=key;
+  return key;
+}
 function ensureCollaborator(conn,data={}){
-  const id=conn?.peer||data.clientId||"local";
+  const id=collaboratorKey(conn,data);
   const prev=remoteState.collaborators[id]||{};
   const collab={
     id,
@@ -2352,38 +2405,113 @@ function syncRemoteState(){
 function updateRemoteStatus(text){
   if(remoteStatus)remoteStatus.textContent=text;
 }
-function startRemoteHost(){
-  remotePanel.classList.add("show");
-  if(remoteState.started)return;
-  remoteState.started=true;
-  if(typeof Peer!=="function"){
-    updateRemoteStatus("PeerJS failed to load. Check network access.");
-    return;
-  }
-  const id=generateRemoteId();
-  updateRemoteStatus("Starting peer...");
-  remoteState.peer=new Peer(id,peerOptions());
-  remoteState.peer.on("open",peerId=>{
-    remoteState.peerId=peerId;
-    const url=buildRemoteUrl(peerId);
-    remoteUrl.textContent=url;
-    remoteFileWarning.textContent=remotePairingHint(url);
-    remoteFileWarning.style.display="block";
-    remoteQr.innerHTML="";
-    if(typeof QRCode==="function")new QRCode(remoteQr,{text:url,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
-    else remoteQr.innerHTML='<div class="qr-fallback">QR library unavailable. Open the URL below on your phone.</div>';
-    updateRemoteStatus("Waiting for phone...");
-  });
-  remoteState.peer.on("connection",conn=>{
-    remoteState.connections.push(conn);
-    conn.on("open",()=>{remoteState.connected=true;ensureCollaborator(conn,{});updateRemoteStatus(`Connected: ${remoteState.connections.filter(c=>c.open).length} collaborator(s)`);conn.send(remotePayload());syncRemoteState()});
-    conn.on("data",data=>handleRemoteData(data,conn));
-    conn.on("close",()=>{remoteState.connections=remoteState.connections.filter(c=>c!==conn);if(remoteState.collaborators[conn.peer])remoteState.collaborators[conn.peer].online=false;remoteState.connected=remoteState.connections.some(c=>c.open);renderCollaborators();updateRemoteStatus(remoteState.connected?`Connected: ${remoteState.connections.filter(c=>c.open).length} collaborator(s)`:"All collaborators disconnected");syncRemoteState()});
-    conn.on("error",err=>updateRemoteStatus(`Connection error: ${err.message||err}`));
-  });
-  remoteState.peer.on("error",err=>{remoteState.error=err;updateRemoteStatus(`Peer error: ${err.message||err}`)});
+function openRemoteCount(){return remoteState.connections.filter(c=>c.open).length}
+function remoteIdleStatus(){const n=openRemoteCount();return n?`Connected: ${n} collaborator(s)`:"Waiting for phone..."}
+/* The QR token is this tab's PeerJS id. sessionStorage keeps it, and resumes pairing, across reloads of the same tab,
+   so phones that are already paired reconnect by themselves instead of needing a new scan. */
+const REMOTE_HOST_KEY=`slider-remote-host:${location.pathname}`;
+function savedRemoteHostId(){try{const id=sessionStorage.getItem(REMOTE_HOST_KEY)||"";return/^snap-[a-z0-9]{6,16}$/.test(id)?id:null}catch(_e){return null}}
+function remoteHostId(fresh=false){
+  const id=(!fresh&&savedRemoteHostId())||generateRemoteId();
+  try{sessionStorage.setItem(REMOTE_HOST_KEY,id)}catch(_e){}
+  return id;
 }
-function toggleRemotePanel(){remotePanel.classList.toggle("show");phoneBtn.classList.toggle("active",remotePanel.classList.contains("show"));if(remotePanel.classList.contains("show"))startRemoteHost()}
+function renderRemotePairing(peerId){
+  const url=buildRemoteUrl(peerId);
+  remoteUrl.textContent=url;
+  remoteFileWarning.textContent=remotePairingHint(url,remoteState.relay);
+  remoteFileWarning.style.display="block";
+  remoteQr.innerHTML="";
+  if(typeof QRCode==="function")new QRCode(remoteQr,{text:url,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
+  else remoteQr.innerHTML='<div class="qr-fallback">QR library unavailable. Open the URL below on your phone.</div>';
+}
+async function startRemoteHost(show=true){
+  if(show)remotePanel.classList.add("show");
+  if(remoteState.started){reconnectRemoteHost(true);return}
+  if(typeof Peer!=="function"){updateRemoteStatus("PeerJS failed to load. Check network access, then reload the deck.");return}
+  remoteState.started=true;
+  updateRemoteStatus("Starting peer...");
+  remoteState.iceServers=await resolveIceServers();
+  remoteState.relay=iceHasRelay(remoteState.iceServers);
+  createRemoteHostPeer(remoteHostId());
+}
+function armRemoteOpenTimer(peer){
+  clearTimeout(remoteState.openTimer);
+  remoteState.openTimer=setTimeout(()=>{if(remoteState.peer===peer&&!peer.open&&!peer.disconnected&&!peer.destroyed)peer.disconnect()},15000);
+}
+function createRemoteHostPeer(id){
+  const peer=new Peer(id,peerOptions(remoteState.iceServers));
+  remoteState.peer=peer;
+  armRemoteOpenTimer(peer);
+  peer.on("open",peerId=>{
+    if(remoteState.peer!==peer)return;
+    clearTimeout(remoteState.openTimer);clearTimeout(remoteState.retryTimer);
+    remoteState.retryTimer=null;remoteState.retries=0;
+    const changed=Boolean(remoteState.peerId&&remoteState.peerId!==peerId);
+    if(remoteState.peerId!==peerId||!remoteUrl.textContent){remoteState.peerId=peerId;renderRemotePairing(peerId)}
+    updateRemoteStatus(changed?"New QR code: phones must scan it again.":remoteIdleStatus());
+  });
+  peer.on("connection",acceptRemoteConnection);
+  // Losing the signaling server only stops new pairings; paired phones keep working. Reconnect with the same id so the QR stays valid.
+  peer.on("disconnected",()=>{if(remoteState.peer===peer&&!peer.destroyed)scheduleRemoteReconnect("Lost the pairing server")});
+  peer.on("close",()=>{if(remoteState.peer===peer)scheduleRemoteReconnect("Pairing stopped")});
+  peer.on("error",err=>{
+    if(remoteState.peer!==peer)return;
+    remoteState.error=err;
+    if(err.type==="unavailable-id"){remoteState.peer=null;peer.destroy();createRemoteHostPeer(remoteHostId(true));return}// the saved id is still held elsewhere
+    if(err.type==="browser-incompatible"){updateRemoteStatus("This browser cannot open WebRTC data channels.");return}
+    if(!/^(network|server-error|socket-error|socket-closed)$/.test(err.type||""))updateRemoteStatus(`Peer error: ${err.message||err}`);// server errors also fire "disconnected" or "close"
+  });
+}
+function scheduleRemoteReconnect(reason){
+  if(!remoteState.started||remoteState.retryTimer)return;
+  clearTimeout(remoteState.openTimer);
+  const attempt=++remoteState.retries,wait=Math.min(1000*2**(attempt-1),15000),phones=openRemoteCount();
+  updateRemoteStatus(`${reason}; reconnecting in ${Math.round(wait/1000)}s.${phones?` ${phones} paired phone(s) still work.`:""}`);
+  remoteState.retryTimer=setTimeout(()=>{remoteState.retryTimer=null;reconnectRemoteHost()},wait);
+}
+function reconnectRemoteHost(now=false){
+  if(!remoteState.started)return;
+  if(now){clearTimeout(remoteState.retryTimer);remoteState.retryTimer=null;remoteState.retries=0}
+  const peer=remoteState.peer;
+  if(remoteState.retryTimer||(peer&&!peer.disconnected&&!peer.destroyed))return;// waiting, connecting, or connected
+  updateRemoteStatus("Reconnecting...");
+  if(!peer||peer.destroyed){createRemoteHostPeer(remoteState.peerId||remoteHostId());return}
+  try{peer.reconnect();armRemoteOpenTimer(peer)}catch(_e){remoteState.peer=null;peer.destroy();createRemoteHostPeer(remoteState.peerId||remoteHostId())}
+}
+function acceptRemoteConnection(conn){
+  const key=collaboratorKey(conn);
+  remoteState.connections.filter(c=>!c.open&&collaboratorKey(c)===key).forEach(c=>dropRemoteConnection(c));// keep one pending attempt per phone
+  remoteState.connections.push(conn);
+  const pending=setTimeout(()=>{if(!conn.open)dropRemoteConnection(conn)},30000);
+  conn.on("open",()=>{
+    clearTimeout(pending);conn.slideWasOpen=true;
+    remoteState.connections.filter(c=>c!==conn&&collaboratorKey(c)===key).forEach(c=>dropRemoteConnection(c));// a reconnecting phone retires its old link
+    remoteState.connected=true;ensureCollaborator(conn,{});updateRemoteStatus(remoteIdleStatus());conn.send(remotePayload());syncRemoteState();
+  });
+  conn.on("data",data=>handleRemoteData(data,conn));
+  conn.on("close",()=>{clearTimeout(pending);dropRemoteConnection(conn)});
+  conn.on("error",err=>{
+    if(conn.open){updateRemoteStatus(`Connection error: ${err.message||err}`);return}
+    clearTimeout(pending);dropRemoteConnection(conn);
+    updateRemoteStatus(remoteState.relay?"A phone could not connect, even through the TURN relay; it will retry.":"A phone could not reach this computer: no direct network path. Use the same Wi-Fi without client isolation, or configure a TURN relay.");
+  });
+}
+function dropRemoteConnection(conn){
+  if(!remoteState.connections.includes(conn))return;
+  remoteState.connections=remoteState.connections.filter(c=>c!==conn);
+  try{conn.close()}catch(_e){}
+  if(!conn.slideWasOpen)return;
+  const key=collaboratorKey(conn);
+  if(remoteState.collaborators[key]&&!remoteState.connections.some(c=>c.open&&collaboratorKey(c)===key))remoteState.collaborators[key].online=false;
+  remoteState.connected=remoteState.connections.some(c=>c.open);
+  renderCollaborators();
+  updateRemoteStatus(remoteState.connected?remoteIdleStatus():"All collaborators disconnected");
+  syncRemoteState();
+}
+window.addEventListener("online",()=>reconnectRemoteHost(true));
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")reconnectRemoteHost(true)});
+function toggleRemotePanel(){remotePanel.classList.toggle("show");phoneBtn.classList.toggle("active",remotePanel.classList.contains("show"));if(remotePanel.classList.contains("show"))startRemoteHost().catch(err=>{remoteState.started=false;updateRemoteStatus(`Could not start pairing: ${err.message||err}`)})}
 phoneBtn.addEventListener("click",toggleRemotePanel);
 document.getElementById("remote-clear-ink").addEventListener("click",()=>clearAnnotations());
 document.getElementById("remote-clear-notes").addEventListener("click",()=>clearCollaborativeNotes());
@@ -2392,6 +2520,7 @@ document.getElementById("remote-copy-url").addEventListener("click",async()=>{
   try{await navigator.clipboard.writeText(remoteUrl.textContent);updateRemoteStatus("URL copied")}catch(_e){updateRemoteStatus("Copy failed; select the URL manually")}
 });
 window.addEventListener("resize",redrawAnnotations);
+if(!getTokenFromUrl()&&window.top===window&&savedRemoteHostId())startRemoteHost(false).catch(()=>{remoteState.started=false});// this tab was pairing before a reload (frames share its sessionStorage, so they never resume)
 
 /* ── Phone controller page ── */
 const mobileIdentity=(()=>{
@@ -2399,20 +2528,26 @@ const mobileIdentity=(()=>{
   const id=saved.clientId||`m-${Math.random().toString(36).slice(2,9)}`;
   return{clientId:id,name:saved.name||`Guest ${id.slice(-3).toUpperCase()}`,color:saved.color||colorFromText(id)};
 })();
-const mobileState={peer:null,conn:null,connected:false,drawColor:mobileIdentity.color,drawWidth:5,drawTool:"pen",host:null,lastSlideIndex:null,identity:mobileIdentity};
+const mobileState={peer:null,conn:null,connected:false,drawColor:mobileIdentity.color,drawWidth:5,drawTool:"pen",host:null,lastSlideIndex:null,identity:mobileIdentity,
+  phase:"idle",attempt:0,iceServers:DEFAULT_ICE_SERVERS,relay:false,lastIce:null,lastData:0,connectTimer:null,retryTimer:null,iceTimer:null};
 const mobilePreview={index:null,build:null,strokes:[],live:null};
 function saveMobileIdentity(){
   try{localStorage.setItem("slider-mobile-identity",JSON.stringify(mobileState.identity))}catch(_e){}
 }
 function mobileSend(data){
   const payload={clientId:mobileState.identity.clientId,name:mobileState.identity.name,color:mobileState.identity.color,...data};
-  if(mobileState.conn&&mobileState.conn.open){mobileState.conn.send(payload);return true}
-  updateMobileStatus("Disconnected",false);
+  const conn=mobileState.conn;
+  if(conn&&conn.open&&mobileState.phase==="connected"){try{conn.send(payload);return true}catch(_e){}}
+  if(mobileState.phase==="waiting"||mobileState.phase==="stopped")retryMobileNow();// a tap while disconnected retries at once
   return false;
 }
 function updateMobileStatus(text,connected=mobileState.connected){
   const status=document.getElementById("mobile-status");
   if(status){status.textContent=text;status.classList.toggle("connected",connected)}
+}
+function setMobileHint(text){
+  const hint=document.getElementById("mobile-conn-hint");
+  if(hint){hint.textContent=text||"";hint.hidden=!text}
 }
 function updateMobileUI(payload){
   if(!payload||payload.type!=="state")return;
@@ -2545,25 +2680,127 @@ function bindMobileController(){
   renderMobilePreviewSlide(mobilePreview.index,mobilePreview.build);
   window.addEventListener("resize",()=>{layoutMobilePreview();redrawMobileInk()});
 }
-function initMobileController(hostPeerId){
+/* Phone connection lifecycle. phase: idle → connecting → connected; a failed attempt waits (backoff) and retries,
+   and after MOBILE_AUTO_RETRIES failures it stops until the user taps the status button, returns to the page, or sends a command. */
+const MOBILE_CONNECT_TIMEOUT=15000,MOBILE_AUTO_RETRIES=8;
+function mobileFailureHint(kind,err){
+  if(kind==="no-route")return mobileState.relay?"This phone found the desktop, but no network path worked, even through the TURN relay. Retrying.":"No network path to the desktop. Join the same Wi-Fi as the presenter's computer (no VPN; guest and venue Wi-Fi often isolate devices), or ask the presenter to configure a TURN relay.";
+  if(kind==="host-missing")return"The desktop is not answering. Keep the deck's Phone panel open. If the deck was reopened in another window, scan its new QR code.";
+  if(kind==="server")return"Can't reach the pairing server (0.peerjs.com). Check this phone's internet connection.";
+  if(kind==="timeout")return"The desktop did not answer in time.";
+  if(kind==="closed")return"Connection dropped. Reconnecting.";
+  return`Connection error${err&&err.message?`: ${err.message}`:"."}`;
+}
+function connectMobile(){
+  if(mobileState.phase==="connecting"||mobileState.phase==="connected")return;
+  clearTimeout(mobileState.retryTimer);mobileState.retryTimer=null;
+  mobileState.phase="connecting";mobileState.attempt++;mobileState.lastIce=null;
+  updateMobileStatus(mobileState.attempt>1?`Retry ${mobileState.attempt}`:"Connecting",false);
+  clearTimeout(mobileState.connectTimer);
+  mobileState.connectTimer=setTimeout(()=>mobileConnectFailed(mobileState.lastIce?"no-route":"timeout"),MOBILE_CONNECT_TIMEOUT);
+  const peer=mobileState.peer;
+  if(!peer||peer.destroyed)createMobilePeer();
+  else if(peer.disconnected){try{peer.reconnect()}catch(_e){mobileState.peer=null;peer.destroy();createMobilePeer()}}
+  else if(peer.open)openMobileConnection();
+  // otherwise the peer is still reaching the pairing server; its "open" handler connects
+}
+function createMobilePeer(){
+  const peer=new Peer(undefined,peerOptions(mobileState.iceServers));
+  mobileState.peer=peer;
+  peer.on("open",()=>{if(mobileState.peer===peer&&mobileState.phase==="connecting")openMobileConnection()});
+  peer.on("disconnected",()=>{if(mobileState.peer===peer)mobileSignalingLost(peer)});
+  peer.on("close",()=>{if(mobileState.peer===peer)mobileSignalingLost(peer)});
+  peer.on("error",err=>{if(mobileState.peer===peer)mobilePeerError(err)});
+}
+function mobileSignalingLost(peer){
+  // An open data channel does not need the pairing server; re-register quietly so a later reconnect can find the desktop.
+  if(mobileState.phase==="connected"){setTimeout(()=>{if(mobileState.peer===peer&&peer.disconnected&&!peer.destroyed)try{peer.reconnect()}catch(_e){}},2000);return}
+  if(mobileState.phase==="connecting")mobileConnectFailed("server");
+}
+function mobilePeerError(err){
+  const type=err&&err.type||"";
+  if(type==="peer-unavailable"){if(mobileState.phase==="connecting")mobileConnectFailed("host-missing");return}
+  if(type==="browser-incompatible"){mobileStop("This browser cannot open WebRTC data channels. Try the current Safari or Chrome.");return}
+  if(/^(network|server-error|socket-error|socket-closed)$/.test(type))return;// "disconnected" or "close" follows and is handled there
+  if(mobileState.phase==="connecting")mobileConnectFailed("other",err);
+}
+function openMobileConnection(){
+  const old=mobileState.conn;mobileState.conn=null;
+  if(old)try{old.close()}catch(_e){}
+  const conn=mobileState.peer.connect(mobileState.host,{reliable:true,metadata:{clientId:mobileState.identity.clientId}});
+  mobileState.conn=conn;
+  conn.on("open",()=>{
+    if(mobileState.conn!==conn)return;
+    clearTimeout(mobileState.connectTimer);clearTimeout(mobileState.retryTimer);mobileState.retryTimer=null;
+    mobileState.phase="connected";mobileState.attempt=0;mobileState.connected=true;
+    updateMobileStatus("Connected",true);setMobileHint("");
+    mobileSend({type:"hello"});
+  });
+  conn.on("data",data=>{if(mobileState.conn===conn){mobileState.lastData=Date.now();updateMobileUI(data)}});
+  conn.on("close",()=>{if(mobileState.conn===conn)mobileConnectFailed(mobileState.phase==="connected"?"closed":"other")});
+  conn.on("error",err=>{if(mobileState.conn===conn)mobileConnectFailed(err&&err.type==="negotiation-failed"||/^(checking|disconnected|failed)$/.test(mobileState.lastIce||"")?"no-route":"other",err)});
+  conn.on("iceStateChanged",ice=>{
+    if(mobileState.conn!==conn)return;
+    mobileState.lastIce=ice;
+    clearTimeout(mobileState.iceTimer);
+    // PeerJS only reports "failed"; a connected link that stays "disconnected" (Wi-Fi switch, sleep) is replaced instead of left hanging
+    if(ice==="disconnected"&&mobileState.phase==="connected")mobileState.iceTimer=setTimeout(()=>{if(mobileState.conn===conn&&conn.peerConnection&&conn.peerConnection.iceConnectionState==="disconnected")mobileConnectFailed("closed")},8000);
+  });
+}
+function mobileConnectFailed(kind,err){
+  if(mobileState.phase!=="connecting"&&mobileState.phase!=="connected")return;// this attempt was already handled
+  const wasConnected=mobileState.phase==="connected";
+  clearTimeout(mobileState.connectTimer);clearTimeout(mobileState.iceTimer);
+  const conn=mobileState.conn;mobileState.conn=null;mobileState.connected=false;
+  if(conn)try{conn.close()}catch(_e){}
+  const subtitle=document.getElementById("mobile-subtitle");
+  if(subtitle)subtitle.textContent="Not connected to the desktop";
+  setMobileHint(mobileFailureHint(kind,err));
+  if(!wasConnected&&mobileState.attempt>=MOBILE_AUTO_RETRIES){mobileStop();return}
+  mobileState.phase="waiting";
+  const wait=wasConnected?400:Math.min(1500*2**(mobileState.attempt-1),10000);
+  updateMobileStatus(wasConnected?"Reconnecting":"Waiting to retry",false);
+  mobileState.retryTimer=setTimeout(()=>{mobileState.retryTimer=null;mobileState.phase="idle";connectMobile()},wait);
+}
+function mobileStop(message){
+  clearTimeout(mobileState.connectTimer);clearTimeout(mobileState.retryTimer);mobileState.retryTimer=null;
+  mobileState.phase="stopped";mobileState.connected=false;
+  if(message)setMobileHint(message);
+  updateMobileStatus("Tap to retry",false);
+}
+function retryMobileNow(){
+  if(!mobileState.host||mobileState.phase==="connecting"||mobileState.phase==="connected")return;
+  clearTimeout(mobileState.retryTimer);mobileState.retryTimer=null;
+  mobileState.phase="idle";mobileState.attempt=0;
+  connectMobile();
+}
+function mobileWake(){
+  if(!mobileState.host)return;
+  if(mobileState.phase!=="connected"){retryMobileNow();return}
+  const peer=mobileState.peer;
+  if(peer&&peer.disconnected&&!peer.destroyed)try{peer.reconnect()}catch(_e){}
+  // A phone that slept can still think its link is open: ask for fresh state and reconnect if nothing comes back.
+  const conn=mobileState.conn,asked=Date.now();
+  mobileSend({type:"hello"});
+  setTimeout(()=>{if(mobileState.conn===conn&&mobileState.phase==="connected"&&mobileState.lastData<asked)mobileConnectFailed("closed")},4000);
+}
+async function initMobileController(hostPeerId){
   document.body.classList.add("remote-controller-mode");
   mobileState.host=hostPeerId;
+  saveMobileIdentity();// a stable clientId lets the desktop keep one roster entry across reloads
   bindMobileController();
-  if(typeof Peer!=="function"){updateMobileStatus("PeerJS unavailable",false);return}
+  if(typeof Peer!=="function"){updateMobileStatus("PeerJS unavailable",false);setMobileHint("The PeerJS script did not load. Check this phone's internet connection, then reload the page.");return}
   updateMobileStatus("Connecting",false);
-  mobileState.peer=new Peer(undefined,peerOptions());
-  mobileState.peer.on("open",()=>{
-    const conn=mobileState.peer.connect(hostPeerId,{reliable:true});
-    mobileState.conn=conn;
-    conn.on("open",()=>{mobileState.connected=true;updateMobileStatus("Connected",true);mobileSend({type:"hello"})});
-    conn.on("data",updateMobileUI);
-    conn.on("close",()=>{mobileState.connected=false;updateMobileStatus("Disconnected",false)});
-    conn.on("error",err=>updateMobileStatus(err.message||"Connection error",false));
-  });
-  mobileState.peer.on("error",err=>updateMobileStatus(err.message||"Peer error",false));
+  mobileState.iceServers=await resolveIceServers();
+  mobileState.relay=iceHasRelay(mobileState.iceServers);
+  document.getElementById("mobile-status")?.addEventListener("click",retryMobileNow);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")mobileWake()});
+  window.addEventListener("online",mobileWake);
+  window.addEventListener("pageshow",event=>{if(event.persisted)mobileWake()});
+  connectMobile();
 }
 const remoteToken=getTokenFromUrl();
-if(remoteToken)initMobileController(remoteToken);
+if(remoteToken)initMobileController(remoteToken).catch(err=>{mobileState.phase="stopped";updateMobileStatus("Tap to retry",false);setMobileHint(`Could not start the remote: ${err.message||err}`)});
 
 /* ═══════════════════════════════════════════════
    EDITOR MODULE
@@ -3313,7 +3550,7 @@ function downloadText(filename,text,type="application/json"){
   a.click();
   URL.revokeObjectURL(a.href);
 }
-function exportJSON(){downloadText('slide-data.json',JSON.stringify({meta:{motion:deckMotion,brief:deckBrief},slideData:slides},null,2))}
+function exportJSON(){downloadText('slide-data.json',JSON.stringify({meta:{themePreset,motion:deckMotion,palette:paletteOverrides(),brief:deckBrief},slideData:slides},null,2))}
 function replaceSlideDeck(nextSlides){
   slides.length=0;slides.push(...nextSlides);
   state.currentSlide=0;
@@ -3327,6 +3564,7 @@ function importJSONText(text){
   commitEdit();
   if(parsed&&parsed.meta&&parsed.meta.motion)setDeckMotion(parsed.meta.motion);
   if(parsed&&parsed.meta&&parsed.meta.brief)deckBrief=sanitizeBrief(parsed.meta.brief);
+  if(parsed&&parsed.meta&&parsed.meta.palette)applyColors({...presetColors(parsed.meta.themePreset),...sanitizePalette(parsed.meta.palette)});
   replaceSlideDeck(next);
 }
 function saveDraft(){
