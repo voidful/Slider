@@ -36,6 +36,7 @@ Read only the row relevant to the task and follow further links as needed. Paths
 - Preserve claims, values, units, datasets, baselines, uncertainty, and absolute versus relative gains. Separate the paper's findings from illustrative explanations or your interpretation.
 - Use the paper's key method/result visuals when they support the talk's thesis. Inspect crops for missing axes, labels, legends, or comparison context. Follow the [visual inclusion policy](references/paper-visual-inclusion-policy.md).
 - A faithful redraw needs inspectable source data or structure and a citation. A missing source is not permission to invent a chart. See [faithful redraw](references/faithful-redraw-policy.md).
+- Give every figure `alt` text that says what it shows and what to notice; the deck's audience view and text handout read it to people who cannot see the slide.
 - A placeholder never satisfies a required visual. For incomplete sources, identify the gap and deliver only the supported plan or clearly labeled draft; do not describe it as fully verified.
 - Give each slide one main message, with wording that follows the [slide copy rules](references/slide-copy-rules.md). Put source references, visual rationale, caveats, and speaking cues in speaker notes. Keep internal audit/planning metadata off the slide face.
 

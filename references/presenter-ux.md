@@ -37,6 +37,7 @@ Also support when practical:
 | A | Auto-advance (moved from P) |
 | B or `.`, W | Black or white screen; any navigation key clears it |
 | F, L, M, R | Fullscreen, laser, motion panel, phone remote |
+| U | Audience QR code: the room follows the slides on their phones (see below) |
 | E | Request changes: click what should change, describe it, then copy one prompt for the agent; double-click text to fix a typo on screen (recorded as a request). The full editor is in the command menu or at `?edit=full` |
 | Ctrl/⌘ K | Command menu: full-text slide search and every deck action, in present and edit mode |
 | ? | Key list · Esc closes the top layer first, then leaves fullscreen |
@@ -58,6 +59,15 @@ Press `R` (or the phone button), scan the QR code, and the phone opens on **Pres
 Time and slide progress bars sit under the clock, dots under Next count the slide's remaining builds, and Next reads "End of deck" at the end. A toggle hides the previews when the notes need the room. If the link drops, a banner over the notes gives the reason and retries on tap; the remote opened in a second tab takes over and the first tab says so.
 
 The desktop owns the timer, so the phone, the presenter window, and the desktop show the same time. A phone's first navigation starts the timer, and navigating clears a blackout, as in the presenter window. Landscape puts the notes on the left and the controls on the right. **Mark** draws on a live preview, **Notes** sends a note to the screen or saves it as the speaker note, and **More** holds jumps, fullscreen, auto-advance, links, and the collaborator name. Every paired phone receives the speaker notes, so share the code only with co-presenters. Pairing needs a URL the phone can reach: `python3 scripts/serve_deck.py deck.html` serves a deck at this computer's Wi-Fi address and shares nothing else; for other networks see [phone remote relay](artifact-rendering.md#phone-remote-relay).
+
+## Audience follow-along and accessible handout
+
+Press `U` (or Ctrl/⌘ K › Audience QR code) to project a QR code for the room. It opens the same deck with `?follow=<id>`. That page shows the slide the presenter is on, at its current build and focus, followed by the slide as real text: headings, lists, tables with header cells, figures with their alt text and captions, and math as KaTeX with MathML for screen readers. The audience can enlarge the text, browse back, and return to live.
+
+- The audience QR names a separate `aud-…` pairing from the speaker remote's token. Followers receive only `{type, index, build, count}` and the deck ignores anything they send, so the audience link can neither steer the deck nor read speaker notes over the connection. Each follower is one WebRTC data channel to the presenter's tab; the deck accepts 150 and tells the rest to read the text version (21 followers were tested on one machine).
+- `?handout` opens the whole deck as one accessible text document: one `h1`, a table of contents, one section per slide with ordered headings, figure descriptions, `lang` set from `meta.brief.language` or the deck's text, readable at 320 px without horizontal scrolling. `?handout=notes` adds the speaker notes, as a transcript for people who cannot hear the talk.
+- The deck file itself contains the speaker notes, so anyone who opens it can find them. When notes are private, share the audience copy instead: Ctrl/⌘ K › Download audience copy (no speaker notes) removes notes, step notes, review comments, and planning fields.
+- Alt text matters more now: the audience view and the handout read it. Give every figure an `alt` that says what it shows.
 
 ## Fullscreen behavior (MANDATORY)
 

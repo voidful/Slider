@@ -63,7 +63,7 @@ def showcase_slides() -> list[dict]:
     slides = [
         {"layout": "cover", "title": "Turn a research paper into a talk you can run from your phone",
          "subtitle": "Slider · an open-source agent skill · github.com/voidful/Slider",
-         "keyMessage": "Press → or Space to advance. Press R and scan the code to control this deck from your phone.",
+         "keyMessage": "Press → or Space to advance. Press R to control this deck from your phone, or U to let the room follow along on theirs.",
          "speakerNote": "This is a live demo. If you scanned the code, you are reading these notes on your phone.\n\n"
                         "Swipe left on the notes, or tap **Next**, to move on."},
         {"layout": "split", "title": "A paper is evidence; a talk is an argument",
