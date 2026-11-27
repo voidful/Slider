@@ -33,7 +33,16 @@ For layout changes, `scripts/audit_design_comfort.py deck.html` can identify str
 
 ## Browser inspection
 
-Use available browser tooling. The bundled `scripts/browser_slide_audit.py deck.html` uses Chromium to inspect every slide in windowed and simulated-fullscreen modes for overflow and broken images.
+Use available browser tooling. The bundled `scripts/browser_slide_audit.py deck.html` uses Chromium to inspect every slide in windowed and simulated-fullscreen modes. It fails a slide when:
+
+- content leaves the 1200×675 stage or makes it scroll;
+- content is clipped by, or spills out of, any box on the slide (a column, card, figure frame, or equation box), measured by line boxes so tight title line-heights are not reported;
+- text is cut off with an ellipsis or line clamp, or text overlaps other text or an image;
+- the deck's own fitting gave up (`data-overflow-fail`);
+- the slide lays out differently in a 1024×640 window than in a 1440×900 one (`--compare-window`, `none` to skip), which catches viewport-unit typography;
+- an image is broken.
+
+It warns about slide text under 14px and LaTeX that KaTeX did not render. `scripts/test_layout_stress.py` renders a worst-case deck (every layout and block, long English and zh-TW text, tall/wide/square figures, many metrics, display math with `<`) through the HTML template and runs this audit; the health check runs it too.
 
 - Inspect crowded tables, equations, figures, long titles, and light/dark layouts at presentation size.
 - Fix clipped content or unreadable labels by simplifying or splitting. Do not use hidden overflow to conceal evidence.

@@ -892,11 +892,11 @@ def audit_rendered_html(
         html,
     )
     for selector, rules in slide_content_selectors:
-        if re.search(r'font-size:\s*[\d.]+v[hw]', rules):
+        if re.search(r'font-size:\s*[^;}]*?\b[\d.]+v[hw]\b', rules):  # clamp(1rem, 2vw, 2rem) too
             result.error(
                 "output",
                 f"Viewport-unit font-size detected in .{selector}. "
-                "Stage model requires rem/px/clamp — vh/vw breaks composition stability.",
+                "Stage model requires rem or px (clamp() only with rem/px terms); vh/vw breaks composition stability.",
             )
         if re.search(r'padding:\s*[\d.]+v[hw]', rules) and selector not in ("controls",):
             result.warn(

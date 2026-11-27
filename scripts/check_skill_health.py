@@ -64,7 +64,7 @@ def assert_python_syntax() -> list[str]:
 
 def assert_skill_references() -> list[str]:
     refs = re.findall(r'\]\(([^)]+)\)', (ROOT / 'SKILL.md').read_text(encoding='utf-8'))
-    return [f'Broken SKILL.md reference: {ref}' for ref in refs if not ref.startswith('http') and not (ROOT / ref).exists()]
+    return [f'Broken SKILL.md reference: {ref}' for ref in refs if not ref.startswith('http') and not (ROOT / ref.split('#')[0]).exists()]
 
 def assert_release_docs() -> list[str]:
     return [f'Missing release document: {name}' for name in REQUIRED_RELEASE_DOCS if not (ROOT / name).exists()]
@@ -350,10 +350,10 @@ def main() -> None:
     except subprocess.CalledProcessError as exc:
         roundtrip_failures, roundtrip_warnings = [f'Roundtrip command failed: {(exc.stderr or exc.stdout or str(exc)).strip()}'], []
     failures.extend(roundtrip_failures)
-    warnings = roundtrip_warnings + line_count_warnings()
+    stress = json.loads(subprocess.run([sys.executable, str(SCRIPTS_DIR / 'test_layout_stress.py')], capture_output=True, text=True).stdout or '{"failures": ["Layout stress test produced no report"], "warnings": []}')
+    failures.extend(stress['failures']); warnings = roundtrip_warnings + stress['warnings'] + line_count_warnings()
     report = {'failures': failures, 'warnings': warnings, 'ok': not failures and (not warnings or not args.strict)}
     print(json.dumps(report, indent=2, ensure_ascii=False))
     if failures or (args.strict and warnings):
         raise SystemExit(1)
-if __name__ == '__main__':
-    main()
+if __name__ == '__main__': main()

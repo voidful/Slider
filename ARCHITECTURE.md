@@ -58,7 +58,7 @@ Two instruction layers sit above the pipeline and need no code. When the user as
 9. **Structured verification** (three-phase pipeline)
    - **Phase 1 (Quick Check):** Structural validity, console errors, template identity marker.
    - **Phase 2 (Static Audit):** Design comfort (`scripts/audit_design_comfort.py`) + evidence fidelity (`scripts/audit_research_slides.py`) + anti-slop check.
-   - **Phase 3 (Browser Audit):** Pixel-level overflow verification (`scripts/browser_slide_audit.py`) when Chromium is available.
+   - **Phase 3 (Browser Audit):** Pixel-level layout verification (`scripts/browser_slide_audit.py`) when Chromium is available: stage overflow, content clipped or spilling inside any box, truncation, overlapping text, fit failures, and identical layout at two window sizes. `scripts/test_layout_stress.py` runs it on a worst-case deck.
    - Select checks for the affected scope and reuse results from unchanged output. See `references/verification-workflow.md`.
 
 10. **Health audit**
@@ -71,8 +71,10 @@ Two instruction layers sit above the pipeline and need no code. When the user as
 
 ## Post-render capabilities
 
-### Structured editor
-The built HTML target includes a Google Slides-style filmstrip and inspector around the fixed stage. It supports inline and structured content editing, layouts and blocks, slide reordering and clipboard actions, undo/redo, themes, browser drafts, and JSON or self-contained HTML interchange. Editor chrome may collapse or adapt to the viewport; slide content never reflows.
+### Request changes and the full editor
+Most people revise a deck by prompting their agent, so the deck's `E` key opens request mode: click what should change, describe it, and copy one prompt that names each slide, field, and current text. A typo fixed on screen with a double-click is recorded as a request, so the agent's slide data gets the same change. Requests are stored as slide comments and survive a reload.
+
+The full editor, reached from the command menu or `?edit=full`, is a Google Slides-style filmstrip and inspector around the fixed stage. It supports inline and structured content editing, layouts and blocks, slide reordering and clipboard actions, undo/redo, themes, browser drafts, and JSON or self-contained HTML interchange. Editor chrome may collapse or adapt to the viewport; slide content never reflows.
 
 ### Live tweaks
 The rendered HTML includes a customization panel (`references/live-tweaks-protocol.md`) for post-generation adjustments to accent colors, font sizes, mood family, and transition speed. Values persist via `localStorage` and can be exported as `deck_tweaks.json`.

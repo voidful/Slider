@@ -29,6 +29,8 @@ The phone remote pairs through the public PeerJS server, then sends control data
 
 Every key is optional. The desktop and each phone fetch `iceServersUrl` when pairing starts; it must return ICE servers as JSON (a list, or `{"iceServers": …}`), which suits short-lived credentials from a TURN provider's API or a small worker in front of one. Inline `iceServers` credentials are readable by anyone who opens the deck, so use an account with a low quota. Include a `turns:` URL on port 443 to pass strict firewalls. `controllerUrl` replaces the deck URL in the QR code. The renderer writes these to the `data-remote-ice-servers`, `data-remote-ice-servers-url`, and `data-remote-controller-url` attributes on `<html>`; edit those attributes directly in a deck that is already built.
 
+To pair with a deck on this computer, run `python3 scripts/serve_deck.py deck.html`: it serves the deck at the computer's Wi-Fi address (a QR code for `file://` or `localhost` points the phone at itself) and shares only the deck and the files it references. Hosting the deck on an https site also lets the phone keep its screen on.
+
 Pairing recovers on its own. The desktop reconnects to the signaling server under the same QR token and resumes pairing after a reload in the same tab. Phones retry with backoff, reconnect when they wake, and say whether the desktop is missing, the pairing server is unreachable, or no network path exists.
 
 ## JSON and math

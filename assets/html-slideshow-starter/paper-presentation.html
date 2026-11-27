@@ -13,6 +13,8 @@
 <style>
 :root{--bg:#f5f5f4;--frame:#fff;--text:#1a1a2e;--muted:#4a4a6a;--border:#e2e8f0;--accent:#2563eb;--accent-bg:rgba(37,99,235,.07);--positive:#059669;--positive-bg:rgba(5,150,105,.07);--negative:#dc2626;--negative-bg:rgba(220,38,38,.07);--neutral:#6b7280;--panel:#fafafa;--toolbar-bg:#fff;--toolbar-text:#111;--toolbar-muted:#52525b;--toolbar-border:rgba(17,17,17,.16);--toolbar-hover:rgba(17,17,17,.08);--toolbar-active:#dc2626;--toolbar-active-bg:rgba(220,38,38,.16);--toolbar-shadow:0 12px 30px rgba(0,0,0,.14);--slide-w:1200;--slide-h:675;--col-size:40%}
 *{box-sizing:border-box;margin:0}
+/* The stage is a fixed 1200×675 canvas scaled as a whole; a browser's default font size must not reflow it. */
+html{font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--text);font-family:"Avenir Next","Segoe UI","SF Pro Text",system-ui,-apple-system,sans-serif;font-feature-settings:'cv01','cv02','ss01';font-optical-sizing:auto;padding:24px;overflow:hidden}
 
 /* ── Deck & Fullscreen ── */
@@ -39,17 +41,23 @@ body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 
 /* ── Slide base ── */
 #slide-root{position:relative;z-index:1;display:flex;flex-direction:column;width:100%;height:100%;flex:1;min-height:0}
-.slide{width:100%;height:100%;padding:52px 56px 32px;display:flex;flex-direction:column;overflow:hidden;background-color:var(--frame);flex:1;min-height:0}
+.slide{width:100%;height:100%;padding:52px 56px 32px;display:flex;flex-direction:column;overflow:hidden;background-color:var(--frame);color:var(--text);flex:1;min-height:0}/* own text color: thumbnails sit inside dark phone and presenter UI */
 .slide>*{min-width:0;min-height:0;flex-shrink:1;position:relative;z-index:2}
 [data-build-state="pending"]:not(.build-block),.build-block[data-build-state="pending"]>*{opacity:0!important;visibility:hidden;pointer-events:none}
 [data-build-state="revealed"]:not(.build-block),.build-block[data-build-state="revealed"]>*{opacity:1;visibility:visible}
 .build-block{display:contents}
+/* Focus steps: a veil with a hole over the target, and a figure that zooms into one region. */
+.slide{position:relative}
+.slide>.focus-spot{position:absolute;left:0;top:0;width:0;height:0;z-index:6;border-radius:14px;pointer-events:none;opacity:0;box-shadow:0 0 0 2400px color-mix(in srgb,var(--frame) 70%,transparent),0 0 0 3px color-mix(in srgb,var(--accent) 70%,transparent);transition:opacity .35s ease,left .5s cubic-bezier(.2,.7,.2,1),top .5s cubic-bezier(.2,.7,.2,1),width .5s cubic-bezier(.2,.7,.2,1),height .5s cubic-bezier(.2,.7,.2,1)}
+.slide>.focus-spot.on{opacity:1}
+.evidence-media img[data-focus-zoom]{transform-origin:0 0;transition:transform .7s cubic-bezier(.2,.7,.2,1)}
+@media (prefers-reduced-motion:reduce){.slide>.focus-spot,.evidence-media img[data-focus-zoom]{transition:none}}
 .slide.density-compact{padding:44px 48px 52px}
 .slide.density-tight{padding:36px 40px 44px}
-.slide.density-compact .title{margin-top:8px;font-size:clamp(1.85rem,3vw,2.45rem);line-height:1.12}
-.slide.density-tight .title{margin-top:6px;font-size:clamp(1.7rem,2.7vw,2.2rem);line-height:1.08}
-.slide.density-compact .body,.slide.density-compact .body-text,.slide.density-compact .bullet{margin-top:12px;font-size:clamp(1rem,1.45vw,1.16rem);line-height:1.48}
-.slide.density-tight .body,.slide.density-tight .body-text,.slide.density-tight .bullet{margin-top:10px;font-size:clamp(.95rem,1.3vw,1.06rem);line-height:1.42}
+.slide.density-compact .title{margin-top:8px;font-size:2.45rem;line-height:1.12}
+.slide.density-tight .title{margin-top:6px;font-size:2.2rem;line-height:1.08}
+.slide.density-compact .body,.slide.density-compact .body-text,.slide.density-compact .bullet{margin-top:12px;font-size:1.16rem;line-height:1.48}
+.slide.density-tight .body,.slide.density-tight .body-text,.slide.density-tight .bullet{margin-top:10px;font-size:1.06rem;line-height:1.42}
 .slide.density-compact .bullets,.slide.density-compact .bullet-list{gap:10px;margin-top:12px}
 .slide.density-tight .bullets,.slide.density-tight .bullet-list{gap:8px;margin-top:10px}
 .slide.density-compact.split,.slide.density-compact.method-overview{gap:24px}
@@ -62,8 +70,8 @@ body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 .label{font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
 .label-positive{color:var(--positive)}
 .label-negative{color:var(--negative)}
-.title{margin:10px 0 0;font-size:clamp(2rem,3.5vw,2.8rem);line-height:1.15;font-weight:700;letter-spacing:-.02em;text-wrap:balance;overflow-wrap:break-word;word-break:break-word;hyphens:auto}
-.body,.body-text{margin-top:14px;font-size:clamp(1.1rem,1.6vw,1.3rem);line-height:1.6;color:var(--muted);max-width:56ch;overflow-wrap:break-word}
+.title{margin:10px 0 0;font-size:2.8rem;line-height:1.15;font-weight:700;letter-spacing:-.02em;text-wrap:balance;overflow-wrap:break-word;word-break:break-word;hyphens:auto;hyphenate-limit-chars:10 4 4}
+.body,.body-text{margin-top:14px;font-size:1.3rem;line-height:1.6;color:var(--muted);max-width:56ch;overflow-wrap:break-word}
 
 /* ═══ COMPOSABLE PRIMITIVES ═══ */
 
@@ -73,18 +81,25 @@ body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 .region-right{flex:1 1 calc(100% - var(--col-size));min-width:0;min-height:0;display:flex;align-items:stretch;justify-content:center;overflow:hidden}
 .region-right>*{flex:1 1 0;min-width:0;min-height:0;width:100%;max-width:100%;align-self:stretch}
 .region-center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1}
-.region-inset{max-width:800px;margin:0 auto;width:100%}
+.region-inset{max-width:800px;margin:auto;width:100%}
+/* Auto margins center safely: content taller than the stage overflows at the bottom (where fitting measures it), never above the label. */
+.region-center .bullets{width:fit-content;max-width:100%;margin-inline:auto;text-align:left}
 
 /* Objective shell — full-height equation layout */
 .objective-shell{display:flex;flex-direction:column;align-items:center;text-align:center;flex:1;gap:16px;justify-content:flex-start;padding-top:24px;min-height:0;overflow:hidden}
 .objective-shell .equation-block{margin:auto 0;max-width:90%}
 .objective-shell .objective-body{max-width:56ch}
+.objective-shell .bullets{width:fit-content;max-width:100%;text-align:left}
+.build-block[data-place="full"]>*,.build-block[data-place="center"]>*{grid-column:1/-1}
+.build-block[data-place="center"]>*{justify-self:center}
+.build-block[data-place="left"]>*{grid-column:1}
+.build-block[data-place="right"]>*{grid-column:-2}
 .density-compact .objective-shell{gap:10px;padding-top:12px}
-.density-compact .objective-shell .title{font-size:clamp(1.2rem,2.4vw,1.6rem)}
+.density-compact .objective-shell .title{font-size:1.6rem}
 .density-compact .objective-shell .objective-body{font-size:0.95rem}
 .density-compact .objective-shell .equation-block{padding:12px;font-size:1.3rem}
 .density-tight .objective-shell{gap:6px;padding-top:8px}
-.density-tight .objective-shell .title{font-size:clamp(1rem,2vw,1.3rem)}
+.density-tight .objective-shell .title{font-size:1.3rem}
 .density-tight .objective-shell .objective-body{font-size:0.88rem}
 .density-tight .objective-shell .equation-block{padding:8px 12px;font-size:1.1rem}
 .density-tight .objective-shell .evidence-note{display:none}
@@ -101,21 +116,21 @@ body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 .bleed{margin:-52px -56px -64px;padding:52px 56px 64px}
 
 /* Content primitives */
-.hero-text{font-size:clamp(2rem,3.5vw,3rem);font-weight:700;letter-spacing:-.03em;line-height:1.1;text-wrap:balance;overflow-wrap:break-word}
-.hero-number{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;letter-spacing:-.05em;line-height:1;color:var(--accent);text-shadow:0 4px 20px var(--accent-bg)}
+.hero-text{font-size:3rem;font-weight:700;letter-spacing:-.03em;line-height:1.1;text-wrap:balance;overflow-wrap:break-word}
+.hero-number{font-size:4.5rem;font-weight:900;letter-spacing:-.05em;line-height:1;color:var(--accent);text-shadow:0 4px 20px var(--accent-bg)}
 .hero-number.positive{color:var(--positive);text-shadow:0 4px 20px var(--positive-bg)}
 .hero-number.negative{color:var(--negative);text-shadow:0 4px 20px var(--negative-bg)}
 
 .evidence-frame{border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,0.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 4px 24px rgba(0,0,0,.04);overflow:hidden;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;max-height:100%;width:100%;max-width:100%}
-.evidence-media{flex:1 1 auto;min-height:80px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.evidence-frame img,.evidence-media img,.evidence-media svg{display:block;max-width:100%;max-height:100%;width:auto;height:auto;min-height:0;flex-shrink:1;object-fit:contain;background:transparent}
-.evidence-frame figcaption,.visual-caption{border-top:1px solid var(--border);padding:8px 12px;font-size:14px;color:var(--muted);background:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.evidence-media{flex:1 1 auto;min-height:80px;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.evidence-frame img,.evidence-media img,.evidence-media svg{display:block;max-width:100%;max-height:100%;width:auto;height:auto;min-height:0;min-width:0;flex-shrink:1;object-fit:contain;background:transparent}
+.evidence-frame figcaption,.visual-caption{border-top:1px solid var(--border);padding:8px 12px;font-size:14px;line-height:1.4;color:var(--muted);background:rgba(255,255,255,0.5);overflow-wrap:break-word;text-wrap:pretty;flex-shrink:0}
 
-.callout-box{background:var(--accent-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:12px;padding:20px 24px;font-size:clamp(1.1rem,1.6vw,1.3rem);line-height:1.6;color:var(--text);border-left:4px solid var(--accent);box-shadow:0 4px 20px rgba(0,0,0,.03)}
+.callout-box{background:var(--accent-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:12px;padding:20px 24px;font-size:1.3rem;line-height:1.6;color:var(--text);border-left:4px solid var(--accent);box-shadow:0 4px 20px rgba(0,0,0,.03)}
 .callout-box.positive{background:var(--positive-bg);border-left-color:var(--positive)}
 .callout-box.negative{background:var(--negative-bg);border-left-color:var(--negative)}
 
-.quote-block{font-size:clamp(1.2rem,2vw,1.5rem);font-weight:300;font-style:italic;line-height:1.5;color:var(--text);border-left:3px solid var(--accent);padding-left:20px;max-width:48ch}
+.quote-block{font-size:1.5rem;font-weight:300;font-style:italic;line-height:1.5;color:var(--text);border-left:3px solid var(--accent);padding-left:20px;max-width:48ch}
 .quote-attr{margin-top:8px;font-size:14px;font-style:normal;font-weight:600;color:var(--muted)}
 
 .limitation-block{border-left:4px solid var(--negative);background:var(--negative-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:0 12px 12px 0;padding:24px}
@@ -140,7 +155,7 @@ body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 .emphasis-primary{opacity:1}
 .emphasis-secondary{opacity:.75;font-size:.9em}
 .emphasis-background{opacity:.5;font-size:.85em}
-.emphasis-dramatic .hero-number{font-size:clamp(3rem,8vw,5.5rem)}
+.emphasis-dramatic .hero-number{font-size:5.5rem}
 
 /* Atmosphere modifiers */
 .atmosphere-warm{background:radial-gradient(circle at top right, rgba(251,146,60,.12), transparent 50%), radial-gradient(circle at bottom left, rgba(251,191,36,.12), transparent 50%), var(--bg)}
@@ -155,17 +170,23 @@ body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 .atmosphere-minimal{background:var(--frame)}
 
 /* ═══ LEGACY LAYOUT COMPAT ═══ */
-.split{flex-direction:row;gap:32px;align-items:center}
-.split>.text-col{flex:0 1 40%;min-width:0;overflow:hidden}
-.split>.visual-col{flex:1 1 65%;min-width:0;min-height:0;display:flex;align-items:stretch;justify-content:center;overflow:hidden}
-.split>.visual-col>*{flex:1 1 0;min-width:0;min-height:0;width:100%;max-width:100%;align-self:stretch}
+/* Columns stretch to the stage height so a figure is bounded by it; text centers through flexible spacers that collapse first when it runs long. */
+.split{flex-direction:row;gap:32px;align-items:stretch}
+.split>.text-col{flex:0 1 40%;min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.split>.text-col::before,.split>.text-col::after{content:"";flex:1 1 0}
+.split>.visual-col{flex:1 1 65%;min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.split>.visual-col>*{flex:0 1 auto;min-width:0;min-height:0;width:100%;max-width:100%}
+.split>.visual-col>.placeholder{flex:1 1 auto}
+/* Last fitting step: a wider text column when even the tightest density cannot fit it. */
+.slide.split.fit-wide-text>.text-col{flex-basis:50%}
+.slide.split.method-overview.fit-wide-text>.text-col{flex-basis:42%}
 .method-overview{gap:20px}
 .method-overview .visual-col{flex:1 1 70%}
 .method-overview .text-col{flex:0 1 30%}
 
 /* ── Bullets ── */
-.bullets,.bullet-list{display:grid;gap:12px;margin-top:16px}
-.bullet{display:grid;grid-template-columns:8px 1fr;gap:10px;align-items:start;color:var(--muted);font-size:clamp(1.1rem,1.6vw,1.3rem);line-height:1.5;overflow-wrap:break-word;word-break:break-word}
+.bullets,.bullet-list{display:grid;gap:12px;margin-top:16px;align-content:start}
+.bullet{display:grid;grid-template-columns:8px 1fr;gap:10px;align-items:start;color:var(--muted);font-size:1.3rem;line-height:1.5;overflow-wrap:break-word;word-break:break-word}
 .bullet-dot{width:8px;height:8px;margin-top:8px;border-radius:999px;background:var(--accent);flex-shrink:0}
 
 /* ── Visual frames (legacy) ── */
@@ -177,8 +198,8 @@ body.fs-active{background:#000!important;padding:0!important;margin:0!important}
 .metrics,.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:24px}
 .metrics-with-visual{display:grid;gap:24px;margin-top:24px;grid-template-columns:1fr 1.2fr;align-items:center}
 .metric,.metric-card{border:1px solid var(--border);border-radius:12px;padding:18px;overflow:hidden;background:rgba(255,255,255,0.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.03)}
-.metric-label{font-size:16px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.metric-value{margin-top:8px;font-size:clamp(1.6rem,3vw,2.5rem);font-weight:800;letter-spacing:-.04em;color:var(--accent)}
+.metric-label{font-size:16px;line-height:1.3;color:var(--muted);overflow-wrap:break-word;word-break:break-word}
+.metric-value{margin-top:8px;font-size:2.5rem;font-weight:800;letter-spacing:-.04em;color:var(--accent)}
 .metric-value.positive{color:var(--positive)}
 .metric-value.negative{color:var(--negative)}
 .metric-detail{margin-top:6px;font-size:15px;color:var(--muted);overflow-wrap:break-word}
@@ -253,52 +274,140 @@ button.active{background:rgba(220,38,38,.12);color:#dc2626}
 .collab-roster-row .name{font-weight:800;color:#0f172a}
 .collab-roster-row .meta{margin-left:auto;color:#64748b;font-size:11px}
 
-.remote-controller-mode{display:block;min-height:100vh;padding:0;background:#0f172a;overflow:auto}
+/* ── Phone remote (controller mode): a dark, one-handed speaker tool ── */
+/* place-items:normal undoes the deck body's centering, which also shrink-wraps block children in current browsers */
+.remote-controller-mode{display:block;place-items:normal;min-height:100vh;padding:0;background:#0b1020;overflow:auto}
 .remote-controller-mode .deck-wrapper,.remote-controller-mode .editor-toolbar,.remote-controller-mode .editor-sidebar,.remote-controller-mode .editor-main,.remote-controller-mode .editor-inspector,.remote-controller-mode .theme-panel{display:none!important}
-.mobile-controller{display:none;flex-direction:column;min-height:100vh;min-height:100dvh;background:linear-gradient(155deg,#0f172a 0%,#172554 52%,#042f2e 100%);color:#f8fafc;font-family:"Avenir Next","Segoe UI","SF Pro Text",system-ui,-apple-system,sans-serif;padding:18px 18px calc(88px + env(safe-area-inset-bottom))}
-.remote-controller-mode .mobile-controller{display:flex}
-.mobile-shell{width:100%;max-width:520px;margin:auto auto 0;display:grid;gap:14px}
-.mobile-card{border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.1);box-shadow:0 16px 44px rgba(0,0,0,.2);backdrop-filter:blur(16px);padding:16px}
-.mobile-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.mobile-title{font-size:20px;font-weight:850;letter-spacing:0}
-.mobile-subtitle{margin-top:4px;color:rgba(248,250,252,.68);font-size:13px;line-height:1.45}
-.mobile-status{font:inherit;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 10px;color:#fde68a;background:rgba(250,204,21,.1);white-space:nowrap;cursor:pointer;-webkit-appearance:none;appearance:none}
-.mobile-status.connected{color:#86efac;background:rgba(34,197,94,.12);cursor:default}
-.mobile-conn-hint{margin-top:12px;border:1px solid rgba(250,204,21,.28);border-radius:10px;background:rgba(250,204,21,.08);color:#fde68a;padding:10px 12px;font-size:13px;line-height:1.45}
+.mobile-controller{--m-bg:#0b1020;--m-surface:rgba(255,255,255,.055);--m-surface-2:rgba(255,255,255,.1);--m-line:rgba(255,255,255,.11);--m-text:#f1f5f9;--m-muted:rgba(241,245,249,.64);--m-warn:#fbbf24;--m-bad:#f87171;--m-good:#4ade80;display:none;flex-direction:column;min-height:100vh;min-height:100dvh;background:radial-gradient(120% 55% at 50% 0%,#1a2540 0%,var(--m-bg) 62%) fixed,var(--m-bg);color:var(--m-text);font:15px/1.4 system-ui,-apple-system,"SF Pro Text","Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent;padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) calc(74px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.remote-controller-mode .mobile-controller{display:flex;width:100%}
+.mobile-controller button{font:inherit;color:inherit;-webkit-user-select:none;user-select:none;touch-action:manipulation;cursor:pointer}
+/* the deck's own button styles (pill radius, hover and red active tint) do not belong in the remote */
+.mobile-controller .mobile-tab,.mobile-controller .mobile-tab:hover,.mobile-controller .mobile-tab.active{background:transparent;border-radius:12px}
+.mobile-controller .mobile-btn:hover{background:var(--m-surface-2)}.mobile-controller .mobile-btn.primary:hover{background:#f8fafc}
+.mobile-shell{width:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.mobile-bar{display:flex;align-items:center;gap:12px;min-height:40px}
+.mobile-bar-text{flex:1;min-width:0}
+.mobile-title{font-size:15px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mobile-subtitle{font-size:12px;color:var(--m-muted)}
+.mobile-status{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:32px;border:1px solid var(--m-line);border-radius:999px;padding:5px 12px;background:var(--m-surface);color:var(--m-warn);font-size:12.5px;font-weight:750;white-space:nowrap;-webkit-appearance:none;appearance:none}
+.mobile-status::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.mobile-status.connected{color:var(--m-good);cursor:default}
+.mobile-conn-hint{border:1px solid rgba(251,191,36,.3);border-radius:12px;background:rgba(251,191,36,.08);color:#fde68a;padding:10px 12px;font-size:13px;line-height:1.45}
 .mobile-conn-hint[hidden]{display:none}
-.mobile-identity{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px}
-.mobile-identity input{width:100%;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(15,23,42,.45);color:#f8fafc;padding:9px 10px;font:14px/1.3 system-ui,sans-serif}
-.mobile-identity input[type=color]{width:46px;padding:3px}
-.mobile-tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px max(16px,calc((100% - 520px)/2)) calc(10px + env(safe-area-inset-bottom));background:linear-gradient(to top,#0f172a 60%,rgba(15,23,42,.82));backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,.08)}
-.mobile-tab{border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(255,255,255,.08);color:#e2e8f0;padding:10px 8px;font-size:13px;font-weight:800}
-.mobile-tab.active{background:#f8fafc;color:#0f172a}
+.mobile-tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(4,1fr);padding:6px max(10px,calc((100% - 560px)/2)) calc(6px + env(safe-area-inset-bottom));background:rgba(11,16,32,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--m-line)}
+.mobile-tab{display:grid;justify-items:center;gap:2px;border:0;background:transparent;color:var(--m-muted);padding:4px 2px;font-size:11px;font-weight:700}
+.mobile-tab svg{width:22px;height:22px;padding:3px 16px;box-sizing:content-box;border-radius:999px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:background-color 120ms ease}
+.mobile-tab.active{color:var(--m-text)}
+.mobile-tab.active svg{background:rgba(255,255,255,.15)}
 .mobile-pane{display:none;gap:12px}
 .mobile-pane.active{display:grid}
-.mobile-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.mobile-btn{border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.1);color:#fff;padding:14px 12px;font-size:15px;font-weight:800}
-.mobile-btn.primary{background:#f8fafc;color:#0f172a}
-.mobile-btn.warn{background:rgba(251,191,36,.15);color:#fde68a}
-.mobile-btn.danger{background:rgba(239,68,68,.14);color:#fecaca}
-.mobile-slide-meta{font-size:13px;color:rgba(248,250,252,.7);line-height:1.45}
-.mobile-range{width:100%}
+.mobile-section{display:grid;gap:10px;border:1px solid var(--m-line);border-radius:16px;background:var(--m-surface);padding:14px}
+.mobile-section h2{margin:4px 0 0;font-size:12px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--m-muted)}
+.mobile-section h2:first-child{margin-top:0}
+.mobile-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mobile-btn{min-height:46px;border:1px solid var(--m-line);border-radius:12px;background:var(--m-surface-2);padding:10px 12px;font-size:15px;font-weight:700;transition:transform 80ms ease,background-color 120ms ease,opacity 120ms ease}
+.mobile-btn:active{transform:scale(.97);background:rgba(255,255,255,.2)}
+.mobile-controller button:focus-visible,.mobile-controller input:focus-visible,.mobile-controller textarea:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+.mobile-btn.primary{background:#f8fafc;color:#0b1020;border-color:#f8fafc}
+.mobile-btn.primary:active{background:#dbe3ee}
+.mobile-btn.warn{color:#fde68a}
+.mobile-btn.danger{color:#fecaca}
+.mobile-btn.active,.mobile-btn[aria-pressed="true"]{background:#f8fafc;color:#0b1020}
+.mobile-slide-meta{font-size:13px;color:var(--m-muted);line-height:1.4}
+.mobile-range{width:100%;height:32px;accent-color:#f8fafc}
 .mobile-field{display:grid;gap:6px}
-.mobile-field label{font-size:12px;font-weight:800;color:rgba(248,250,252,.72)}
-.mobile-field textarea,.mobile-field input{width:100%;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(15,23,42,.55);color:#f8fafc;padding:10px 12px;font:15px/1.45 system-ui,sans-serif}
-.mobile-field textarea{min-height:126px;resize:vertical}
-.mobile-draw-pad{aspect-ratio:16/9;border:1px solid rgba(255,255,255,.2);border-radius:16px;background:#0b1220;touch-action:none;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+.mobile-field label{font-size:12px;font-weight:700;color:var(--m-muted)}
+/* 16px inputs: smaller text makes iOS zoom the page on focus */
+.mobile-field textarea,.mobile-field input,.mobile-identity input{width:100%;min-height:46px;border:1px solid var(--m-line);border-radius:12px;background:rgba(2,6,23,.5);color:var(--m-text);padding:10px 12px;font:16px/1.45 system-ui,-apple-system,sans-serif}
+.mobile-field textarea{min-height:140px;resize:vertical}
+.mobile-identity{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.mobile-identity input[type=color]{width:52px;padding:4px}
+.mobile-draw-pad{aspect-ratio:16/9;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:#0b1220;touch-action:none;position:relative;overflow:hidden}
 #mobile-preview-deck{position:absolute;top:0;left:0;width:1200px;height:675px;transform-origin:top left;transform:scale(.28);pointer-events:none}
 #mobile-preview-deck .deck{width:1200px;height:675px;margin:0;border:none;border-radius:0;box-shadow:none}
 .mobile-preview-ink{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
-.mobile-preview-empty{position:absolute;inset:0;display:grid;place-items:center;color:rgba(248,250,252,.55);font-size:13px;text-align:center;padding:16px;z-index:3}
-.mobile-preview-hint{position:absolute;left:8px;bottom:8px;z-index:4;font-size:11px;font-weight:700;color:rgba(248,250,252,.82);background:rgba(15,23,42,.62);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:3px 9px;pointer-events:none;backdrop-filter:blur(6px)}
+.mobile-preview-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--m-muted);font-size:13px;text-align:center;padding:16px;z-index:3}
+.mobile-preview-hint{position:absolute;left:8px;bottom:8px;z-index:4;font-size:11px;font-weight:700;color:#f1f5f9;background:rgba(11,16,32,.7);border-radius:999px;padding:3px 9px;pointer-events:none}
 .mobile-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.mobile-swatch{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.24)}
-.mobile-swatch.active{outline:3px solid #f8fafc}
-.mobile-width{min-width:42px;border-radius:999px;padding:8px 10px}
-.mobile-small{font-size:12px;color:rgba(248,250,252,.62);line-height:1.45}
-.mobile-collab-list{display:grid;gap:7px}
-.mobile-collab-row{display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.07);padding:8px 9px;font-size:13px}
-.mobile-collab-row span:last-child{margin-left:auto;color:rgba(248,250,252,.56);font-size:11px}
+.mobile-swatch{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.24)}
+.mobile-swatch.active{outline:3px solid #f8fafc;outline-offset:2px}
+.mobile-width{min-width:46px;border-radius:999px;padding:8px 10px}
+.mobile-small{font-size:12.5px;color:var(--m-muted);line-height:1.45}
+.mobile-collab-list{display:grid;gap:6px}
+.mobile-collab-row{display:flex;align-items:center;gap:8px;border-radius:10px;background:rgba(255,255,255,.05);padding:8px 10px;font-size:14px}
+.mobile-collab-row span:last-child{margin-left:auto;color:var(--m-muted);font-size:12px}
+/* Present: notes fill the screen between the timer and the navigation buttons. */
+body.mobile-presenting{height:100vh;height:100dvh;min-height:0;overflow:hidden}
+.mobile-presenting .mobile-controller{height:100vh;height:100dvh;min-height:0}
+.mobile-presenting .mobile-shell{flex:1;min-height:0}
+.mp.active{flex:1;min-height:0;display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto auto;grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "pace" "thumbs" "notes" "tools" "nav";gap:10px}
+.mp-top{grid-area:top;display:flex;align-items:center;gap:12px;min-width:0}
+.mp-clock{flex:none;font-size:40px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.mp-clock[data-pace="late"]{color:var(--m-warn)}
+.mp-clock[data-pace="over"]{color:var(--m-bad)}
+.mp-clock.alert{animation:mp-flash .5s ease-in-out 6 alternate}
+@keyframes mp-flash{to{opacity:.25}}
+.mp-time{flex:1;min-width:0;font-size:13px;line-height:1.35}
+#mp-target{font-weight:650}
+.mp-time .mobile-slide-meta{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-wall{flex:none;align-self:flex-start;font-size:13px;font-weight:700;color:var(--m-muted);font-variant-numeric:tabular-nums}
+.mp-pace{grid-area:pace;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:3px 8px}
+.mp-pace span{font-size:10px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--m-muted)}
+.mp-pace i{position:relative;display:block;height:4px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+.mp-pace i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w,0%);border-radius:inherit;background:currentColor;transition:width .4s ease}
+.mp-pace-time{color:var(--m-good)}
+.mp-pace[data-pace="late"] .mp-pace-time{color:var(--m-warn)}
+.mp-pace[data-pace="over"] .mp-pace-time{color:var(--m-bad)}
+.mp-pace-slides{color:rgba(241,245,249,.55)}
+.mp-pace[data-pace=""]{display:none}
+.mp-thumbs{grid-area:thumbs;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mp-thumbs[hidden]{display:none}
+.mp-thumb{min-width:0}
+.mp-thumb-box{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#0b1220;border:1px solid var(--m-line)}
+.mp-thumb-next .mp-thumb-box{border-color:rgba(241,245,249,.55)}
+.mp-thumb-box .thumb-canvas{border-radius:0;box-shadow:none}
+.mp-thumb-label{margin-top:4px;font-size:11px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-thumb-next .mp-thumb-label{color:var(--m-text)}
+.mp-end{position:absolute;inset:0;display:grid;place-items:center;padding:8px;font-size:12px;color:var(--m-muted);text-align:center}
+.mp-notes{grid-area:notes;min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-user-select:none;user-select:none;border:1px solid var(--m-line);border-radius:16px;background:rgba(2,6,23,.45);padding:16px 18px;font-size:var(--mp-notes,22px);line-height:1.5;color:var(--m-text);overflow-wrap:break-word}
+.mp-notes p,.mp-notes ul,.mp-notes ol{margin:0 0 .6em}.mp-notes ul,.mp-notes ol{padding-left:1.2em}
+.mp-notes strong{color:#fff}
+.mp-notes code{font-size:.82em}
+.mp-notes .notes-empty{color:var(--m-muted)}
+.mp-offline{grid-area:notes;align-self:start;z-index:2;margin:10px;border:1px solid rgba(251,191,36,.4);border-radius:12px;background:#2b2412;color:#fde68a;padding:11px 12px;font-size:14px;font-weight:700;text-align:left;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.mp-offline[hidden]{display:none}
+.mp.offline .mp-nav .mobile-btn{opacity:.45}
+.mp-tools{grid-area:tools;display:flex;gap:8px;min-width:0}
+.mp-group{display:flex;flex:1 1 auto;min-width:0;border:1px solid var(--m-line);border-radius:12px;overflow:hidden;background:var(--m-surface)}
+.mp-group button{flex:1 1 auto;min-width:0;min-height:42px;border:0;border-radius:0;background:transparent;padding:8px 6px;font-size:13px;font-weight:700;white-space:nowrap}
+.mp-group button+button{border-left:1px solid var(--m-line)}
+.mp-group button:active{background:rgba(255,255,255,.16)}
+.mp-group button[aria-pressed="true"]{background:#f8fafc;color:#0b1020}
+.mp-group svg{display:block;width:20px;height:20px;margin:0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mp-nav{grid-area:nav;display:grid;grid-template-columns:1fr 2fr;gap:10px}
+.mp-nav .mobile-btn{min-height:68px;border-radius:18px;font-size:19px;display:grid;place-content:center;gap:5px}
+.mp-nav .mobile-btn[aria-disabled="true"]{opacity:.45}
+.mp-dots{display:flex;gap:4px;justify-content:center}
+.mp-dots:empty{display:none}
+.mp-dots i{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.25}
+.mp-dots i.on{opacity:1}
+.mp-wake{grid-column:1/-1}
+.mp-wake[hidden]{display:none}
+@media (max-width:360px){.mp-group button{padding:8px 4px;font-size:12px}.mp-clock{font-size:34px}}
+/* Landscape: notes on the left, timer and controls on the right; the app bar gives its height to the notes. */
+@media (orientation:landscape) and (max-height:560px){
+  .mobile-controller{padding:max(8px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) calc(58px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+  .mobile-presenting .mobile-shell{max-width:none}
+  .mobile-presenting .mobile-bar,.mobile-presenting .mobile-conn-hint{display:none}/* the offline banner over the notes carries the status */
+  .mp.active{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);grid-template-rows:auto auto auto minmax(auto,1fr) auto;grid-template-areas:"notes top" "notes pace" "notes thumbs" "notes tools" "notes nav";gap:8px}
+  .mp-clock{font-size:30px}
+  .mp-tools{align-items:end}
+  .mp-group button{padding:7px 4px;font-size:12px;min-height:36px}
+  .mp-nav .mobile-btn{min-height:54px}
+  .mobile-tabs{padding-top:3px;padding-bottom:calc(3px + env(safe-area-inset-bottom))}
+  .mobile-tab{grid-auto-flow:column;align-items:center;gap:6px}
+  .mobile-tab svg{padding:3px 6px}
+}
 
 /* ── Laser pointer ── */
 .laser-dot{position:fixed;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle,#ff1a1a 0%,#ff4444 40%,rgba(255,0,0,.4) 70%,transparent 100%);box-shadow:0 0 8px 3px rgba(255,0,0,.5),0 0 20px 6px rgba(255,0,0,.25);pointer-events:none;z-index:99998;transform:translate(-50%,-50%);display:none;will-change:left,top}
@@ -377,6 +486,24 @@ button.active{background:rgba(220,38,38,.12);color:#dc2626}
 .notes-drawer .notes-head{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--toolbar-muted);margin-bottom:6px}
 .notes-md p{margin:0 0 8px}.notes-md ul{margin:0 0 8px;padding-left:20px}.notes-md li{margin:2px 0}.notes-md code{font:13px ui-monospace,monospace;background:rgba(127,127,127,.15);padding:0 4px;border-radius:4px}
 .notes-empty{color:var(--toolbar-muted);font-style:italic}
+/* Request changes (E): point at the slide, describe the change, copy one prompt for the agent. */
+body.requesting #slide-root [data-bind]{cursor:crosshair}
+body.requesting #slide-root [data-bind]:hover{outline:2px dashed var(--accent);outline-offset:4px;border-radius:4px}
+body.requesting #slide-root [contenteditable="true"]{outline:2px solid var(--accent);outline-offset:4px;cursor:text}
+.request-panel{position:absolute;right:16px;top:16px;z-index:36;width:340px;max-height:calc(100% - 100px);display:none;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.97);box-shadow:0 16px 44px rgba(0,0,0,.16);color:#0f172a;font:13px/1.45 system-ui,-apple-system,sans-serif;backdrop-filter:blur(12px)}
+.request-panel.show{display:flex}
+.request-panel h3{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;font-size:15px;font-weight:800}
+.request-panel h3 button{border:0;background:transparent;color:#64748b;font:700 12px system-ui,sans-serif;padding:2px 6px;border-radius:6px;cursor:pointer}
+.request-panel.min p,.request-panel.min .request-list{display:none}/* collapsed: title and actions only, so the slide stays clickable */
+.request-panel p{margin:0;color:#475569;font-size:12px}
+.request-list{display:grid;gap:6px;min-height:0;overflow:auto;margin:0;padding:0 0 0 18px}
+.request-list li{padding:6px 4px 6px 0;border-bottom:1px solid var(--border)}
+.request-list li small{display:block;color:#64748b;font-size:11px}
+.request-list li button{float:right;margin-left:6px;border:0;background:transparent;color:#94a3b8;font-size:14px;line-height:1;padding:2px 4px;cursor:pointer}
+.request-list:empty::before{content:"No requests yet.";color:#94a3b8;margin-left:-18px}
+.request-panel .mini-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.step-note{margin:0 0 .7em;padding:.4em .7em;border-left:4px solid var(--accent);border-radius:0 8px 8px 0;background:color-mix(in srgb,var(--accent) 16%,transparent);font-weight:650}
+.step-note span{display:block;font-size:.62em;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
 body.chrome-off .controls,body.chrome-off .progress,body.chrome-off .collab-strip,body.chrome-off .remote-note{display:none!important}
 body.chrome-off .deck{border:0;border-radius:0;box-shadow:none}
 .slider-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:100001;max-width:min(560px,90vw);padding:10px 16px;border-radius:999px;background:#0f172a;color:#f8fafc;font:600 13px/1.4 system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.25);pointer-events:none}
@@ -488,9 +615,9 @@ body:not(.edit-mode) .guide-panel{display:none!important}
 .visual-overflow-guard{min-height:0;overflow:hidden;display:flex;flex-direction:column;flex:1 1 0}
 .result-metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px;flex-shrink:0}
 .result-metrics-row .metric-card{padding:8px 12px}
-.result-metrics-row .metric-label{font-size:13px}
-.result-metrics-row .metric-value{margin-top:2px;font-size:clamp(1.2rem,2vw,1.6rem)}
-.result-metrics-row .metric-detail{margin-top:2px;font-size:12px;line-height:1.3}
+.result-metrics-row .metric-label{font-size:14px}
+.result-metrics-row .metric-value{margin-top:2px;font-size:1.6rem}
+.result-metrics-row .metric-detail{margin-top:2px;font-size:14px;line-height:1.3}
 .result-visual-fill{flex:1 1 0;min-height:0;overflow:hidden;display:flex;flex-direction:column}
 .qualitative-text-col{flex:0 1 30%}
 .qualitative-visual-col{flex:1 1 70%}
@@ -710,7 +837,7 @@ body.edit-mode .progress{display:none}
     <span class="ctl-sep" aria-hidden="true"></span>
     <div class="ctl-group">
       <button id="command-btn" aria-label="Search slides and actions" data-tip="Search · ⌘K"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg></button>
-      <button id="edit-mode-btn" aria-label="Edit slides" data-tip="Edit · E"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4.2L19.3 8.9a2.6 2.6 0 0 0-3.7-3.7L4.5 16.3 4 20Z"/><path d="m14 6.8 3.7 3.7"/></svg></button>
+      <button id="edit-mode-btn" aria-label="Request changes" data-tip="Request changes · E"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4.2L19.3 8.9a2.6 2.6 0 0 0-3.7-3.7L4.5 16.3 4 20Z"/><path d="m14 6.8 3.7 3.7"/></svg></button>
       <button id="fullscreen" aria-label="Fullscreen" data-tip="Fullscreen · F"><svg class="ic ic-max" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 3.5h-3a2 2 0 0 0-2 2v3M20.5 8.5v-3a2 2 0 0 0-2-2h-3M3.5 15.5v3a2 2 0 0 0 2 2h3M15.5 20.5h3a2 2 0 0 0 2-2v-3"/></svg><svg class="ic ic-min" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 3.5v3a2 2 0 0 1-2 2h-3M20.5 8.5h-3a2 2 0 0 1-2-2v-3M3.5 15.5h3a2 2 0 0 1 2 2v3M15.5 20.5v-3a2 2 0 0 1 2-2h3"/></svg></button>
     </div>
   </div>
@@ -724,7 +851,7 @@ body.edit-mode .progress{display:none}
       <li>P: presenter view · N: notes · A: auto-advance</li>
       <li>F: fullscreen · L: laser · B / W: black or white screen</li>
       <li>M: motion · R: phone remote · Ctrl/⌘ K: command menu</li>
-      <li>E: edit · ?: this list · Esc: close</li>
+      <li>E: request changes for your agent · ?: this list · Esc: close</li>
     </ul>
   </div>
   <div class="laser-dot" id="laser-dot"></div>
@@ -733,9 +860,20 @@ body.edit-mode .progress{display:none}
     <button class="gallery-close" id="gallery-close">×</button>
     <div class="gallery-grid" id="gallery-grid"></div>
   </div>
+  <div class="request-panel" id="request-panel" role="dialog" aria-label="Requested changes">
+    <h3>Request changes <button type="button" id="request-min" aria-expanded="true">Hide list</button></h3>
+    <p>Click anything on the slide and say what should change. Double-click text to fix a typo on screen. Then copy one prompt for your agent.</p>
+    <ol class="request-list" id="request-list"></ol>
+    <div class="mini-actions">
+      <button type="button" class="mini-btn primary" id="request-copy">Copy prompt</button>
+      <button type="button" class="mini-btn" id="request-save" hidden>Download deck with my fixes</button>
+      <button type="button" class="mini-btn danger" id="request-clear">Clear</button>
+      <button type="button" class="mini-btn" id="request-full-editor">Full editor</button>
+    </div>
+  </div>
   <div class="remote-panel" id="remote-panel">
     <h3>Phone Remote / Collaboration</h3>
-    <p>Scan this deck controller URL from multiple phones. Control data goes through PeerJS/WebRTC; no app control server is required.</p>
+    <p>Scan this deck controller URL from multiple phones. Control data goes through PeerJS/WebRTC; no app control server is required. Paired phones show the speaker notes, timer, and next slide, so share the code only with presenters you trust.</p>
     <div class="remote-status" id="remote-status">Not started</div>
     <div class="collab-roster" id="collab-roster"></div>
     <div class="qr-box" id="remote-qr"><div class="qr-fallback">Click Phone to start connection.</div></div>
@@ -753,90 +891,131 @@ body.edit-mode .progress{display:none}
 
 <div class="mobile-controller" id="mobile-controller">
   <div class="mobile-shell">
-    <section class="mobile-card">
-      <div class="mobile-head">
-        <div>
-          <div class="mobile-title">Slide Remote</div>
-          <div class="mobile-subtitle" id="mobile-subtitle">Connecting to desktop...</div>
-        </div>
-        <button type="button" class="mobile-status" id="mobile-status" title="Reconnect">Connecting</button>
+    <header class="mobile-bar">
+      <div class="mobile-bar-text">
+        <div class="mobile-title" id="mobile-title">Slide Remote</div>
+        <div class="mobile-subtitle" id="mobile-subtitle">Connecting to desktop...</div>
       </div>
-      <div class="mobile-conn-hint" id="mobile-conn-hint" role="status" aria-live="polite" hidden></div>
-      <div class="mobile-identity">
-        <input id="mobile-name-input" type="text" maxlength="24" autocomplete="name" placeholder="Your name">
-        <input id="mobile-color-input" type="color" aria-label="Your collaboration color">
-      </div>
-    </section>
+      <button type="button" class="mobile-status" id="mobile-status" title="Reconnect">Connecting</button>
+    </header>
+    <div class="mobile-conn-hint" id="mobile-conn-hint" role="status" aria-live="polite" hidden></div>
 
-    <nav class="mobile-tabs">
-      <button class="mobile-tab active" data-mobile-tab="control">Control</button>
-      <button class="mobile-tab" data-mobile-tab="draw">Mark</button>
-      <button class="mobile-tab" data-mobile-tab="notes">Notes</button>
-      <button class="mobile-tab" data-mobile-tab="more">More</button>
+    <nav class="mobile-tabs" aria-label="Remote sections">
+      <button type="button" class="mobile-tab active" data-mobile-tab="control"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><span>Present</span></button>
+      <button type="button" class="mobile-tab" data-mobile-tab="draw"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z"/><path d="M14 6l3 3"/></svg><span>Mark</span></button>
+      <button type="button" class="mobile-tab" data-mobile-tab="notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v10H9l-4 4V5z"/></svg><span>Notes</span></button>
+      <button type="button" class="mobile-tab" data-mobile-tab="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></svg><span>More</span></button>
     </nav>
 
-    <section class="mobile-card mobile-pane active" data-mobile-pane="control">
-      <div class="mobile-slide-meta" id="mobile-slide-meta">Slide - / -</div>
-      <div class="mobile-grid-2">
-        <button class="mobile-btn" data-send-key="ArrowUp">Previous</button>
-        <button class="mobile-btn primary" data-send-key="ArrowDown">Next</button>
-      </div>
-      <div class="mobile-grid-2">
-        <button class="mobile-btn" data-send-key="Home">First</button>
-        <button class="mobile-btn" data-send-key="End">Last</button>
-      </div>
-      <input class="mobile-range" id="mobile-slide-range" type="range" min="1" max="1" value="1">
-      <div class="mobile-grid-2">
-        <button class="mobile-btn" id="mobile-fullscreen">Fullscreen</button>
-        <button class="mobile-btn" id="mobile-play">Play / Pause</button>
-      </div>
-    </section>
-
-    <section class="mobile-card mobile-pane" data-mobile-pane="draw">
-      <div class="mobile-draw-pad" id="mobile-draw-pad">
-        <div class="mobile-preview-deck" id="mobile-preview-deck" aria-hidden="true">
-          <div class="deck"><div class="body-shell"><div class="main-shell"><main id="mobile-preview-root"></main></div></div></div>
+    <!-- Present: the speaker's view. Notes and position follow the desktop; the clock is the desktop's talk timer. -->
+    <section class="mobile-pane active mp" data-mobile-pane="control" aria-label="Speaker view">
+      <div class="mp-top">
+        <div class="mp-clock" id="mp-clock" data-pace="">00:00</div>
+        <div class="mp-time">
+          <div id="mp-target">Talk timer</div>
+          <div class="mobile-slide-meta" id="mobile-slide-meta">Slide - / -</div>
         </div>
-        <canvas class="mobile-preview-ink" id="mobile-preview-ink" width="1200" height="675" aria-hidden="true"></canvas>
-        <div class="mobile-preview-empty" id="mobile-preview-empty" style="display:none">Waiting for the current slide…</div>
-        <span class="mobile-preview-hint">Live preview · drag to mark</span>
+        <div class="mp-wall" id="mp-wall"></div>
       </div>
-      <div class="mobile-tools" id="mobile-color-tools"></div>
-      <div class="mobile-tools" id="mobile-width-tools"></div>
-      <div class="mobile-grid-2">
-        <button class="mobile-btn warn" id="mobile-highlight">Highlighter</button>
-        <button class="mobile-btn danger" id="mobile-clear-draw">Clear marks</button>
+      <div class="mp-pace" id="mp-pace" aria-hidden="true"><span>Time</span><i class="mp-pace-time" id="mp-pace-time"></i><span>Slides</span><i class="mp-pace-slides" id="mp-pace-slides"></i></div>
+      <div class="mp-thumbs" id="mp-thumbs">
+        <div class="mp-thumb"><div class="mp-thumb-box" id="mp-now"></div><div class="mp-thumb-label">On screen</div></div>
+        <div class="mp-thumb mp-thumb-next"><div class="mp-thumb-box" id="mp-next"></div><div class="mp-thumb-label" id="mp-next-label">Next</div></div>
       </div>
-      <div class="mobile-small">Drag on the live slide preview to mark exactly where you mean.</div>
+      <div class="mp-notes notes-md" id="mp-notes" aria-live="polite"><p class="notes-empty">Waiting for the desktop…</p></div>
+      <button type="button" class="mp-offline" id="mp-offline" hidden>Not connected. Tap to reconnect.</button>
+      <div class="mp-tools">
+        <div class="mp-group" role="group" aria-label="Notes size and slide previews">
+          <button type="button" id="mp-font-down" aria-label="Smaller notes">A−</button>
+          <button type="button" id="mp-font-up" aria-label="Larger notes">A+</button>
+          <button type="button" id="mp-thumbs-toggle" aria-pressed="true" aria-label="Show slide previews"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="8" height="6" rx="1"/><rect x="13" y="6" width="8" height="6" rx="1"/><path d="M3 16h18"/></svg></button>
+        </div>
+        <div class="mp-group" role="group" aria-label="Talk timer">
+          <button type="button" id="mp-clock-btn">Start</button>
+          <button type="button" id="mp-clock-reset" aria-label="Reset timer">Reset</button>
+        </div>
+        <div class="mp-group" role="group" aria-label="Pause the screen">
+          <button type="button" id="mp-black" aria-pressed="false">Black</button>
+          <button type="button" id="mp-white" aria-pressed="false">White</button>
+        </div>
+      </div>
+      <div class="mp-nav">
+        <button type="button" class="mobile-btn" data-send-key="ArrowUp" data-nav="1" id="mp-back">‹ Back</button>
+        <button type="button" class="mobile-btn primary" data-send-key="ArrowDown" data-nav="1" id="mp-forward"><span id="mp-forward-label">Next ›</span><span class="mp-dots" id="mp-dots" aria-hidden="true"></span></button>
+      </div>
+      <div class="mobile-small mp-wake" id="mp-wake" hidden></div>
     </section>
 
-    <section class="mobile-card mobile-pane" data-mobile-pane="notes">
-      <div class="mobile-field">
-        <label>Notes for current slide</label>
-        <textarea id="mobile-note-input" placeholder="Write a note, reminder, or audience question..."></textarea>
+    <section class="mobile-pane" data-mobile-pane="draw">
+      <div class="mobile-section">
+        <div class="mobile-draw-pad" id="mobile-draw-pad">
+          <div class="mobile-preview-deck" id="mobile-preview-deck" aria-hidden="true">
+            <div class="deck"><div class="body-shell"><div class="main-shell"><main id="mobile-preview-root"></main></div></div></div>
+          </div>
+          <canvas class="mobile-preview-ink" id="mobile-preview-ink" width="1200" height="675" aria-hidden="true"></canvas>
+          <div class="mobile-preview-empty" id="mobile-preview-empty" style="display:none">Waiting for the current slide…</div>
+          <span class="mobile-preview-hint">Live slide · drag to draw</span>
+        </div>
+        <div class="mobile-tools" id="mobile-color-tools"></div>
+        <div class="mobile-tools" id="mobile-width-tools"></div>
+        <div class="mobile-grid-2">
+          <button type="button" class="mobile-btn warn" id="mobile-highlight">Highlighter</button>
+          <button type="button" class="mobile-btn danger" id="mobile-clear-draw">Clear marks</button>
+        </div>
+        <div class="mobile-small">Your marks appear on the projected slide in your color. Hover without drawing to move a pointer.</div>
       </div>
-      <div class="mobile-grid-2">
-        <button class="mobile-btn primary" id="mobile-show-note">Show note</button>
-        <button class="mobile-btn" id="mobile-save-note">Save as speaker note</button>
-      </div>
-      <button class="mobile-btn danger" id="mobile-clear-note">Clear shown note</button>
     </section>
 
-    <section class="mobile-card mobile-pane" data-mobile-pane="more">
-      <div class="mobile-field">
-        <label>Open link on desktop</label>
-        <input id="mobile-link-input" type="url" placeholder="https://example.com">
+    <section class="mobile-pane" data-mobile-pane="notes">
+      <div class="mobile-section">
+        <div class="mobile-field">
+          <label for="mobile-note-input">Note for this slide</label>
+          <textarea id="mobile-note-input" placeholder="A reminder, a correction, or an audience question"></textarea>
+        </div>
+        <div class="mobile-grid-2">
+          <button type="button" class="mobile-btn primary" id="mobile-show-note">Show on screen</button>
+          <button type="button" class="mobile-btn" id="mobile-save-note">Save to speaker notes</button>
+        </div>
+        <button type="button" class="mobile-btn danger" id="mobile-clear-note">Remove from screen</button>
+        <div class="mobile-small">“Show on screen” pins the note on the projected slide for everyone. “Save to speaker notes” replaces this slide's notes on the desktop.</div>
       </div>
-      <button class="mobile-btn primary" id="mobile-send-link">Open link</button>
-      <div class="mobile-grid-2">
-        <button class="mobile-btn" id="mobile-overview">Overview</button>
-        <button class="mobile-btn" data-send-key="Escape">Escape</button>
+    </section>
+
+    <section class="mobile-pane" data-mobile-pane="more">
+      <div class="mobile-section">
+        <h2>Go to</h2>
+        <input class="mobile-range" id="mobile-slide-range" type="range" min="1" max="1" value="1" aria-label="Slide">
+        <div class="mobile-grid-2">
+          <button type="button" class="mobile-btn" data-send-key="Home">First slide</button>
+          <button type="button" class="mobile-btn" data-send-key="End">Last slide</button>
+        </div>
+        <button type="button" class="mobile-btn" id="mobile-overview">Overview on screen</button>
       </div>
-      <div class="mobile-field">
-        <label>Collaborators</label>
+      <div class="mobile-section">
+        <h2>Screen</h2>
+        <div class="mobile-grid-2">
+          <button type="button" class="mobile-btn" id="mobile-fullscreen">Fullscreen</button>
+          <button type="button" class="mobile-btn" id="mobile-play">Auto-advance</button>
+        </div>
+        <button type="button" class="mobile-btn" data-send-key="Escape">Close overlay (Esc)</button>
+      </div>
+      <div class="mobile-section">
+        <h2>Open a link on the screen</h2>
+        <div class="mobile-identity">
+          <input id="mobile-link-input" type="url" inputmode="url" placeholder="https://example.com" aria-label="Link">
+          <button type="button" class="mobile-btn primary" id="mobile-send-link">Open</button>
+        </div>
+      </div>
+      <div class="mobile-section">
+        <h2>You</h2>
+        <div class="mobile-identity">
+          <input id="mobile-name-input" type="text" maxlength="24" autocomplete="name" placeholder="Your name" aria-label="Your name">
+          <input id="mobile-color-input" type="color" aria-label="Your ink color">
+        </div>
+        <h2>Connected</h2>
         <div class="mobile-collab-list" id="mobile-collab-list"></div>
+        <div class="mobile-small">Everyone connected sees the speaker notes. Share the code only with co-presenters.</div>
       </div>
-      <div class="mobile-small">Connection pattern adapted from SnapShare: QR code plus PeerJS data channel.</div>
     </section>
   </div>
 </div>
@@ -1187,8 +1366,8 @@ function buildRemoteUrl(peerId){
 function remotePairingHint(url,relay=false){
   const u=new URL(url,window.location.href);
   const localHosts=new Set(["localhost","127.0.0.1","::1"]);
-  if(u.protocol==="file:")return"This controller is bundled in the deck. To pair a phone, open the deck from an http/https URL the phone can reach, or set data-remote-controller-url to your own static controller/deck URL.";
-  if(localHosts.has(u.hostname))return"This URL uses localhost, which points to the phone itself. Use this computer's LAN IP or your own static hosted deck URL for phone pairing.";
+  if(u.protocol==="file:")return"A phone cannot open a file on this computer. Serve the deck on your Wi-Fi (python3 scripts/serve_deck.py deck.html in Slider does it), host it on an https site, or set data-remote-controller-url.";
+  if(localHosts.has(u.hostname))return"This URL says localhost, which on the phone means the phone itself. Open the deck at this computer's network address instead (python3 scripts/serve_deck.py deck.html prints it), or host it on an https site.";
   if(relay)return"A TURN relay is configured, so phones can pair from mobile data or another network. Control data flows over PeerJS/WebRTC; no app control server is used.";
   return"No TURN relay is configured, so a phone must reach this computer directly: same Wi-Fi without client isolation, no VPN. For phones on mobile data or venue Wi-Fi, set data-remote-ice-servers or data-remote-ice-servers-url on <html>.";
 }
@@ -1206,16 +1385,31 @@ function availableRevealTargets(slide){
   if(slide.visual?.src||slide.figureLabel)targets.add("visual");
   return targets;
 }
-function getRevealOrder(slide){
-  const available=availableRevealTargets(slide),seen=new Set();
-  return(Array.isArray(slide?.revealOrder)?slide.revealOrder:[]).filter(target=>{
-    if(typeof target!=="string"||!available.has(target)||seen.has(target))return false;
-    seen.add(target);return true;
+/* revealOrder steps. A target string (or {reveal, note}) reveals that element. {focus, region?, note?} keeps the
+   layout and moves attention: everything except the target dims, and a figure can zoom into region [x, y, w, h]
+   (fractions of the image). A slide that ends on a focus gets a final "clear" step, so the complete slide, which
+   jumps, print, and overviews show, is never dimmed. Notes on steps follow the speaker on the phone and presenter view. */
+function revealSteps(slide){
+  const available=availableRevealTargets(slide),seen=new Set(),steps=[];
+  (Array.isArray(slide?.revealOrder)?slide.revealOrder:[]).forEach((entry,i)=>{
+    const item=entry&&typeof entry==="object"?entry:{reveal:entry};
+    const note=typeof item.note==="string"?item.note.trim():"";
+    if(typeof item.focus==="string"&&item.focus.trim()){
+      const region=Array.isArray(item.region)&&item.region.length===4&&item.region.every(v=>Number.isFinite(Number(v)))?item.region.map(Number):null;
+      steps.push({key:`focus:${i}`,kind:"focus",target:item.focus.trim(),region,note});
+    }else if(typeof item.reveal==="string"&&available.has(item.reveal)&&!seen.has(item.reveal)){
+      seen.add(item.reveal);steps.push({key:item.reveal,kind:"reveal",target:item.reveal,note});
+    }
   });
+  if(steps.length&&steps[steps.length-1].kind==="focus")steps.push({key:"clear",kind:"clear",target:"",note:""});
+  return steps;
 }
+function getRevealOrder(slide){return revealSteps(slide).map(step=>step.key)}
+/* The step the slide is showing after `revealed` steps, for notes and focus. */
+function currentStep(slide,revealed){return revealed>0?revealSteps(slide)[revealed-1]||null:null}
 let morphSource=null;// slide.morph of the slide renderSlide() is drawing: {buildTarget: morphId}
 function buildAttr(target){const id=morphSource&&morphSource[target];return` data-build-target="${esc(target)}"${typeof id==="string"&&id?` data-morph="${esc(id)}"`:""}`}
-function buildBlock(html,target){return`<div class="build-block"${buildAttr(target)}>${html}</div>`}
+function buildBlock(html,target,attrs=""){return`<div class="build-block"${buildAttr(target)}${attrs}>${html}</div>`}
 function clampBuild(slide,revealed){return Math.max(0,Math.min(Math.trunc(Number(revealed)||0),getRevealOrder(slide).length))}
 function applyBuildState(container,slide,revealed=state.currentBuild){
   const order=getRevealOrder(slide),count=clampBuild(slide,revealed);
@@ -1225,6 +1419,51 @@ function applyBuildState(container,slide,revealed=state.currentBuild){
     el.dataset.buildState=visible?"revealed":"pending";
     if(visible)el.removeAttribute("aria-hidden");else el.setAttribute("aria-hidden","true");
   });
+  const slideEl=container.querySelector(".slide"),step=currentStep(slide,count);
+  if(!slideEl)return;
+  if(step&&step.kind==="focus")slideEl.dataset.focus=JSON.stringify({target:step.target,region:step.region});
+  else delete slideEl.dataset.focus;
+}
+function focusElements(slideEl,target){
+  const key=CSS.escape(target);
+  let els=[...slideEl.querySelectorAll(`[data-build-target="${key}"],[data-bind="${key}"]`)];
+  if(!els.length)els=[...slideEl.querySelectorAll("[data-bind]")].filter(el=>el.dataset.bind.startsWith(`${target}.`));// a table row: its cells
+  return els.flatMap(el=>getComputedStyle(el).display==="contents"?[...el.children]:[el]).filter(el=>el.getClientRects().length);
+}
+/* Natural sizes of images seen anywhere in this page, so a snapshot (presenter or phone preview) can zoom a
+   figure before its own copy has decoded. */
+const imageSizes=new Map();
+document.addEventListener("load",e=>{const img=e.target;if(img instanceof HTMLImageElement&&img.naturalWidth)imageSizes.set(img.src,[img.naturalWidth,img.naturalHeight])},true);
+/* Draw the spotlight and figure zoom for the slide's focus step. Runs after fitting, since it reads final geometry. */
+function layoutFocus(container){
+  const slideEl=container&&container.querySelector(".slide");
+  if(!slideEl)return;
+  slideEl.querySelectorAll("img[data-focus-zoom]").forEach(img=>{img.style.transform="";img.removeAttribute("data-focus-zoom")});
+  let spot=slideEl.querySelector(":scope>.focus-spot");
+  let focus=null;try{focus=slideEl.dataset.focus?JSON.parse(slideEl.dataset.focus):null}catch(_e){}
+  const els=focus?focusElements(slideEl,focus.target):[];
+  if(!els.length){if(spot)spot.classList.remove("on");return}
+  const box=slideEl.getBoundingClientRect(),scale=box.width/(slideEl.offsetWidth||1)||1;
+  const img=focus.region&&els[0].querySelector(".evidence-media img");
+  if(img&&!img.naturalWidth&&imageSizes.has(img.src)){const [w,h]=imageSizes.get(img.src);img.width=w;img.height=h}
+  if(img&&img.offsetWidth){
+    const media=img.parentElement.getBoundingClientRect(),own=img.getBoundingClientRect();
+    const [x,y,w,h]=focus.region.map(v=>Math.max(0,Math.min(1,v))),W=own.width/scale,H=own.height/scale;
+    const zoom=Math.max(1,Math.min(4,(media.width/scale)/Math.max(1,w*W),(media.height/scale)/Math.max(1,h*H)));
+    const left=(own.left-media.left)/scale,top=(own.top-media.top)/scale;
+    const tx=(media.width/scale)/2-left-zoom*(x+w/2)*W,ty=(media.height/scale)/2-top-zoom*(y+h/2)*H;
+    img.dataset.focusZoom="1";img.style.transform=`translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) scale(${zoom.toFixed(3)})`;
+  }
+  let l=Infinity,t=Infinity,r=-Infinity,b=-Infinity;
+  for(const el of els){const rc=el.getBoundingClientRect();l=Math.min(l,rc.left);t=Math.min(t,rc.top);r=Math.max(r,rc.right);b=Math.max(b,rc.bottom)}
+  const pad=10,X=Math.max(4,(l-box.left)/scale-pad),Y=Math.max(4,(t-box.top)/scale-pad);
+  const fresh=!spot;
+  if(fresh){spot=document.createElement("div");spot.className="focus-spot";spot.setAttribute("aria-hidden","true");spot.dataset.auditIgnore="true";slideEl.appendChild(spot)}
+  spot.style.left=`${X.toFixed(1)}px`;spot.style.top=`${Y.toFixed(1)}px`;
+  spot.style.width=`${Math.min(slideEl.offsetWidth-4-X,(r-l)/scale+pad*2).toFixed(1)}px`;spot.style.height=`${Math.min(slideEl.offsetHeight-4-Y,(b-t)/scale+pad*2).toFixed(1)}px`;
+  // The live slide fades the veil in; snapshots (presenter and phone previews) are serialized at once, so set it now.
+  if(fresh&&container===root)requestAnimationFrame(()=>spot.classList.add("on"));
+  else spot.classList.add("on");
 }
 
 /* ═══════════════════════════════════════════════
@@ -1916,6 +2155,7 @@ function renderBuildStep(previous){
   const slide=slides[state.currentSlide];
   state.currentBuild=clampBuild(slide,state.currentBuild);
   applyBuildState(root,slide,state.currentBuild);
+  layoutFocus(root);
   updateDeckChrome(slide);
   playBuildMotion(previous);
 }
@@ -1954,6 +2194,8 @@ function renderVisual(slide){
   if(slide.visual&&slide.visual.src){const alt=esc(slide.visual.alt||slide.figureLabel||slide.title);const cap=esc(slide.visual.caption||slide.figureLabel||"Paper visual");const conf=slide.visual.confidence?` · ${esc(slide.visual.confidence)} confidence`:"";return`<figure class="evidence-frame"${buildAttr("visual")}><div class="evidence-media"><img src="${slide.visual.src}" alt="${alt}" loading="eager"/></div><figcaption class="visual-caption"${dataBind("visual.caption")}>${cap}${conf}</figcaption></figure>`}
   if(slide.figureLabel)return`<div class="placeholder"${buildAttr("visual")}${dataBind("figureLabel")}>${esc(slide.figureLabel)}</div>`;return""
 }
+/* LaTeX goes in as text so "<" (as in y_{<t}) cannot open an HTML tag and swallow the rest of the slide; KaTeX reads the text node. Pre-rendered markup that starts with a tag passes through. */
+function mathSource(value){const text=String(value??"");return /^\s*<[a-z!]/i.test(text)?text:esc(text)}
 function renderMetricValue(m,path){let c="metric-value";if(m.delta==="positive")c+=" positive";else if(m.delta==="negative")c+=" negative";return`<div class="${c}"${path?dataBind(`${path}.value`):""}>${esc(String(m.value))}</div>`}
 
 /* ═══ CONTENT BLOCKS RENDERER ═══ */
@@ -1974,7 +2216,7 @@ function renderBlock(block,idx){
     case"metric":{const c=block.content||{};const dc=c.delta==="positive"?" positive":c.delta==="negative"?" negative":"";const sz=block.emphasis==="dramatic"?" hero-number":"metric-value";return`<div class="metric-card${e}"><div class="metric-label"${dataBind(`${base}.content.label`)}>${esc(c.label||"")}</div><div class="${sz}${dc}"${dataBind(`${base}.content.value`)}>${esc(String(c.value||""))}</div><div class="metric-detail"${dataBind(`${base}.content.detail`)}>${esc(c.detail||"")}</div></div>`}
     case"metric-grid":{const items=(block.content||[]).map((m,j)=>{const dc=m.delta==="positive"?" positive":m.delta==="negative"?" negative":"";return`<div class="metric-card"><div class="metric-label"${dataBind(`${base}.content.${j}.label`)}>${esc(m.label||"")}</div><div class="metric-value${dc}"${dataBind(`${base}.content.${j}.value`)}>${esc(String(m.value||""))}</div><div class="metric-detail"${dataBind(`${base}.content.${j}.detail`)}>${esc(m.detail||"")}</div></div>`}).join("");return`<div class="metric-grid${e}">${items}</div>`}
     case"table":{const c=block.content||{};const hdrs=(c.headers||[]).map((h,j)=>`<th${dataBind(`${base}.content.headers.${j}`)}>${esc(h)}</th>`).join("");const rows=(c.rows||[]).map((r,ri)=>{const cls=r.highlight?" class=\"highlight\"":r.best?" class=\"best\"":"";const cells=(r.cells||[]).map((cell,ci)=>`<td${typeof cell==="number"||/^[\d.+%-]+$/.test(String(cell))?" class=\"num\"":""}${dataBind(`${base}.content.rows.${ri}.cells.${ci}`)}>${esc(String(cell))}</td>`).join("");return`<tr${cls}>${cells}</tr>`}).join("");return`<div class="data-table${e}"><table class="result-table"><thead><tr>${hdrs}</tr></thead><tbody>${rows}</tbody></table>${c.caption?`<div class="table-caption"${dataBind(`${base}.content.caption`)}>${esc(c.caption)}</div>`:""}</div>`}
-    case"equation":{const cLen=(block.content||"").length;const eqCls=cLen>120?" equation-tight":cLen>60?" equation-compact":"";return`<div class="equation-block${eqCls}${e}">${block.content}</div>${block.explanation?`<div class="equation-explain">${esc(block.explanation)}</div>`:""}`}
+    case"equation":{const cLen=(block.content||"").length;const eqCls=cLen>120?" equation-tight":cLen>60?" equation-compact":"";return`<div class="equation-block${eqCls}${e}">${mathSource(block.content)}</div>${block.explanation?`<div class="equation-explain">${esc(block.explanation)}</div>`:""}`}
     case"callout":return`<div class="callout-box${s?" "+s:""}${e}"${dataBind(`${base}.content`)}>${esc(block.content)}</div>`;
     case"quote":return`<blockquote class="quote-block${e}"><span${dataBind(`${base}.content`)}>${esc(block.content)}</span>${block.attribution?`<div class="quote-attr"${dataBind(`${base}.attribution`)}>— ${esc(block.attribution)}</div>`:""}</blockquote>`;
     case"comparison":{const c=block.content||{};return`<div class="comparison-panel${e}"><div><div class="comparison-label comparison-label-accent"${dataBind(`${base}.content.leftLabel`)}>${esc(c.leftLabel||"Ours")}</div><div${dataBind(`${base}.content.left`)}>${esc(c.left||"")}</div></div><div><div class="comparison-label comparison-label-neutral"${dataBind(`${base}.content.rightLabel`)}>${esc(c.rightLabel||"Baseline")}</div><div${dataBind(`${base}.content.right`)}>${esc(c.right||"")}</div></div></div>`}
@@ -1985,13 +2227,18 @@ function renderBlock(block,idx){
   }
 }
 
+/* Percent tracks plus the 24px gap always overrun the stage ("35% 65%" is 24px too wide); read them as shares of the free space. Quoted area names are kept. */
+function gridTracks(template){return String(template).split(/("[^"]*")/).map((part,i)=>i%2?part:part.replace(/(\d+(?:\.\d+)?)%/g,"minmax(0,$1fr)")).join("")}
 function renderContentBlocks(slide){
   const blocks=slide.contentBlocks||[];
   const atmo=slide.atmosphere?` atmosphere-${slide.atmosphere}`:"";
-  const grid=slide.gridTemplate?`display:grid;grid-template:${slide.gridTemplate};gap:24px;flex:1;min-height:0;`:"";
+  const grid=slide.gridTemplate?`display:grid;grid-template:${gridTracks(slide.gridTemplate)};gap:24px;flex:1;min-height:0;`:"";
   const customCSS=slide.customCSS?Object.entries(slide.customCSS).map(([k,v])=>`${k}:${v}`).join(";"):"";
-  const style=grid||customCSS?` style="${grid}${customCSS}"`:"";
-  const inner=blocks.map((b,i)=>buildBlock(renderBlock(b,i),`contentBlocks.${i}`)).join("\n");
+  /* Quoted area names ("fig txt") must not end the attribute early. */
+  const style=grid||customCSS?` style="${esc(grid+customCSS).replace(/"/g,"&quot;")}"`:"";
+  /* In a grid, labels and headings span every column; placement puts other blocks in the left, right, or full width. */
+  const placeOf=b=>{const p=String(b?.placement||"");return["left","right","full","center"].includes(p)?p:slide.gridTemplate&&["label","heading"].includes(b?.type)?"full":""};
+  const inner=blocks.map((b,i)=>{const place=placeOf(b);return buildBlock(renderBlock(b,i),`contentBlocks.${i}`,place?` data-place="${place}"`:"")}).join("\n");
   return`<section class="slide stack${atmo}"${style}>${inner}</section>`
 }
 
@@ -2013,7 +2260,7 @@ function renderClassicSlide(slide){
 
   if(slide.layout==="metrics"){const mcs=metricCards();return`<section class="slide stack"><div><div class="label label-positive">Result</div>${title}${body}<div class="metric-grid">${mcs}</div>${evidNote}</div></section>`}
 
-  if(slide.layout==="objective"){const eq=slide.equation||"";const eqLen=eq.length;const eqClass=eqLen>120?"equation-tight":eqLen>60?"equation-compact":"";return`<section class="slide"><div class="objective-shell"><div class="label">Objective</div>${title}${eq?`<div class="equation-block${eqClass?" "+eqClass:""}">${eq}</div>`:""}<p class="body-text objective-body"${buildAttr("keyMessage")}${dataBind("keyMessage")}>${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets,"bullets")}${evidNote}</div></section>`}
+  if(slide.layout==="objective"){const eq=slide.equation||"";const eqLen=eq.length;const eqClass=eqLen>120?"equation-tight":eqLen>60?"equation-compact":"";return`<section class="slide"><div class="objective-shell"><div class="label">Objective</div>${title}${eq?`<div class="equation-block${eqClass?" "+eqClass:""}">${mathSource(eq)}</div>`:""}<p class="body-text objective-body"${buildAttr("keyMessage")}${dataBind("keyMessage")}>${esc(slide.keyMessage||"")}</p>${renderBullets(slide.bullets,"bullets")}${evidNote}</div></section>`}
 
   if(slide.layout==="qualitative-evidence")return`<section class="slide split"><div class="text-col qualitative-text-col"><div class="label">Qualitative</div>${title}${body}${evidNote}</div><div class="visual-col qualitative-visual-col">${renderVisual(slide)}</div></section>`;
 
@@ -2059,28 +2306,81 @@ function fitRenderedSlide(container){
   }
   if(container===root&&motionActive())fitSlideAtRest(slideEl);
   else fitSlideElement(slideEl);
+  layoutFocus(container);
 }
 /* Mid-animation transforms would read as overflow, so measure a resting clone instead. */
 function fitSlideAtRest(slideEl){
   const probe=motionLayer(slideEl.closest(".deck")||deckEl,"motion-probe"),clone=slideEl.cloneNode(true);
   probe.replaceChildren(clone);
   fitSlideElement(clone);
+  const fitted=[...clone.querySelectorAll(".equation-block")].map(el=>el.style.fontSize);
   probe.replaceChildren();
-  for(const cls of ["density-compact","density-tight"])slideEl.classList.toggle(cls,clone.classList.contains(cls));
+  for(const cls of FIT_CLASSES)slideEl.classList.toggle(cls,clone.classList.contains(cls));
+  slideEl.querySelectorAll(".equation-block").forEach((el,i)=>{el.style.fontSize=fitted[i]||""});
   if(clone.hasAttribute("data-overflow-fail"))slideEl.setAttribute("data-overflow-fail","true");
   else slideEl.removeAttribute("data-overflow-fail");
 }
+/* Layout check shared by fitting, the Guide, and the browser audit: the stage and every box inside it must hold
+   their content. Text clipped by a column or spilling into a neighbour counts the same as text leaving the stage. */
+const FIT_CLASSES=["density-compact","density-tight","fit-wide-text"];
+const FIT_SKIP=".katex,.katex *,svg *,[data-audit-ignore],[data-audit-ignore] *,[data-focus-zoom]";
+/* Text runs are measured by their line boxes: glyph ascent/descent past a tight line-height is not overflow. */
+function lineRects(node,lineHeight,scale){
+  const range=document.createRange();range.selectNodeContents(node);
+  return[...(node.nodeType===3?range.getClientRects():node.getClientRects())].map(r=>{const trim=lineHeight?Math.max(0,(r.height-lineHeight*scale)/2):0;return{left:r.left,right:r.right,top:r.top+trim,bottom:r.bottom-trim}});
+}
+function lineHeightPx(el){const v=getComputedStyle(el).lineHeight;return v==="normal"?0:parseFloat(v)}
+function contentRects(el,scale,out=[]){
+  for(const node of el.childNodes){
+    if(node.nodeType===3){if(node.nodeValue.trim())out.push(...lineRects(node,lineHeightPx(el),scale));continue}
+    if(node.nodeType!==1||node.matches("[data-audit-ignore]"))continue;
+    const style=getComputedStyle(node);
+    if(style.display==="none"||style.position==="absolute"||style.position==="fixed")continue;
+    if(style.display==="contents")contentRects(node,scale,out);
+    else if(style.display==="inline")out.push(...lineRects(node,lineHeightPx(node),scale));
+    else out.push(node.getBoundingClientRect());
+  }
+  return out;
+}
+/* Largest distance (stage px) by which any box's content leaves its padding box, the stage included. */
+function layoutOverflow(slideEl){
+  const scale=slideEl.getBoundingClientRect().width/(slideEl.offsetWidth||1)||1;
+  let worst=Math.max(0,slideEl.scrollHeight-slideEl.clientHeight,slideEl.scrollWidth-slideEl.clientWidth);
+  for(const el of [slideEl,...slideEl.querySelectorAll("*")]){
+    if(el.matches(FIT_SKIP)||!el.clientWidth&&!el.clientHeight)continue;
+    const display=getComputedStyle(el).display;
+    if(display==="inline"||display==="contents"||display==="none")continue;
+    const box=el.getBoundingClientRect(),left=box.left+el.clientLeft*scale,top=box.top+el.clientTop*scale;
+    const right=left+el.clientWidth*scale,bottom=top+el.clientHeight*scale;
+    worst=Math.max(worst,el.scrollWidth-el.clientWidth);
+    for(const r of contentRects(el,scale))worst=Math.max(worst,(left-r.left)/scale,(top-r.top)/scale,(r.right-right)/scale,(r.bottom-bottom)/scale);
+  }
+  return worst;
+}
+function layoutOverflows(slideEl,tolerance=1){return layoutOverflow(slideEl)>tolerance}
+/* Wide display math shrinks to the equation box (down to 55%) instead of being clipped. */
+function fitEquations(slideEl){
+  for(const box of slideEl.querySelectorAll(".equation-block")){
+    box.style.fontSize="";
+    const style=getComputedStyle(box),padding=parseFloat(style.paddingLeft)+parseFloat(style.paddingRight);
+    const room=box.clientWidth-padding,need=box.scrollWidth-padding;
+    if(need<=room+1)continue;
+    const size=parseFloat(style.fontSize);
+    box.style.fontSize=`${Math.max(size*.55,size*room/need*.98).toFixed(2)}px`;
+  }
+}
 function fitSlideElement(slideEl){
-  slideEl.classList.remove('density-compact','density-tight');
+  slideEl.classList.remove(...FIT_CLASSES);
   slideEl.removeAttribute('data-overflow-fail');
-  const overflows=()=>slideEl.scrollHeight>slideEl.clientHeight+1||slideEl.scrollWidth>slideEl.clientWidth+1;
-  if(!overflows())return;
-  slideEl.classList.add('density-compact');
-  if(!overflows())return;
-  slideEl.classList.remove('density-compact');
-  slideEl.classList.add('density-tight');
-  if(!overflows()){return}
-  /* density-tight still overflows — mark as failed for audit */
+  const steps=[[],["density-compact"],["density-tight"]];
+  if(slideEl.classList.contains("split"))steps.push(["density-tight","fit-wide-text"]);
+  for(const step of steps){
+    slideEl.classList.remove(...FIT_CLASSES);
+    slideEl.classList.add(...step);
+    fitEquations(slideEl);
+    if(!layoutOverflows(slideEl))return;
+  }
+  /* Even the last step overflows: mark it so the Guide and the audits report it. */
   slideEl.setAttribute('data-overflow-fail','true');
 }
 function updateDeckChrome(s){
@@ -2136,8 +2436,10 @@ document.addEventListener("webkitfullscreenchange",()=>{syncFSBody();scaleDeck()
 applyStartLocation();applyTheme();render({entrance:true,force:true});
 
 /* ── Math readiness hook (KaTeX race condition fix) ── */
+/* Web fonts (KaTeX, theme fonts) change text metrics after the first fit; refit once they arrive. */
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(!state.editMode)fitRenderedSlide(root)});
 (function waitForMath(){
-  if(typeof renderMathInElement==='function'){renderMath(root);return}
+  if(typeof renderMathInElement==='function'){renderMath(root);fitRenderedSlide(root);return}
   let attempts=0;
   const poll=setInterval(()=>{
     attempts++;
@@ -2365,7 +2667,13 @@ function setRemoteNote(text){
   if(text)addCollaborativeNote(text,"local");
   else clearCollaborativeNotes();
 }
+/* A phone's first navigation starts the talk timer; navigating lifts a blackout, as in the presenter window. */
+function remoteNavigates(){
+  if(!talkClock.running&&!talkClock.elapsed)toggleClock(true);
+  if(deckBlackout)setBlackout(null);
+}
 function handleRemoteKey(key){
+  if(/^(ArrowDown|ArrowRight|ArrowUp|ArrowLeft| |Space|Home|End)$/.test(key))remoteNavigates();
   if(key==="ArrowDown"||key==="ArrowRight"||key===" "||key==="Space")advance();
   else if(key==="ArrowUp"||key==="ArrowLeft")retreat();
   else if(key==="Home")goTo(0);
@@ -2380,7 +2688,9 @@ function handleRemoteData(data,conn){
   const source=ensureCollaborator(conn,data);
   if(data.type==="hello"){syncRemoteState();return}
   if(data.type==="keyboard"&&data.key)handleRemoteKey(data.key);
-  if(data.type==="slide"&&data.action==="goTo")goTo(Number(data.index)||0);
+  if(data.type==="slide"&&data.action==="goTo"){remoteNavigates();goTo(Number(data.index)||0)}
+  if(data.type==="clock"){if(data.action==="reset")resetClock();else toggleClock();tickPresenter()}
+  if(data.type==="blackout")setBlackout(data.mode==="white"?"white":"black");
   if(data.type==="fullscreen")toggleFullscreen();
   if(data.type==="play")togglePlayback();
   if(data.type==="gallery")toggleGallery();
@@ -2392,7 +2702,11 @@ function handleRemoteData(data,conn){
 }
 function remotePayload(){
   const slide=slides[state.currentSlide]||{};
-  return{type:"state",index:state.currentSlide,count:slides.length,build:state.currentBuild,buildCount:getRevealOrder(slide).length,title:slide.title||"",speakerNote:slide.speakerNote||"",remoteNote:slide.remoteNote||"",notes:getSlideNotes(),collaborators:collaboratorList(),playing:state.playing,inkCount:getCurrentStrokes().length,strokes:getCurrentStrokes().map(s=>({color:s.color,width:s.width,tool:s.tool,points:s.points}))};
+  const next=nextBeat();
+  return{type:"state",index:state.currentSlide,count:slides.length,build:state.currentBuild,buildCount:getRevealOrder(slide).length,title:slide.title||"",speakerNote:slide.speakerNote||"",
+    stepNote:currentStep(slide,state.currentBuild)?.note||"",
+    clock:{elapsed:Math.round(clockElapsed()),running:talkClock.running},minutes:briefMinutes(),blackout:deckBlackout,
+    next:next?{index:next.index,build:next.build,label:next.label,title:slides[next.index]?.title||""}:null,remoteNote:slide.remoteNote||"",notes:getSlideNotes(),collaborators:collaboratorList(),playing:state.playing,inkCount:getCurrentStrokes().length,strokes:getCurrentStrokes().map(s=>({color:s.color,width:s.width,tool:s.tool,points:s.points}))};
 }
 function broadcastCollab(payload,exceptConn){
   remoteState.connections.forEach(conn=>{try{if(conn!==exceptConn&&conn.open)conn.send(payload)}catch(_e){}});
@@ -2537,17 +2851,30 @@ function saveMobileIdentity(){
 function mobileSend(data){
   const payload={clientId:mobileState.identity.clientId,name:mobileState.identity.name,color:mobileState.identity.color,...data};
   const conn=mobileState.conn;
-  if(conn&&conn.open&&mobileState.phase==="connected"){try{conn.send(payload);return true}catch(_e){}}
+  if(conn&&conn.open&&mobileState.phase==="connected"){try{conn.send(payload);keepPhoneAwake();return true}catch(_e){}}
   if(mobileState.phase==="waiting"||mobileState.phase==="stopped")retryMobileNow();// a tap while disconnected retries at once
   return false;
 }
 function updateMobileStatus(text,connected=mobileState.connected){
   const status=document.getElementById("mobile-status");
   if(status){status.textContent=text;status.classList.toggle("connected",connected)}
+  document.body.classList.toggle("mobile-linked",connected);
+  syncOfflineBanner();
 }
 function setMobileHint(text){
   const hint=document.getElementById("mobile-conn-hint");
   if(hint){hint.textContent=text||"";hint.hidden=!text}
+  mobileState.hint=text||"";
+  syncOfflineBanner();
+}
+/* The Present view says a lost link where the speaker is looking: over the notes, with the reason when known. */
+function syncOfflineBanner(){
+  const connected=Boolean(mobileState.connected),offline=document.getElementById("mp-offline");
+  document.querySelector(".mp")?.classList.toggle("offline",!connected);
+  if(!offline)return;
+  offline.hidden=connected;
+  if(!connected)offline.textContent=mobileState.phase==="connecting"?(mobileState.attempt>1?`Reconnecting (try ${mobileState.attempt})…`:"Connecting…")
+    :`${mobileState.hint?`${mobileState.hint} `:"Not connected. "}${mobileState.yielded?"Tap to use this tab instead.":"Tap to retry now."}`;
 }
 function updateMobileUI(payload){
   if(!payload||payload.type!=="state")return;
@@ -2556,7 +2883,8 @@ function updateMobileUI(payload){
   const range=document.getElementById("mobile-slide-range");
   const note=document.getElementById("mobile-note-input");
   const slideNumber=(payload.index||0)+1;
-  if(meta)meta.textContent=`Slide ${slideNumber} / ${payload.count}${payload.buildCount?` · build ${payload.build}/${payload.buildCount}`:""}: ${payload.title||"Untitled"}`;
+  if(meta)meta.textContent=`Slide ${slideNumber} / ${payload.count}${payload.buildCount?` · build ${payload.build}/${payload.buildCount}`:""} · ${payload.title||"Untitled"}`;
+  updateMobilePresent(payload);
   if(subtitle)subtitle.textContent=payload.playing?"Desktop is playing":"Desktop is ready";
   if(range){range.max=String(payload.count||1);range.value=String(slideNumber)}
   const latestNote=(payload.notes||[]).slice(-1)[0]?.text||"";
@@ -2581,7 +2909,135 @@ function updateMobileUI(payload){
 function setMobileTab(name){
   document.querySelectorAll("[data-mobile-tab]").forEach(btn=>btn.classList.toggle("active",btn.dataset.mobileTab===name));
   document.querySelectorAll("[data-mobile-pane]").forEach(pane=>pane.classList.toggle("active",pane.dataset.mobilePane===name));
+  document.body.classList.toggle("mobile-presenting",name==="control");
   if(name==="draw")requestAnimationFrame(()=>{layoutMobilePreview();redrawMobileInk()});
+  if(name==="control")requestAnimationFrame(layoutMobileThumbs);
+}
+/* ── Phone Present view: the desktop's speaker notes, talk timer, and next beat, with large navigation ──
+   The desktop owns the clock; the phone counts on from the elapsed time in the last state it received. */
+const mobilePresent={recvAt:0,elapsed:0,running:false,minutes:0,index:null,build:null,count:0,blackout:null,notes:null,alerted:new Set(),wake:null,resetArmed:0};
+function phoneNotesSize(delta=0){
+  let size=22;
+  try{size=Number(localStorage.getItem("slider-phone-notes"))||22}catch(_e){}
+  size=Math.max(14,Math.min(44,size+delta));
+  if(delta)try{localStorage.setItem("slider-phone-notes",String(size))}catch(_e){}
+  document.getElementById("mp-notes")?.style.setProperty("--mp-notes",`${size}px`);
+}
+function mobileThumbHTML(index,build,fallback){
+  if(slides[index])try{return presenterStageHTML(index,build)}catch(_e){}
+  return`<div class="mp-end">${esc(fallback||"")}</div>`;// the desktop added slides this copy does not have
+}
+function layoutMobileThumbs(){
+  document.querySelectorAll(".mp-thumb-box .thumb-canvas").forEach(canvas=>{
+    const stage=canvas.querySelector(".thumb-stage");
+    if(stage&&canvas.clientWidth)stage.style.transform=`scale(${canvas.clientWidth/1200})`;
+  });
+}
+function updateMobilePresent(payload){
+  const P=mobilePresent,clock=payload.clock||{};
+  P.recvAt=Date.now();P.elapsed=Number(clock.elapsed)||0;P.running=Boolean(clock.running);
+  P.minutes=Number(payload.minutes)||0;P.count=Number(payload.count)||0;P.blackout=payload.blackout||null;
+  if(!P.elapsed&&!P.running)P.alerted.clear();
+  const notes=`${payload.stepNote||""}\u0000${payload.speakerNote||""}`,box=document.getElementById("mp-notes");
+  if(box&&(notes!==P.notes||payload.index!==P.index)){
+    box.innerHTML=stepNoteHTML(payload.stepNote)+notesHTML(payload.speakerNote);
+    if(payload.index!==P.index)box.scrollTop=0;
+    P.notes=notes;
+  }
+  if(payload.index!==P.index||(payload.build||0)!==P.build){
+    P.index=payload.index;P.build=payload.build||0;
+    const next=payload.next;
+    document.getElementById("mp-now").innerHTML=mobileThumbHTML(P.index,P.build,payload.title);
+    document.getElementById("mp-next").innerHTML=next?mobileThumbHTML(next.index,next.build,next.title):'<div class="mp-end">End of deck</div>';
+    document.getElementById("mp-next-label").textContent=next?next.label:"End of deck";
+    requestAnimationFrame(layoutMobileThumbs);
+  }
+  for(const mode of["black","white"])document.getElementById(`mp-${mode}`)?.setAttribute("aria-pressed",String(P.blackout===mode));
+  // Next shows the slide's remaining builds as dots and says when the deck has ended.
+  const count=Number(payload.buildCount)||0,dots=document.getElementById("mp-dots");
+  if(dots)dots.innerHTML=count&&count<=12?Array.from({length:count},(_,i)=>`<i${i<(payload.build||0)?' class="on"':""}></i>`).join(""):"";
+  const forward=document.getElementById("mp-forward"),atEnd=!payload.next;
+  document.getElementById("mp-forward-label").textContent=atEnd?"End of deck":"Next ›";
+  forward?.setAttribute("aria-disabled",String(atEnd));
+  document.getElementById("mp-back")?.setAttribute("aria-disabled",String(!payload.index&&!payload.build));
+  tickMobilePresent();
+}
+function tickMobilePresent(){
+  const P=mobilePresent,clock=document.getElementById("mp-clock");
+  if(!clock)return;
+  document.getElementById("mp-wall").textContent=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  if(!P.recvAt)return;
+  const ms=P.elapsed+(P.running?Date.now()-P.recvAt:0),target=P.minutes*60000;
+  const progress=P.count>1?P.index/(P.count-1):1;
+  const pace=!target?"":ms>target?"over":ms/target-progress>.12?"late":"ok";
+  clock.textContent=formatElapsed(ms/1000);clock.dataset.pace=pace;
+  const paceBar=document.getElementById("mp-pace");
+  if(paceBar){
+    paceBar.dataset.pace=target?pace:"";
+    document.getElementById("mp-pace-time").style.setProperty("--w",`${Math.min(100,target?ms/target*100:0).toFixed(1)}%`);
+    document.getElementById("mp-pace-slides").style.setProperty("--w",`${(progress*100).toFixed(1)}%`);
+  }
+  document.getElementById("mp-target").textContent=!ms&&!P.running?"Timer starts with your first Next"
+    :!target?"Set the talk length in the editor's Guide"
+    :pace==="over"?`${formatElapsed((ms-target)/1000)} over ${P.minutes} min`
+    :`${formatElapsed((target-ms)/1000)} left of ${P.minutes} min${pace==="late"?" · behind pace":""}`;
+  document.getElementById("mp-clock-btn").textContent=P.running?"Pause":ms?"Resume":"Start";
+  if(!target||!P.running)return;
+  // Buzz once as each mark passes; marks already passed long ago (after a reload) stay quiet.
+  for(const left of[300000,120000,0]){
+    const key=String(left);
+    if(target-ms>left||P.alerted.has(key))continue;
+    P.alerted.add(key);
+    if(target-ms>left-15000){
+      try{navigator.vibrate&&navigator.vibrate(left?[180,90,180]:[400,120,400,120,400])}catch(_e){}
+      clock.classList.remove("alert");void clock.offsetWidth;clock.classList.add("alert");
+    }
+  }
+}
+function mobileNav(dir){
+  if(mobileSend({type:"keyboard",key:dir>0?"ArrowDown":"ArrowUp"}))try{navigator.vibrate&&navigator.vibrate(12)}catch(_e){}
+}
+/* Keep the phone screen on while presenting (Screen Wake Lock: https or localhost only). */
+async function keepPhoneAwake(){
+  const hint=document.getElementById("mp-wake"),show=text=>{if(hint){hint.textContent=text||"";hint.hidden=!text}};
+  if(document.visibilityState!=="visible"||(mobilePresent.wake&&!mobilePresent.wake.released))return;
+  if(!("wakeLock" in navigator)){show(window.isSecureContext?"This browser cannot keep the screen on. Turn off auto-lock while you present.":"Open the deck over https to keep this screen on, or turn off auto-lock while you present.");return}
+  try{mobilePresent.wake=await navigator.wakeLock.request("screen");show("")}
+  catch(_e){show("Could not keep the screen on. Turn off auto-lock while you present.")}
+}
+function bindMobilePresent(){
+  phoneNotesSize(0);
+  document.getElementById("mp-font-down").addEventListener("click",()=>phoneNotesSize(-2));
+  document.getElementById("mp-font-up").addEventListener("click",()=>phoneNotesSize(2));
+  document.getElementById("mp-clock-btn").addEventListener("click",()=>mobileSend({type:"clock",action:"toggle"}));
+  const reset=document.getElementById("mp-clock-reset");
+  reset.addEventListener("click",()=>{// a second tap within three seconds resets, so a stray tap cannot wipe the time mid-talk
+    if(Date.now()-mobilePresent.resetArmed<3000){mobilePresent.resetArmed=0;reset.textContent="Reset";mobileSend({type:"clock",action:"reset"});return}
+    mobilePresent.resetArmed=Date.now();reset.textContent="Tap again";
+    setTimeout(()=>{if(Date.now()-mobilePresent.resetArmed>=2900){mobilePresent.resetArmed=0;reset.textContent="Reset"}},3000);
+  });
+  for(const mode of["black","white"])document.getElementById(`mp-${mode}`).addEventListener("click",()=>mobileSend({type:"blackout",mode}));
+  document.getElementById("mp-offline").addEventListener("click",()=>retryMobileNow());
+  const thumbs=document.getElementById("mp-thumbs"),thumbsToggle=document.getElementById("mp-thumbs-toggle");
+  const showThumbs=show=>{thumbs.hidden=!show;thumbsToggle.setAttribute("aria-pressed",String(show));thumbsToggle.setAttribute("aria-label",show?"Hide slide previews":"Show slide previews");if(show)requestAnimationFrame(layoutMobileThumbs)};
+  let thumbsOn=true;try{thumbsOn=localStorage.getItem("slider-phone-thumbs")!=="off"}catch(_e){}
+  showThumbs(thumbsOn);
+  thumbsToggle.addEventListener("click",()=>{const on=thumbs.hidden;showThumbs(on);try{localStorage.setItem("slider-phone-thumbs",on?"on":"off")}catch(_e){}});
+  const title=document.getElementById("mobile-title");
+  if(title)title.textContent=document.title||slides[0]?.title||"Slide Remote";
+  const notes=document.getElementById("mp-notes");
+  let swipe=null;// horizontal swipe on the notes: left = next, right = back; vertical drags scroll
+  notes.addEventListener("pointerdown",e=>{swipe={x:e.clientX,y:e.clientY}});
+  notes.addEventListener("pointerup",e=>{
+    if(!swipe)return;
+    const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;swipe=null;
+    if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5)mobileNav(dx<0?1:-1);
+  });
+  notes.addEventListener("pointercancel",()=>{swipe=null});
+  setInterval(tickMobilePresent,500);
+  window.addEventListener("resize",layoutMobileThumbs);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")keepPhoneAwake()});
+  document.body.classList.add("mobile-presenting");
 }
 function renderMobilePreviewSlide(index,revealed=getRevealOrder(slides[index]).length){
   const root=document.getElementById("mobile-preview-root");
@@ -2662,7 +3118,10 @@ function bindMobileController(){
   if(nameInput){nameInput.value=mobileState.identity.name;nameInput.addEventListener("input",()=>{mobileState.identity.name=nameInput.value.trim()||"Guest";saveMobileIdentity();mobileSend({type:"hello"})})}
   if(colorInput){colorInput.value=mobileState.identity.color;colorInput.addEventListener("input",()=>{mobileState.identity.color=colorInput.value;mobileState.drawColor=colorInput.value;saveMobileIdentity();setupMobileTools();mobileSend({type:"hello"})})}
   document.querySelectorAll("[data-mobile-tab]").forEach(btn=>btn.addEventListener("click",()=>setMobileTab(btn.dataset.mobileTab)));
-  document.querySelectorAll("[data-send-key]").forEach(btn=>btn.addEventListener("click",()=>mobileSend({type:"keyboard",key:btn.dataset.sendKey})));
+  document.querySelectorAll("[data-send-key]").forEach(btn=>btn.addEventListener("click",()=>{
+    if(mobileSend({type:"keyboard",key:btn.dataset.sendKey})&&btn.dataset.nav)try{navigator.vibrate&&navigator.vibrate(12)}catch(_e){}
+  }));
+  bindMobilePresent();
   document.getElementById("mobile-fullscreen").addEventListener("click",()=>mobileSend({type:"fullscreen"}));
   document.getElementById("mobile-play").addEventListener("click",()=>mobileSend({type:"play"}));
   document.getElementById("mobile-overview").addEventListener("click",()=>mobileSend({type:"gallery"}));
@@ -2735,6 +3194,7 @@ function openMobileConnection(){
     mobileState.phase="connected";mobileState.attempt=0;mobileState.connected=true;
     updateMobileStatus("Connected",true);setMobileHint("");
     mobileSend({type:"hello"});
+    keepPhoneAwake();
   });
   conn.on("data",data=>{if(mobileState.conn===conn){mobileState.lastData=Date.now();updateMobileUI(data)}});
   conn.on("close",()=>{if(mobileState.conn===conn)mobileConnectFailed(mobileState.phase==="connected"?"closed":"other")});
@@ -2768,8 +3228,29 @@ function mobileStop(message){
   if(message)setMobileHint(message);
   updateMobileStatus("Tap to retry",false);
 }
+/* One remote per phone: the QR link opened twice would make two tabs replace each other's link forever.
+   The tab the speaker is using claims the link; the other one stops and says so. */
+const mobileTabId=Math.random().toString(36).slice(2);
+let mobileTabChannel=null;
+function claimRemoteTab(){
+  if(!mobileTabChannel&&typeof BroadcastChannel==="function"&&mobileState.host){
+    mobileTabChannel=new BroadcastChannel(`slider-remote:${mobileState.host}`);
+    mobileTabChannel.onmessage=e=>{if(e.data&&e.data.type==="claim"&&e.data.tab!==mobileTabId)yieldRemoteTab()};
+  }
+  mobileState.yielded=false;
+  try{mobileTabChannel&&mobileTabChannel.postMessage({type:"claim",tab:mobileTabId})}catch(_e){}
+}
+function yieldRemoteTab(){
+  if(mobileState.yielded)return;
+  mobileState.yielded=true;
+  const conn=mobileState.conn;
+  mobileStop("This remote is open in another tab.");
+  mobileState.conn=null;
+  if(conn)try{conn.close()}catch(_e){}
+}
 function retryMobileNow(){
   if(!mobileState.host||mobileState.phase==="connecting"||mobileState.phase==="connected")return;
+  claimRemoteTab();
   clearTimeout(mobileState.retryTimer);mobileState.retryTimer=null;
   mobileState.phase="idle";mobileState.attempt=0;
   connectMobile();
@@ -2797,6 +3278,7 @@ async function initMobileController(hostPeerId){
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")mobileWake()});
   window.addEventListener("online",mobileWake);
   window.addEventListener("pageshow",event=>{if(event.persisted)mobileWake()});
+  claimRemoteTab();
   connectMobile();
 }
 const remoteToken=getTokenFromUrl();
@@ -3512,6 +3994,7 @@ function exportHTML(){
   page.querySelectorAll('.motion-layer').forEach(el=>el.remove());
   page.querySelectorAll('.motion-panel').forEach(el=>{el.classList.remove('show');el.replaceChildren()});
   page.querySelectorAll('#command-menu,#print-root,#slide-snapshot-host,#print-page-style,#comment-composer,#slot-file-input,.slider-toast,.comment-pin').forEach(el=>el.remove());
+  page.querySelectorAll('#request-composer').forEach(el=>el.remove());page.querySelector('#request-panel')?.classList.remove('show');page.querySelector('body')?.classList.remove('requesting');page.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));
   page.querySelectorAll('.controls button.active').forEach(el=>el.classList.remove('active'));
   page.querySelector('#controls-bar')?.classList.remove('is-playing','controls-visible');
   page.querySelectorAll('#gallery-grid,#notes-drawer,#guide-panel').forEach(el=>el.replaceChildren());
@@ -3964,17 +4447,19 @@ function notesHTML(text){
     return`<p>${lines.map(inline).join("<br>")}</p>`;
   }).join("");
 }
+/* The note of the step on screen (a focus or reveal step), shown above the slide's notes. */
+function stepNoteHTML(note){const text=String(note||"").trim();return text?`<div class="step-note"><span>Now</span>${notesHTML(text).replace(/^<p>|<\/p>$/g,"")}</div>`:""}
 function toggleNotesDrawer(force){notesDrawerOpen=force??!notesDrawerOpen;syncNotesDrawer()}
 function syncNotesDrawer(){
   const drawer=document.getElementById("notes-drawer"),open=Boolean(notesDrawerOpen)&&!state.editMode&&slides.length>0;
   if(!drawer)return;
   drawer.classList.toggle("show",open);
-  if(open)drawer.innerHTML=`<div class="notes-head">Speaker notes · slide ${state.currentSlide+1} · shown on this screen · N hides</div><div class="notes-md">${notesHTML(slides[state.currentSlide].speakerNote)}</div>`;
+  if(open)drawer.innerHTML=`<div class="notes-head">Speaker notes · slide ${state.currentSlide+1} · shown on this screen · N hides</div><div class="notes-md">${stepNoteHTML(currentStep(slides[state.currentSlide],state.currentBuild)?.note)}${notesHTML(slides[state.currentSlide].speakerNote)}</div>`;
 }
 function setBlackout(mode){
   deckBlackout=mode&&deckBlackout!==mode?mode:null;
   document.getElementById("blackout").className=`blackout${deckBlackout?` ${deckBlackout}`:""}`;
-  tickPresenter();
+  tickPresenter();syncRemoteState();
 }
 function toggleHelp(force){const open=force??!helpPanel.classList.contains("show");helpPanel.classList.toggle("show",open);state.showHelp=open}
 function exitAnyFullscreen(){
@@ -4017,7 +4502,7 @@ function renderSnapshot(index,build,read){
   applyBuildState(host,slide,build??getRevealOrder(slide).length);
   if(slideNeedsMath(slide))renderMath(host);
   const el=host.querySelector(".slide");
-  if(el)fitSlideElement(el);
+  if(el){fitSlideElement(el);layoutFocus(host)}
   const result=read?read(host,el):host.innerHTML;
   host.replaceChildren();
   return result;
@@ -4125,7 +4610,7 @@ function closePresenterState(){
 }
 function nextBeat(){
   const count=getRevealOrder(slides[state.currentSlide]).length;
-  if(state.currentBuild<count)return{index:state.currentSlide,build:state.currentBuild+1,label:`Next · build ${state.currentBuild+1} of ${count}`};
+  if(state.currentBuild<count)return{index:state.currentSlide,build:state.currentBuild+1,label:`Next · step ${state.currentBuild+1} of ${count}`};
   if(state.currentSlide<slides.length-1)return{index:state.currentSlide+1,build:0,label:`Next · slide ${state.currentSlide+2}`};
   return null;
 }
@@ -4140,7 +4625,7 @@ function syncPresenter(){
   doc.getElementById("pv-now").innerHTML=presenterStageHTML(state.currentSlide,state.currentBuild);
   doc.getElementById("pv-next-label").textContent=next?next.label:"Next";
   doc.getElementById("pv-next").innerHTML=next?presenterStageHTML(next.index,next.build):'<div class="pv-end">End of deck</div>';
-  doc.getElementById("pv-notes").innerHTML=notesHTML(slide.speakerNote);
+  doc.getElementById("pv-notes").innerHTML=stepNoteHTML(currentStep(slide,state.currentBuild)?.note)+notesHTML(slide.speakerNote);
   doc.getElementById("pv-progress").style.width=`${((state.currentSlide+1)/slides.length)*100}%`;
   layoutPresenter();tickPresenter();
 }
@@ -4156,8 +4641,9 @@ function toggleClock(force){
   if(run===talkClock.running)return;
   if(run)talkClock.since=Date.now();else talkClock.elapsed=clockElapsed();
   talkClock.running=run;
+  syncRemoteState();
 }
-function resetClock(){talkClock.elapsed=0;talkClock.since=Date.now();talkClock.armed=false}
+function resetClock(){talkClock.elapsed=0;talkClock.since=Date.now();talkClock.armed=false;syncRemoteState()}
 function briefMinutes(){const minutes=Number(deckBrief&&deckBrief.minutes);return minutes>0?minutes:0}
 function tickPresenter(){
   const doc=presenterDoc();
@@ -4218,7 +4704,8 @@ function commandActions(){
     {label:"Copy link to this slide",keys:"share url deep link",run:copySlideLink},
     {label:"Motion graphics",key:"M",keys:"transition animation",run:()=>toggleMotionPanel(state.editMode?editorMotionPanel:motionPanel,true)},
     {label:"Phone remote and collaboration",key:"R",run:inPresent(toggleRemotePanel)},
-    {label:edit?"Back to present mode":"Edit slides",key:"E",run:()=>edit?enterPresentMode():enterEditMode()},
+    {label:"Request changes for your agent",key:"E",keys:"edit prompt revise feedback",run:()=>{if(edit)enterPresentMode();toggleRequestMode(true)}},
+    {label:edit?"Back to present mode":"Full editor",keys:"edit layout inspector",run:()=>edit?enterPresentMode():(toggleRequestMode(false),enterEditMode())},
     {label:"Guide: next step to finish the deck",key:"G in editor",keys:"checklist brief readiness",run:openGuide},
     {label:"Comment mode",key:"C in editor",keys:"review feedback",run:()=>{if(!state.editMode)enterEditMode();toggleCommentMode(true)}},
     {label:"Print or save as PDF",key:IS_MAC?"⌘ P":"Ctrl P",keys:"pdf export",run:()=>printDeck(false)},
@@ -4772,6 +5259,125 @@ guidePanel.addEventListener("click",e=>{
   guidePanel.querySelector(".guide-step button,.guide-step input,.guide-step textarea")?.focus({preventScroll:true});
 });
 
+/* ── Request changes (E): most people revise a deck by prompting their agent, so the deck's main edit tool
+   points at what to change and writes the prompt. Requests are stored as slide comments, so the Guide and the
+   comment export see them. A typo fixed on screen is recorded as a request too, keeping the agent's source in sync. ── */
+let requestMode=false;
+const requestPanel=document.getElementById("request-panel");
+const REQUEST_KEY=`slider-requests:${location.pathname}`;
+function requestItems(){return slides.flatMap((slide,index)=>openComments(slide).map(comment=>({slide,index,comment})))}
+function clip(text,max){const t=String(text||"").replace(/\s+/g," ").trim();return t.length>max?`${t.slice(0,max-1)}…`:t}
+function requestPrompt(){
+  const items=requestItems();
+  if(!items.length)return"";
+  const file=decodeURIComponent(location.pathname.split("/").pop()||"")||"the deck";
+  const lines=[`Using the Slider skill, revise ${file} (“${document.title}”). Apply each request to the slide data, re-render the HTML, and check that every slide still fits. Keep every claim, number, name, citation, and figure source unless a request changes it; do not invent sources or results.`,""];
+  items.forEach(({slide,index,comment},n)=>{
+    const where=`Slide ${index+1} (“${clip(slide.title||"Untitled",60)}”)${comment.path?`, field ${comment.path}`:", whole slide"}`;
+    if(comment.edit)lines.push(`${n+1}. ${where}: I changed this on screen from “${clip(comment.edit.from,120)}” to “${clip(comment.edit.to,120)}”. Make the same change in the slide data.`);
+    else{const now=comment.path?fieldText(slide,comment.path):"";lines.push(`${n+1}. ${where}${now?` (now: “${clip(now,90)}”)`:""}: ${comment.text}`)}
+  });
+  return lines.join("\n");
+}
+function saveRequests(){try{localStorage.setItem(REQUEST_KEY,JSON.stringify(slides.map(slide=>openComments(slide).filter(c=>c.request))))}catch(_e){}}
+function restoreRequests(){
+  let saved=null;try{saved=JSON.parse(localStorage.getItem(REQUEST_KEY)||"null")}catch(_e){}
+  if(!Array.isArray(saved)||saved.length!==slides.length)return;
+  saved.forEach((list,i)=>(Array.isArray(list)?list:[]).forEach(comment=>{
+    const slide=slides[i];
+    if(!comment||!comment.id||(slide.comments||[]).some(c=>c.id===comment.id))return;
+    if(comment.edit&&comment.path&&fieldText(slide,comment.path)===comment.edit.from)setByPath(slide,editablePath(slide,comment.path),comment.edit.to);
+    (slide.comments||(slide.comments=[])).push(comment);
+  }));
+}
+function editablePath(slide,path){const value=getByPath(slide,path);return value&&typeof value==="object"&&typeof value.text==="string"?`${path}.text`:path}
+function addRequest(index,path,text,edit){
+  const slide=slides[index];
+  (slide.comments||(slide.comments=[])).push({id:`r${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`,path,text,request:true,...(edit?{edit}:{}),createdAt:new Date().toISOString(),resolved:false});
+  saveRequests();renderRequests();
+}
+function renderRequests(){
+  const list=document.getElementById("request-list"),items=requestItems();
+  list.innerHTML=items.map(({slide,index,comment})=>`<li><button type="button" data-request-remove="${index}:${esc(comment.id)}" aria-label="Remove request">×</button>${comment.edit?`Changed to “${esc(clip(comment.edit.to,80))}”`:esc(comment.text)}<small>Slide ${index+1} · ${esc(comment.path||"whole slide")}</small></li>`).join("");
+  document.getElementById("request-save").hidden=!items.some(item=>item.comment.edit);
+  const button=document.getElementById("edit-mode-btn");
+  button.dataset.tip=items.length?`Request changes (${items.length}) · E`:"Request changes · E";
+}
+function toggleRequestMode(force){
+  requestMode=force??!requestMode;
+  document.body.classList.toggle("requesting",requestMode);
+  requestPanel.classList.toggle("show",requestMode);
+  document.getElementById("edit-mode-btn").classList.toggle("active",requestMode);
+  if(!requestMode)closeRequestComposer();
+  else{if(state.playing)stopPlayback();renderRequests()}
+}
+function closeRequestComposer(){document.getElementById("request-composer")?.remove()}
+function openRequestComposer(index,path,x,y){
+  closeRequestComposer();
+  const slide=slides[index];if(!slide)return;
+  const box=document.createElement("div");
+  box.id="request-composer";box.className="comment-composer";box.setAttribute("role","dialog");box.setAttribute("aria-label","Request a change");
+  box.innerHTML=`<div class="comment-target">Slide ${index+1} · ${esc(commentTargetLabel(slide,path))}</div><textarea aria-label="Requested change" placeholder="What should change here? Ctrl/⌘ Enter adds it."></textarea><div class="mini-actions"><button type="button" class="mini-btn" data-add>Add request</button><button type="button" class="mini-btn" data-close>Cancel</button></div>`;
+  document.body.appendChild(box);
+  box.style.left=`${Math.max(8,Math.min(x+12,window.innerWidth-box.offsetWidth-8))}px`;
+  box.style.top=`${Math.max(8,Math.min(y+12,window.innerHeight-box.offsetHeight-8))}px`;
+  const input=box.querySelector("textarea");
+  const add=()=>{const text=input.value.trim();if(!text){input.focus();return}addRequest(index,path,text);closeRequestComposer()};
+  box.querySelector("[data-add]").addEventListener("click",add);
+  box.querySelector("[data-close]").addEventListener("click",closeRequestComposer);
+  box.addEventListener("keydown",e=>{e.stopPropagation();if(e.key==="Escape"){e.preventDefault();closeRequestComposer()}else if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();add()}});
+  input.focus();
+}
+/* Double-click fixes text in place; Enter or leaving the field keeps it, Esc undoes it. */
+function startInlineFix(el){
+  const index=state.currentSlide,slide=slides[index],path=el.dataset.bind,before=fieldText(slide,path);
+  if(!path||!before||typeof getByPath(slide,editablePath(slide,path))!=="string")return;
+  closeRequestComposer();
+  el.setAttribute("contenteditable","true");el.focus();
+  const finish=keep=>{
+    el.removeEventListener("blur",onBlur);el.removeEventListener("keydown",onKey);
+    el.removeAttribute("contenteditable");
+    const after=el.textContent.replace(/\s+/g," ").trim();
+    if(keep&&after&&after!==before){setByPath(slide,editablePath(slide,path),after);addRequest(index,path,"",{from:before,to:after})}
+    render();
+  };
+  const onBlur=()=>finish(true);
+  const onKey=e=>{e.stopPropagation();if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();el.blur()}else if(e.key==="Escape"){e.preventDefault();finish(false)}};
+  el.addEventListener("blur",onBlur);el.addEventListener("keydown",onKey);
+}
+root.addEventListener("click",e=>{
+  if(!requestMode||e.target.closest("[contenteditable=\"true\"]"))return;
+  e.preventDefault();e.stopPropagation();
+  const target=e.target.closest("[data-bind]");
+  openRequestComposer(state.currentSlide,target?.dataset.bind||"",e.clientX,e.clientY);
+},true);
+root.addEventListener("dblclick",e=>{
+  if(!requestMode)return;
+  const target=e.target.closest("[data-bind]");
+  if(target){e.preventDefault();startInlineFix(target)}
+},true);
+document.getElementById("request-list").addEventListener("click",e=>{
+  const button=e.target.closest("[data-request-remove]");if(!button)return;
+  const [index,id]=button.dataset.requestRemove.split(":");const slide=slides[Number(index)];
+  if(slide?.comments){slide.comments=slide.comments.filter(c=>c.id!==id);if(!slide.comments.length)delete slide.comments}
+  saveRequests();renderRequests();
+});
+document.getElementById("request-copy").addEventListener("click",()=>{
+  const text=requestPrompt();
+  if(!text){toast("Click something on the slide to add a request first");return}
+  copyText(text,()=>toast("Prompt copied. Paste it to your agent."));
+});
+document.getElementById("request-save").addEventListener("click",exportHTML);
+document.getElementById("request-min").addEventListener("click",e=>{const min=requestPanel.classList.toggle("min");e.currentTarget.textContent=min?"Show list":"Hide list";e.currentTarget.setAttribute("aria-expanded",String(!min))});
+document.getElementById("request-clear").addEventListener("click",()=>{
+  if(!requestItems().length||!window.confirm("Clear every request? Fixes already made on screen stay."))return;
+  slides.forEach(slide=>{if(slide.comments){slide.comments=slide.comments.filter(c=>!c.request);if(!slide.comments.length)delete slide.comments}});
+  saveRequests();renderRequests();
+});
+document.getElementById("request-full-editor").addEventListener("click",()=>{toggleRequestMode(false);enterEditMode()});
+restoreRequests();
+if(new URLSearchParams(location.search).get("edit")==="full"&&!getTokenFromUrl())setTimeout(enterEditMode,0);
+
 /* ── Edit mode keyboard shortcut ── */
 window.addEventListener('keydown',e=>{
   const target=e.target instanceof Element?e.target:null;
@@ -4779,7 +5385,11 @@ window.addEventListener('keydown',e=>{
   const modifier=e.metaKey||e.ctrlKey;
   const key=e.key.toLowerCase();
   if(key==='e'&&!modifier&&!state.editMode&&!editingTarget){
-    enterEditMode();
+    toggleRequestMode();
+    return;
+  }
+  if(requestMode&&!state.editMode&&e.key==='Escape'&&!editingTarget){
+    if(document.getElementById('request-composer'))closeRequestComposer();else toggleRequestMode(false);
     return;
   }
   if(!state.editMode)return;
@@ -4851,7 +5461,7 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('resize',()=>{if(state.editMode){scaleEditDeck();layoutThumbnailStages()}});
 
 /* ── Edit button in the present-mode controls (static markup, so exports do not duplicate it) ── */
-document.getElementById('edit-mode-btn').addEventListener('click',enterEditMode);
+document.getElementById('edit-mode-btn').addEventListener('click',()=>toggleRequestMode());
 
 </script>
 </body>

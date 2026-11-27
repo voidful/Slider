@@ -1,10 +1,46 @@
 # Slider
 
-Turn research papers into evidence-backed browser presentations.
+**Turn a research paper into a talk you can present from your phone.**
 
-Slider is an agent skill for creating, revising, and auditing paper talks. Give it a PDF, arXiv link, DOI, title, or extracted text plus your audience and time limit. It helps build a coherent argument with traceable figures, results, and limitations.
+Slider is an agent skill for Codex, Claude Code, Gemini CLI, and ChatGPT. Give your agent a PDF, arXiv link, DOI, or title, plus the audience and time slot. It builds the argument, keeps the paper's figures and numbers traceable to their source, writes speaker notes, and delivers one HTML file that opens in any browser. Press `R` in the deck and your phone shows the notes, the timer, and the next slide.
 
-![Slider React starter preview](assets/readme/slider-react-preview.jpg)
+**[Live demo](https://voidful.github.io/Slider/)** · [繁體中文說明](README.zh-TW.md) · [Install](#install-and-use)
+
+![A Slider slide on the projector and the phone remote showing speaker notes, the talk timer, and the next slide](assets/readme/hero.jpg)
+
+## Try it in one minute
+
+Open the [live demo](https://voidful.github.io/Slider/) on a laptop, press `R`, and scan the code with your phone. Or run the demo deck from a checkout; Python 3 is all it needs:
+
+```bash
+git clone https://github.com/voidful/Slider.git && cd Slider
+python3 scripts/serve_deck.py
+```
+
+The helper serves the deck at this computer's Wi-Fi address, so the QR code works on a phone on the same network. Serve your own deck the same way: `python3 scripts/serve_deck.py deck.html`. Only the deck and the files it references are shared.
+
+## Present from your phone
+
+<img src="assets/readme/phone-present.jpg" alt="Phone remote: notes, timer, previews, and Back and Next" width="260" align="right">
+
+The phone opens the same page; there is no app to install.
+
+- Your speaker notes in large type, following the slide on screen
+- A talk timer paced against your time slot; the clock flashes, and Android phones buzz, at 5 and 2 minutes left
+- The slide on screen and the next build or slide
+- Big Back and Next buttons, or swipe the notes
+- Black or white screen for questions; draw on the slide; send a note to the screen
+- Turn the phone sideways for notes on the left and controls on the right
+
+Pairing goes through the public PeerJS server, then control data flows over WebRTC. Phones on mobile data or isolated venue Wi-Fi need a TURN relay; see [phone remote relay](references/artifact-rendering.md#phone-remote-relay). Everyone who scans the code sees your notes.
+
+<br clear="right">
+
+## Change it by asking, guided from the start
+
+- **Guided first.** If you don't say how long the talk is, who it's for, or what people should remember, the agent asks, one question at a time, before building. Say "just build it" to skip.
+- **Point, then prompt.** Press `E` in a deck, click whatever should change, and write what you want. Slider collects the requests and copies them as one prompt with the slide, the field, and its current text, ready for your agent. Double-click text to fix a typo on screen; the fix goes into the prompt too, so the agent's copy stays in sync. (The full layout editor is still in the command menu.)
+- **Motion that explains.** A slide can walk through a figure: each press zooms into the next panel or spotlights the next row or number while the rest dims, and your phone shows the line to say for that step. Jumps, print, and overviews always show the whole slide.
 
 ## Install and use
 
@@ -62,7 +98,9 @@ The short [SKILL.md](SKILL.md) routes to [task workflows](references/task-workfl
 
 ## Preview the bundled starters
 
-Open [the HTML starter](assets/html-slideshow-starter/paper-presentation.html) locally in a browser, or run the React demo:
+![Slider React starter preview](assets/readme/slider-react-preview.jpg)
+
+Open [the HTML starter](assets/html-slideshow-starter/paper-presentation.html) locally in a browser (`python3 scripts/serve_deck.py` adds the phone remote), or run the React demo:
 
 ```bash
 cd assets/react-project-starter
@@ -130,7 +168,8 @@ If a paper, figure, runtime, or browser is unavailable, Slider should identify t
 | Export regressions | `python3 scripts/test_platform_exports.py` | Separate portable bundles, usable paths, omitted generated dependencies |
 | Repository health | `python3 scripts/check_skill_health.py` | Syntax, references, and synthetic pipeline/artifact integration |
 | Evidence heuristics | `python3 scripts/audit_research_slides.py --slide-data slide-plan.json --paper-type architecture-heavy` | Potential source/visual/density issues; use the paper's actual type |
-| Browser geometry | `python3 scripts/browser_slide_audit.py deck.html` | Windowed and simulated-fullscreen overflow/image checks |
+| Browser geometry | `python3 scripts/browser_slide_audit.py deck.html` | Every slide fits the stage with nothing clipped, cut off, or overlapping, and lays out the same at two window sizes |
+| Worst-case layouts | `python3 scripts/test_layout_stress.py` | A 27-slide deck of long, CJK, figure-heavy content passes that audit |
 
 The HTML renderer already attempts static and browser checks. Reuse its results instead of repeating the same check on unchanged output. Scientific fidelity still requires reviewing the paper; simulated fullscreen does not establish native fullscreen, projector readability, or real phone pairing.
 

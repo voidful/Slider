@@ -60,7 +60,8 @@ export type Slide = {
   appendix?: boolean;
   evidenceNote?: string;
   /** Semantic targets revealed one presenter beat at a time. */
-  revealOrder?: string[];
+  /** Reveal targets; focus steps ({ focus, region, note }) run in the HTML deck and are skipped here. */
+  revealOrder?: Array<string | RevealStep>;
   /** Narrative role from slide planning; opener, main result, limitation, and takeaway are accent slides. */
   pageRole?: string;
   /** Transition into this slide (see lib/motion.ts); overrides the deck default. */
@@ -72,3 +73,5 @@ export type Slide = {
   /** Morph ids by build target, e.g. { visual: "fig-2" }; the same id on the next slide flies there with the morph transition. */
   morph?: Record<string, string>;
 };
+
+export type RevealStep = { reveal?: string; focus?: string; region?: number[]; note?: string };

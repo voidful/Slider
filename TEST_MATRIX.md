@@ -28,7 +28,16 @@ The roundtrip uses synthetic paper text and images; it verifies integration, not
 - `python3 scripts/browser_slide_audit.py assets/html-slideshow-starter/paper-presentation.html`
   - Verifies the bundled demo deck renders without overflow.
   - Checks windowed and simulated-fullscreen scaling.
-  - Checks image load status.
+  - Checks every box on each slide for clipped or spilling content, ellipsis/line-clamp truncation, overlapping text, and slides the fitter flagged with `data-overflow-fail`.
+  - Renders a second time in a 1024×640 window and fails when any slide lays out differently than at 1440×900 (`--compare-window none` skips it).
+  - Checks image load status; warns about slide text under 14px and unrendered LaTeX.
+
+## Layout Stress
+
+- `python3 scripts/test_layout_stress.py` (also run by the health check)
+  - Renders a 27-slide worst-case deck through the HTML template: every classic layout and content block, long English and zh-TW titles and bullets, unbroken URLs and model names, wide 4:1, tall 2:5, and square figures, five to six metrics with long labels, an 8-row table, display math containing `<`, named grid areas, and grid `placement`.
+  - Every slide must pass the browser audit above. `--keep DIR` writes the deck for inspection.
+- After changing slide CSS or fitting, also look at the stress deck: `?motion=none&chrome=0#/N` opens slide N without chrome for screenshots.
 
 ## Slide Copy Rules
 
@@ -43,6 +52,11 @@ The roundtrip uses synthetic paper text and images; it verifies integration, not
 - Press `P` in a browser that allows pop-ups: the presenter window shows the current beat, the next build, notes, and the timer; arrows there drive the deck. Where pop-ups are blocked, the notes drawer opens instead.
 - Press Ctrl/⌘ K, search a phrase from a slide body, and run an action.
 - Print to PDF: one 1200×675 page per slide at final builds and no deck chrome; File › Print handout gives A4 pages with notes. Headless check: `chromium --headless --print-to-pdf=out.pdf deck.html` should produce one page per slide.
+
+## Request Changes and Focus Steps (HTML deck)
+
+- Press `E`, click a bullet, add a request; double-click the title, change a word, and press Enter. The panel lists both, the button tip shows the count, and **Copy prompt** gives one numbered prompt with slide, field, current text, and the on-screen change. Reload: both requests return and the fixed title stays fixed. **Download deck with my fixes** exports HTML without the open panel.
+- `python3 examples/build_showcase.py --output /tmp/showcase.html`, open slide 2, and press Right: each focus step zooms the figure into the next box and dims the rest, the phone and presenter view show the step's "Now" line, and the step after the last focus clears it. `#/2` (a direct jump) and print show the slide undimmed.
 
 ## Guide and Comments (HTML editor)
 
@@ -59,6 +73,7 @@ The roundtrip uses synthetic paper text and images; it verifies integration, not
 - Browser smoke test at the local Vite URL.
   - Verify previous/next navigation, disabled edge buttons, overview, notes, and fullscreen controls.
 - Confirm speaker notes do not cover slide evidence or metrics.
+- Render a dense plan (long split bullets, a tall figure beside metrics, a 10-row `table-focus`) with `--mode react-project`: slides should carry `data-density` on `.slide-stage` and stay inside the stage; a slide that cannot fit gets `data-overflow` and a console warning instead of a hidden scroll box.
 - On the demo motivation slide, confirm Right/Space reveals one bullet at a time, Left unwinds builds, and overview jumps show the complete slide.
 - Confirm the presenter window mirrors the current build and consumes builds before slide changes.
 
@@ -96,6 +111,10 @@ The roundtrip uses synthetic paper text and images; it verifies integration, not
 - Confirm the QR URL points to the same deck/controller URL with `?token=...`, not a third-party controller domain.
 - Scan the QR code from a phone.
 - Verify next/previous/fullscreen/play controls affect the desktop deck.
+- `python3 scripts/serve_deck.py deck.html --port 8000`: the printed URL uses the Wi-Fi address and opens the deck; `/` redirects to it; other files in the folder, `..` paths, and hidden files return 404.
+- Open the remote in two tabs on one phone: the first tab stops with "This remote is open in another tab" and the second keeps the link; tapping the first tab's banner takes the link back.
+- On the Present tab, turn off the desktop's Wi-Fi: a banner over the notes gives the reason and Back/Next dim; tapping the banner retries. Hide the previews and confirm the notes grow and the choice survives a reload.
+- On the Present tab: the notes, slide position, and now/next thumbnails follow the desktop; the first Next starts the timer; with a talk length in the brief, the clock turns amber when behind pace and red when over, and flashes once at time. Black and White toggle the desktop screen and the next Next clears it. Reset needs two taps. A horizontal swipe on the notes moves one beat. Rotate the phone: notes left, controls right, nothing overlapping. Over `https`, the phone screen stays on; over plain `http` the Present tab says to turn off auto-lock.
 - Draw on the Mark pad and confirm ink appears on the current slide.
 - Send a note and confirm it appears on the desktop deck.
 - Connect a second phone and confirm both users appear in the collaborator roster.

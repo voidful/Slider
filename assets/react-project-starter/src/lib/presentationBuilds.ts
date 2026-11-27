@@ -14,11 +14,13 @@ function availableTargets(slide?: Slide) {
 export function getBuildOrder(slide?: Slide) {
   const available = availableTargets(slide);
   const seen = new Set<string>();
-  return (slide?.revealOrder ?? []).filter((target) => {
-    if (typeof target !== "string" || !available.has(target) || seen.has(target)) return false;
-    seen.add(target);
-    return true;
-  });
+  return (slide?.revealOrder ?? [])
+    .map((entry) => (typeof entry === "string" ? entry : entry?.reveal))
+    .filter((target): target is string => {
+      if (typeof target !== "string" || !available.has(target) || seen.has(target)) return false;
+      seen.add(target);
+      return true;
+    });
 }
 
 export function getBuildCount(slide?: Slide) {

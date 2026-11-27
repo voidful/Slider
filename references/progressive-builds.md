@@ -32,6 +32,20 @@ Supported targets:
 
 Unknown and duplicate targets are ignored at runtime, preventing empty presenter beats. Keep the order short; two to four builds on a slide is usually enough.
 
+### Focus steps (HTML deck)
+
+A step can move attention instead of revealing something. An object entry `{"focus": "<target>"}` dims everything on the slide except the target; `"region": [x, y, w, h]` (fractions of the image, origin top left) also zooms a figure into that region; `"note"` is the line to say, shown above the speaker notes on the phone, the presenter view, and the notes drawer. A reveal can carry a note too: `{"reveal": "bullets.1", "note": "…"}`.
+
+```json
+"revealOrder": [
+  {"focus": "visual", "region": [0.0, 0.2, 0.33, 0.6], "note": "Start at the encoder: it never sees the labels."},
+  {"focus": "visual", "region": [0.66, 0.2, 0.33, 0.6], "note": "The head is where the gain comes from."},
+  "bullets.0"
+]
+```
+
+A focus target is any reveal target above, a bound field (`title`, `keyMessage`, `metrics.N`), or a table row inside a content block (`contentBlocks.N.content.rows.R`). A slide whose last step is a focus gets one more step that clears it, so the complete slide, which jumps, overviews, print, and thumbnails show, is never dimmed. React targets skip focus steps and keep the reveals.
+
 ## Navigation semantics
 
 - Forward entry starts with all listed targets pending.

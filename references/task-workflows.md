@@ -55,6 +55,10 @@ Read the supplied deck/slide data and the specific source evidence affected by t
 
 Reuse the existing source bundle and visual assets unless the change makes them stale. Do not regenerate the talk or recompile its design just to change one sentence. The canonical template is the default engine; maintaining or fixing that engine is allowed when it is part of the user's request.
 
+### Apply requests pasted from the deck
+
+Most revisions arrive as prompts. Pressing `E` in an HTML deck lets the user click what should change and copy one prompt: a numbered list of `Slide N (“title”), field <path> (now: “current text”): <request>`. Apply each request to the field its path names (the whole slide when it says so), keeping claims, numbers, names, and citations unless the request changes them. A line that says "I changed this on screen from … to …" records a fix the user already made in the deck: make exactly that change in the slide data so the next render keeps it. Re-render, check the changed slides still fit, and report any request you could not apply.
+
 ### Apply review comments
 
 Comments come from the HTML editor's comment mode, either inside the deck (`slide.comments`) or as File › Export comments (`slide-comments.json`). For each open comment, edit the field its `path` names, or the whole slide when `path` is empty. Keep claims, numbers, names, and citations unless the comment asks to change them, and check a requested number against the paper. Then set `resolved: true` on that comment, re-render, and report any comment you could not apply and why.

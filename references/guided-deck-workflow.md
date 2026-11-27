@@ -1,8 +1,8 @@
 # Guided deck workflow
 
-Use this when the user wants to build the talk with you step by step ("walk me through it", "引導我完成投影片", "陪我想這場報告要怎麼講", "help me decide what goes in"). It adapts the conversation design of [life-design-compass](https://github.com/voidful/life-design-compass) (v0.1.0, reviewed 2026-11-07) to research talks: treat the talk as a design project, ask one question at a time, reframe what is stuck, put three equally serious storylines on the table, test the chosen one cheaply, then build. The explanation inside the talk follows [explain clearly](explain-clearly.md).
+Use this by default for a new talk whose request does not yet give the talk length, the audience, and the one thing the audience should remember, and whenever the user wants to build the talk with you step by step ("walk me through it", "引導我完成投影片", "陪我想這場報告要怎麼講", "help me decide what goes in"). A missing brief needs only the `quick brief` questions; the full `guided build` is for users who want to decide the story together. It adapts the conversation design of [life-design-compass](https://github.com/voidful/life-design-compass) (v0.1.0, reviewed 2026-11-07) to research talks: treat the talk as a design project, ask one question at a time, reframe what is stuck, put three equally serious storylines on the table, test the chosen one cheaply, then build. The explanation inside the talk follows [explain clearly](explain-clearly.md).
 
-Without such a request, follow [task workflows](task-workflows.md) and build from defaults. A guided interview is never required to deliver a deck, and the user can say "just build it" at any point.
+With a complete brief and no such request, follow [task workflows](task-workflows.md) and build from defaults. The user can say "just build it" at any point; then fill the gaps with stated defaults (research audience, about 15 minutes) and name them in the handoff.
 
 ## Status labels
 

@@ -1,0 +1,49 @@
+# Publishes the showcase deck (examples/build_showcase.py) as the live demo on GitHub Pages.
+# One-time setup: Settings › Pages › Build and deployment › Source: GitHub Actions.
+name: Live demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - assets/html-slideshow-starter/**
+      - assets/readme/**
+      - examples/**
+      - scripts/render_slideshow_artifact.py
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the showcase deck
+        run: |
+          python3 examples/build_showcase.py --output site/index.html
+          cp assets/readme/social-preview.png site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

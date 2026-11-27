@@ -104,6 +104,7 @@ The deck preset is a baseline, not the whole plan. Once the static slides read w
 | The same figure on consecutive slides (overview, then detail) | `"transition": "morph"`, with `morph` ids when the crop differs | The audience keeps their place in the figure |
 | Same title, next part ("continued") | `"transition": "morph"` | Only the new content seems to change |
 | Method pipeline, timeline, numbered steps | `revealOrder` for pacing and `{"group": "stagger"}` | Appearance order mirrors the method's order |
+| A figure or table the speaker walks through | Focus steps in `revealOrder` (see below) | The zoom or spotlight follows the words, one part at a time |
 | Before and after, or baseline against ours | `"transition": "wipe"` | The sweep reads as a change |
 | Long equation or derivation | `"motion": "none"` or `"subtle"` | Symbols should not move while being read |
 | Definition, quotation, or one-sentence claim | `{"text": "soft", "emphasis": "sweep"}` | Reading pace, then emphasis on the callout |
@@ -112,6 +113,24 @@ The deck preset is a baseline, not the whole plan. Once the static slides read w
 | Appendix and backup slides | `"motion": "none"` | Fast lookup during questions |
 
 The renderer prints advisory `motion:` hints for the clearest mismatches: a large table or many numbers with animated values, the same figure on consecutive slides without `morph`, strong transitions stacked on ordinary slides, and a long deck with no per-slide choices at all. Treat them as prompts to look, not rules; the brief and the content decide.
+
+## Explain with motion
+
+Entrances and transitions decide how things appear. Explanation needs a different kind of motion: it tells the audience where to look now, and it moves with the speaker's words. Use focus steps in `revealOrder` ([progressive builds](progressive-builds.md#focus-steps-html-deck)) for this.
+
+| The speaker is… | Use | Note to write |
+|:---|:---|:---|
+| Walking through a multi-panel figure or a method diagram | One `{"focus": "visual", "region": …}` per panel, in reading order | What this panel shows and why it matters, one sentence each |
+| Comparing a row of a results table against the baseline | `{"focus": "contentBlocks.N.content.rows.R"}` for the baseline row, then ours | The number to say out loud and what it is compared with |
+| Landing one headline number among several | `{"focus": "metrics.N"}` | The number, its unit, and the comparison target |
+| Defining a term the rest of the slide depends on | `{"focus": "keyMessage"}` or the definition block | The definition in plain words |
+
+Rules:
+
+- One path for the eye per slide. Two to four focus steps are usually enough; a slide that needs more should be split.
+- Every step carries information. If the note would be empty, the step is decoration; drop it.
+- Keep the evidence readable: zoom regions should frame whole labels and axes, and the complete slide (shown on jumps, print, and overviews) must still make the claim on its own.
+- Reduced motion keeps the focus and zoom but removes the movement.
 
 ## Controls
 
