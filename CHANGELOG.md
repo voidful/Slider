@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Audience follow-along and accessible handout
+
+- `U` projects an audience QR code. Phones that scan it follow the presenter's slide, build, and focus, and show the slide as real text (headings, lists, tables with header cells, figures with alt text and captions, math with MathML), with text sizing, browsing, and Back to live. The audience pairs with a separate `aud-…` id and receives only the slide position; the deck ignores anything a follower sends. 21 simultaneous followers were tested from one machine; the deck accepts 150 and points the rest to the text version.
+- `?handout` renders the whole deck as one accessible text document (ordered headings, contents, figure descriptions, `lang`, readable at 320 px); `?handout=notes` adds the speaker notes as a transcript. Ctrl/⌘ K › Download audience copy exports the deck without speaker notes, step notes, review comments, or planning fields.
+- SKILL.md asks for alt text on every figure, since the audience view and handout read it.
+
 ### Revise by asking, guided questions, and motion that explains
 
 - `E` in the HTML deck now opens **Request changes**: click what should change, describe it, and copy one prompt that lists each slide, field, and current text for the agent. Double-clicking text fixes it on screen and records the fix in the prompt, so the agent's slide data stays in sync. Requests are stored as slide comments, survive a reload, and appear in the Guide; the panel can download the deck with the on-screen fixes. The full layout editor moved to the command menu and `?edit=full`. Most people revise by prompting, and edits made only in the browser were overwritten the next time the agent rendered from its slide data.

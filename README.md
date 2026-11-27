@@ -36,6 +36,10 @@ Pairing goes through the public PeerJS server, then control data flows over WebR
 
 <br clear="right">
 
+## For the audience
+
+Press `U` and the projected QR code lets everyone follow on their own phone: the current slide, figures they can zoom, and the slide as text that screen readers and translation tools can read. They can look back and return to live; they cannot control the deck or see your notes over the connection. After the talk, `?handout` gives the whole deck as an accessible text document (`?handout=notes` adds your notes as a transcript), and Ctrl/⌘ K › Download audience copy removes the notes from the file you share.
+
 ## Change it by asking, guided from the start
 
 - **Guided first.** If you don't say how long the talk is, who it's for, or what people should remember, the agent asks, one question at a time, before building. Say "just build it" to skip.

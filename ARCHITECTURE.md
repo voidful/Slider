@@ -71,6 +71,9 @@ Two instruction layers sit above the pipeline and need no code. When the user as
 
 ## Post-render capabilities
 
+### Audience follow-along and handout
+`U` projects a second, read-only pairing (`?follow=aud-…`): followers get the slide position only and render the slide and an accessible text version from their own copy of the deck. `?handout` (and `?handout=notes`) turns the same text renderer into a document for screen readers and later reading, and the audience copy export strips notes from the shared file. See [presenter UX](references/presenter-ux.md#audience-follow-along-and-accessible-handout).
+
 ### Request changes and the full editor
 Most people revise a deck by prompting their agent, so the deck's `E` key opens request mode: click what should change, describe it, and copy one prompt that names each slide, field, and current text. A typo fixed on screen with a double-click is recorded as a request, so the agent's slide data gets the same change. Requests are stored as slide comments and survive a reload.
 

@@ -486,6 +486,62 @@ body.mobile-presenting{height:100vh;height:100dvh;min-height:0;overflow:hidden}
 .notes-drawer .notes-head{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--toolbar-muted);margin-bottom:6px}
 .notes-md p{margin:0 0 8px}.notes-md ul{margin:0 0 8px;padding-left:20px}.notes-md li{margin:2px 0}.notes-md code{font:13px ui-monospace,monospace;background:rgba(127,127,127,.15);padding:0 4px;border-radius:4px}
 .notes-empty{color:var(--toolbar-muted);font-style:italic}
+/* Audience QR overlay (projected) */
+.audience-overlay{position:absolute;inset:0;z-index:40;display:none;place-items:center;background:color-mix(in srgb,var(--frame) 94%,transparent);backdrop-filter:blur(6px)}
+.audience-overlay.show{display:grid}
+.audience-card{display:flex;align-items:center;gap:48px;max-width:1040px;padding:40px}
+.audience-qr{flex:none;width:380px;height:380px;display:grid;place-items:center;padding:20px;border-radius:20px;background:#fff;box-shadow:0 12px 40px rgba(0,0,0,.12)}
+.audience-qr img,.audience-qr canvas{width:340px!important;height:340px!important}
+.audience-kicker{font-size:18px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.audience-head{margin-top:10px;font-size:44px;font-weight:800;line-height:1.1;letter-spacing:-.02em;color:var(--text)}
+.audience-copy p{margin-top:16px;font-size:22px;line-height:1.45;color:var(--muted)}
+.audience-url{margin-top:22px;font:600 20px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);word-break:break-all}
+.audience-count{margin-top:10px;font-size:18px;font-weight:700;color:var(--positive)}
+.audience-copy .audience-hint{font-size:16px}
+/* Audience view and handout: real text, large type, no horizontal scroll at 320px. */
+body.audience-mode,body.handout-mode{display:block;place-items:normal;min-height:100vh;padding:0;overflow:auto;background:#f8fafc;color:#0f172a}
+body.audience-mode .deck-wrapper,body.audience-mode .editor-toolbar,body.audience-mode .editor-sidebar,body.audience-mode .editor-main,body.audience-mode .editor-inspector,body.audience-mode .theme-panel,
+body.handout-mode .deck-wrapper,body.handout-mode .editor-toolbar,body.handout-mode .editor-sidebar,body.handout-mode .editor-main,body.handout-mode .editor-inspector,body.handout-mode .theme-panel{display:none!important}
+.audience-view{--av-size:19px;max-width:760px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));font:var(--av-size)/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+.audience-view[hidden]{display:none}
+.av-bar{display:flex;align-items:center;gap:12px;padding:6px 0 12px}
+.av-title{flex:1;min-width:0;font-size:16px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av-status{flex:none;border-radius:999px;padding:4px 10px;font-size:13px;font-weight:750;background:#fef3c7;color:#92400e}
+.av-status[data-state="live"]{background:#dcfce7;color:#166534}
+.av-status[data-state="browse"]{background:#dbeafe;color:#1e40af}
+.av-stage-wrap{border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(15,23,42,.12);background:#fff}
+.av-stage .thumb-canvas{border-radius:0;box-shadow:none}
+.av-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;margin:12px 0}
+.av-nav button,.av-size button{min-height:44px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;font:700 16px system-ui,sans-serif;padding:8px 12px;cursor:pointer}
+.av-nav button:disabled{opacity:.4;cursor:default}
+.av-nav .av-live[aria-pressed="true"]{background:#166534;border-color:#166534;color:#fff}
+.av-text,.handout{color:#0f172a}
+.av-text h2,.handout h2{margin:.2em 0 .4em;font-size:1.35em;line-height:1.25}
+.av-text h3,.handout h3,.handout h4{margin:1em 0 .3em;font-size:1.1em}
+.av-text p,.handout p{margin:.5em 0}
+.av-text ul,.av-text ol,.handout ul,.handout ol{margin:.5em 0;padding-left:1.3em}
+.av-text figure,.handout figure{margin:1em 0}
+.av-text img,.handout img{display:block;max-width:100%;height:auto;border:1px solid #e2e8f0;border-radius:8px;background:#fff}
+.av-text figcaption,.handout figcaption{margin-top:.4em;font-size:.9em;color:#334155}
+.st-desc{display:block;margin-top:.25em;font-size:.9em;color:#475569}
+.st-kicker{display:block;font-size:.75em;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#1d4ed8}
+.st-lead{font-size:1.05em;color:#1e293b}
+.st-table{overflow-x:auto;margin:.8em 0;border:1px solid #e2e8f0;border-radius:8px;background:#fff}
+.st-table table{border-collapse:collapse;width:100%;font-size:.9em}
+.st-table th,.st-table td{padding:.4em .6em;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}
+.st-table th{background:#eff6ff}
+.st-math{overflow-x:auto;margin:.8em 0;padding:.4em;background:#eff6ff;border-radius:8px}
+.st-quote{margin:.8em 0;padding-left:1em;border-left:4px solid #93c5fd}
+.av-foot{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:15px;color:#475569}
+.av-size{display:inline-flex;gap:6px}
+.av-foot a,.handout a{color:#1d4ed8}
+.handout{max-width:760px;margin:0 auto;padding:24px 16px 64px;font:19px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+.handout h1{font-size:1.7em;line-height:1.2;margin:.2em 0}
+.handout section{margin-top:2em;padding-top:1em;border-top:2px solid #e2e8f0}
+.handout .ho-notes{margin-top:1em;padding:.6em .9em;border-left:4px solid #94a3b8;background:#f1f5f9}
+.handout-skip{position:absolute;left:-9999px}.handout-skip:focus{left:16px;top:8px;background:#fff;padding:8px;z-index:10}
+.audience-view :focus-visible,.handout :focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+@media print{body.handout-mode .handout section{break-inside:avoid-page}}
 /* Request changes (E): point at the slide, describe the change, copy one prompt for the agent. */
 body.requesting #slide-root [data-bind]{cursor:crosshair}
 body.requesting #slide-root [data-bind]:hover{outline:2px dashed var(--accent);outline-offset:4px;border-radius:4px}
@@ -850,12 +906,26 @@ body.edit-mode .progress{display:none}
       <li>Home / End, 1–9: jump · O or G: overview</li>
       <li>P: presenter view · N: notes · A: auto-advance</li>
       <li>F: fullscreen · L: laser · B / W: black or white screen</li>
-      <li>M: motion · R: phone remote · Ctrl/⌘ K: command menu</li>
+      <li>M: motion · R: phone remote · U: audience QR · Ctrl/⌘ K: command menu</li>
       <li>E: request changes for your agent · ?: this list · Esc: close</li>
     </ul>
   </div>
   <div class="laser-dot" id="laser-dot"></div>
   <!-- Gallery overlay (inside deck for fullscreen) -->
+  <!-- Audience QR (U): projected so the room can follow on their phones; a separate, read-only pairing -->
+  <div class="audience-overlay" id="audience-overlay" role="dialog" aria-label="Follow along on your phone">
+    <div class="audience-card">
+      <div class="audience-qr" id="audience-qr"></div>
+      <div class="audience-copy">
+        <div class="audience-kicker">Follow along</div>
+        <div class="audience-head">Scan to read the slides on your phone</div>
+        <p>Zoom into figures, read the slide as text, or go back a slide. No app needed.</p>
+        <div class="audience-url" id="audience-url">Starting…</div>
+        <div class="audience-count" id="audience-count"></div>
+        <p class="audience-hint" id="audience-hint"></p>
+      </div>
+    </div>
+  </div>
   <div class="gallery-overlay" id="gallery-overlay">
     <button class="gallery-close" id="gallery-close">×</button>
     <div class="gallery-grid" id="gallery-grid"></div>
@@ -889,6 +959,25 @@ body.edit-mode .progress{display:none}
 </div>
 </div><!-- end deck-wrapper -->
 
+<!-- Audience view (?follow=…): read-only, follows the presenter's slide; the text below the slide is the accessible version -->
+<div class="audience-view" id="audience-view" hidden>
+  <header class="av-bar">
+    <div class="av-title" id="av-title"></div>
+    <span class="av-status" id="av-status" role="status">Connecting…</span>
+  </header>
+  <div class="av-stage-wrap" aria-hidden="true"><div class="av-stage" id="av-stage"></div></div>
+  <nav class="av-nav" aria-label="Slides">
+    <button type="button" id="av-prev">‹ Previous</button>
+    <button type="button" id="av-live" class="av-live">Live</button>
+    <button type="button" id="av-next">Next ›</button>
+  </nav>
+  <main class="av-text notes-md" id="av-text" aria-live="polite"></main>
+  <footer class="av-foot">
+    <span id="av-pos"></span>
+    <span class="av-size"><button type="button" id="av-smaller" aria-label="Smaller text">A−</button><button type="button" id="av-larger" aria-label="Larger text">A+</button></span>
+    <a id="av-handout" href="?handout">Whole deck as text</a>
+  </footer>
+</div>
 <div class="mobile-controller" id="mobile-controller">
   <div class="mobile-shell">
     <header class="mobile-bar">
@@ -2390,7 +2479,7 @@ function updateDeckChrome(s){
   const atStart=state.currentSlide===0&&state.currentBuild===0,atEnd=state.currentSlide===slides.length-1&&state.currentBuild>=buildCount;
   for(const [id,off] of [["home",atStart],["prev",atStart],["next",atEnd]]){const el=document.getElementById(id);if(el)el.disabled=off}
   progressBar.style.width=`${((state.currentSlide+1)/slides.length)*100}%`;
-  syncDeckLocation();syncNotesDrawer();syncPresenter();
+  syncDeckLocation();syncNotesDrawer();syncPresenter();syncFollowers();
 }
 /* meta (optional): {from|ghostIndex, dir, entrance, force} plays a transition and/or entrance. */
 function render(meta){
@@ -2492,7 +2581,7 @@ window.addEventListener("keydown",e=>{
   if(k==="end"){goTo(slides.length-1);return}
   if(e.key==="?"){toggleHelp();return}
   if(k==="escape"){if(closePresentLayer())e.preventDefault();else exitAnyFullscreen();return}
-  const action={f:toggleFullscreen,l:toggleLaser,g:toggleGallery,o:toggleGallery,r:toggleRemotePanel,a:togglePlayback,p:openPresenter,n:()=>toggleNotesDrawer(),b:()=>setBlackout("black"),".":()=>setBlackout("black"),w:()=>setBlackout("white"),m:()=>toggleMotionPanel(motionPanel)}[k];
+  const action={f:toggleFullscreen,l:toggleLaser,g:toggleGallery,o:toggleGallery,r:toggleRemotePanel,u:()=>toggleAudience(),a:togglePlayback,p:openPresenter,n:()=>toggleNotesDrawer(),b:()=>setBlackout("black"),".":()=>setBlackout("black"),w:()=>setBlackout("white"),m:()=>toggleMotionPanel(motionPanel)}[k];
   if(action){e.preventDefault();action();return}
   if(/^[0-9]$/.test(k))digitJump(Number(k));
 });
@@ -3988,7 +4077,8 @@ function addDefaultBlock(){
 }
 
 /* ── Export ── */
-function exportHTML(){
+function exportHTML(options){
+  const opts=options&&!(options instanceof Event)?options:{};
   finishMotion();
   const page=document.documentElement.cloneNode(true);
   page.querySelectorAll('.motion-layer').forEach(el=>el.remove());
@@ -3998,13 +4088,14 @@ function exportHTML(){
   page.querySelectorAll('.controls button.active').forEach(el=>el.classList.remove('active'));
   page.querySelector('#controls-bar')?.classList.remove('is-playing','controls-visible');
   page.querySelectorAll('#gallery-grid,#notes-drawer,#guide-panel').forEach(el=>el.replaceChildren());
-  page.querySelectorAll('.help,.notes-drawer,.gallery-overlay,.guide-panel,.remote-panel').forEach(el=>el.classList.remove('show'));
+  page.querySelectorAll('.help,.notes-drawer,.gallery-overlay,.guide-panel,.remote-panel,.audience-overlay').forEach(el=>el.classList.remove('show'));
+  page.querySelector('#audience-qr')?.replaceChildren();
   page.querySelector('#blackout')?.setAttribute('class','blackout');
   page.querySelector('#editor-main')?.classList.remove('commenting');
   page.querySelector('body')?.classList.remove('chrome-off','guide-open','fs-active');
   const templateHTML=page.outerHTML;
   /* Encode slide data to UTF-8 base64 to ensure pristine transport of LaTeX equations without escape collisions */
-  const slideJSON=JSON.stringify(slides);
+  const slideJSON=JSON.stringify(opts.slides||slides);
   const b64Data=encodeB64Utf8(slideJSON);
   let html=templateHTML;
   /* Replace both primary (B64) and legacy (RAW) transport markers */
@@ -4021,7 +4112,7 @@ function exportHTML(){
   const blob=new Blob([html],{type:'text/html'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='presentation.html';
+  a.download=opts.filename||'presentation.html';
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -4468,7 +4559,8 @@ function exitAnyFullscreen(){
 }
 /* Escape closes the topmost presenting layer; fullscreen exits only when nothing else is open. */
 function closePresentLayer(){
-  if(helpPanel.classList.contains("show"))toggleHelp(false);
+  if(audienceOverlay.classList.contains("show"))toggleAudience(false);
+  else if(helpPanel.classList.contains("show"))toggleHelp(false);
   else if(motionPanel.classList.contains("show"))toggleMotionPanel(motionPanel,false);
   else if(galleryOverlay.classList.contains("show"))closeGallery();
   else if(remotePanel.classList.contains("show"))toggleRemotePanel();
@@ -4704,6 +4796,10 @@ function commandActions(){
     {label:"Copy link to this slide",keys:"share url deep link",run:copySlideLink},
     {label:"Motion graphics",key:"M",keys:"transition animation",run:()=>toggleMotionPanel(state.editMode?editorMotionPanel:motionPanel,true)},
     {label:"Phone remote and collaboration",key:"R",run:inPresent(toggleRemotePanel)},
+    {label:"Audience QR code: follow along on phones",key:"U",keys:"audience share accessibility follow",run:inPresent(()=>toggleAudience(true))},
+    {label:"Open the deck as accessible text",keys:"handout screen reader accessibility transcript",run:()=>window.open(`${location.pathname}?handout`,"_blank","noopener")},
+    {label:"Open the text handout with speaker notes",keys:"handout transcript notes",run:()=>window.open(`${location.pathname}?handout=notes`,"_blank","noopener")},
+    {label:"Download audience copy (no speaker notes)",keys:"export share audience",run:exportAudienceCopy},
     {label:"Request changes for your agent",key:"E",keys:"edit prompt revise feedback",run:()=>{if(edit)enterPresentMode();toggleRequestMode(true)}},
     {label:edit?"Back to present mode":"Full editor",keys:"edit layout inspector",run:()=>edit?enterPresentMode():(toggleRequestMode(false),enterEditMode())},
     {label:"Guide: next step to finish the deck",key:"G in editor",keys:"checklist brief readiness",run:openGuide},
@@ -5258,6 +5354,245 @@ guidePanel.addEventListener("click",e=>{
   refreshGuide(true);
   guidePanel.querySelector(".guide-step button,.guide-step input,.guide-step textarea")?.focus({preventScroll:true});
 });
+
+/* ── Audience follow-along (U): a second, read-only pairing. The audience QR names a different peer than the
+   speaker remote, so scanning it can never control the deck or receive speaker notes; followers get only
+   the slide position. Each follower is one WebRTC data channel to this tab, so very large rooms get the handout. ── */
+const AUDIENCE_LIMIT=150;
+var audienceState={peer:null,peerId:null,connections:[],started:false,iceServers:DEFAULT_ICE_SERVERS,retryTimer:null,retries:0};// var: the first render calls syncFollowers() before this line runs
+const audienceOverlay=document.getElementById("audience-overlay");
+const AUDIENCE_HOST_KEY=`slider-audience-host:${location.pathname}`;
+function audienceHostId(fresh=false){
+  let id=null;try{id=fresh?null:sessionStorage.getItem(AUDIENCE_HOST_KEY)}catch(_e){}
+  if(!/^aud-[a-z0-9]{6,16}$/.test(id||""))id=`aud-${randomRemoteToken(10)}`;
+  try{sessionStorage.setItem(AUDIENCE_HOST_KEY,id)}catch(_e){}
+  return id;
+}
+function audienceUrl(id){
+  const u=new URL(configuredRemoteControllerUrl()||location.href,location.href);
+  u.searchParams.delete("token");u.searchParams.delete("remote");u.searchParams.set("follow",id);u.hash="";
+  return u.href;
+}
+function audiencePayload(){return{type:"follow",index:state.currentSlide,build:state.currentBuild,count:slides.length}}
+function openFollowers(){return audienceState.connections.filter(conn=>conn.open)}
+function syncFollowers(){
+  if(!audienceState||!audienceState.connections.length)return;
+  const payload=audiencePayload();
+  for(const conn of openFollowers())try{conn.send(payload)}catch(_e){}
+}
+function renderAudienceCount(){
+  const n=openFollowers().length,el=document.getElementById("audience-count");
+  if(el)el.textContent=n?`${n} following`:"";
+}
+function toggleAudience(force){
+  const show=force??!audienceOverlay.classList.contains("show");
+  audienceOverlay.classList.toggle("show",show);
+  if(show)startAudienceHost().catch(err=>{audienceState.started=false;document.getElementById("audience-hint").textContent=`Could not start: ${err.message||err}`});
+}
+async function startAudienceHost(){
+  if(audienceState.started)return;
+  if(typeof Peer!=="function"){document.getElementById("audience-hint").textContent="PeerJS failed to load. Share the handout link instead.";return}
+  audienceState.started=true;
+  audienceState.iceServers=await resolveIceServers();
+  createAudiencePeer(audienceHostId());
+}
+function createAudiencePeer(id){
+  const peer=new Peer(id,peerOptions(audienceState.iceServers));
+  audienceState.peer=peer;
+  peer.on("open",peerId=>{
+    if(audienceState.peer!==peer)return;
+    audienceState.retries=0;audienceState.peerId=peerId;
+    const url=audienceUrl(peerId),qr=document.getElementById("audience-qr");
+    document.getElementById("audience-url").textContent=url.replace(/^https?:\/\//,"");
+    document.getElementById("audience-hint").textContent=/^(file:|https?:\/\/(localhost|127\.0\.0\.1|\[::1\]))/i.test(url)?remotePairingHint(url):"Press U or Esc to close. The link also opens the whole deck as text after the talk.";
+    qr.innerHTML="";
+    if(typeof QRCode==="function")new QRCode(qr,{text:url,width:340,height:340,correctLevel:QRCode.CorrectLevel.M});
+    else qr.textContent="QR library unavailable";
+  });
+  peer.on("connection",acceptFollower);
+  const retry=()=>{
+    if(audienceState.peer!==peer||audienceState.retryTimer)return;
+    const wait=Math.min(1000*2**audienceState.retries++,15000);
+    audienceState.retryTimer=setTimeout(()=>{audienceState.retryTimer=null;if(peer.destroyed)createAudiencePeer(audienceState.peerId||audienceHostId());else try{peer.reconnect()}catch(_e){}},wait);
+  };
+  peer.on("disconnected",retry);peer.on("close",retry);
+  peer.on("error",err=>{
+    if(audienceState.peer!==peer)return;
+    if(err.type==="unavailable-id"){audienceState.peer=null;peer.destroy();createAudiencePeer(audienceHostId(true))}
+  });
+}
+function acceptFollower(conn){
+  if(openFollowers().length>=AUDIENCE_LIMIT){conn.on("open",()=>{try{conn.send({type:"full"})}catch(_e){}setTimeout(()=>conn.close(),1000)});return}
+  audienceState.connections.push(conn);
+  const drop=()=>{audienceState.connections=audienceState.connections.filter(c=>c!==conn);renderAudienceCount()};
+  conn.on("open",()=>{try{conn.send(audiencePayload())}catch(_e){}renderAudienceCount()});
+  conn.on("data",()=>{});// followers never steer the deck
+  conn.on("close",drop);conn.on("error",drop);
+  setTimeout(()=>{if(!conn.open)drop()},30000);
+}
+
+/* ── Slides as text: the accessible version of a slide, used by the audience view and the handout. ── */
+function deckLanguage(){
+  const set=String(deckBrief&&deckBrief.language||"").trim();
+  if(set)return/中文|zh/i.test(set)?"zh-Hant":/日本|ja/i.test(set)?"ja":/^[a-z]{2}(-[A-Za-z]+)?$/.test(set)?set:"en";
+  const text=slides.map(slide=>`${slide.title||""} ${slide.keyMessage||""}`).join(" ");
+  return(text.match(/[\u3400-\u9fff]/g)||[]).length>text.length*.15?"zh-Hant":"en";
+}
+function textFigure(src,alt,caption){
+  const desc=String(alt||"").trim(),cap=String(caption||"").trim();
+  if(!src)return cap?`<p><em>Figure to come:</em> ${esc(cap)}</p>`:"";
+  return`<figure><img src="${esc(src)}" alt="${esc(desc||cap)}" loading="lazy">${cap||desc?`<figcaption>${esc(cap)}${desc&&desc!==cap?`<span class="st-desc">Description: ${esc(desc)}</span>`:""}</figcaption>`:""}</figure>`;
+}
+function textMetrics(list){return`<ul>${(list||[]).map(m=>`<li><strong>${esc(m.label||"")}:</strong> ${esc(String(m.value??""))}${m.detail?` (${esc(m.detail)})`:""}</li>`).join("")}</ul>`}
+function textBlock(block,level){
+  const c=block?.content;
+  switch(block?.type){
+    case"label":return`<span class="st-kicker">${esc(c)}</span>`;
+    case"heading":return`<h${level+1}>${esc(c)}</h${level+1}>`;
+    case"hero-text":return`<p class="st-lead"><strong>${esc(c)}</strong></p>`;
+    case"text":return`<p>${esc(c)}</p>`;
+    case"callout":return`<p class="st-lead"><strong>${esc(c)}</strong></p>`;
+    case"bullets":return`<ul>${(c||[]).map(item=>`<li>${esc(typeof item==="string"?item:item?.text||"")}</li>`).join("")}</ul>`;
+    case"figure":return textFigure(c?.src,c?.alt,c?.caption||c?.placeholder);
+    case"metric":return textMetrics([c||{}]);
+    case"metric-grid":return textMetrics(c);
+    case"table":{const t=c||{};const head=(t.headers||[]).map(h=>`<th scope="col">${esc(h)}</th>`).join("");const rows=(t.rows||[]).map(r=>`<tr>${(r.cells||[]).map((cell,i)=>i===0?`<th scope="row">${esc(String(cell))}</th>`:`<td>${esc(String(cell))}</td>`).join("")}</tr>`).join("");return`<div class="st-table" role="region" tabindex="0" aria-label="${esc(t.caption||"Table")}"><table>${t.caption?`<caption>${esc(t.caption)}</caption>`:""}<thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`}
+    case"equation":return`<div class="st-math">${mathSource(c)}</div>${block.explanation?`<p>${esc(block.explanation)}</p>`:""}`;
+    case"quote":return`<blockquote class="st-quote"><p>${esc(c)}</p>${block.attribution?`<p>— ${esc(block.attribution)}</p>`:""}</blockquote>`;
+    case"comparison":return`<h${level+1}>${esc(c?.leftLabel||"Ours")}</h${level+1}><p>${esc(c?.left||"")}</p><h${level+1}>${esc(c?.rightLabel||"Baseline")}</h${level+1}><p>${esc(c?.right||"")}</p>`;
+    case"timeline":return`<ol>${(c||[]).map(step=>`<li>${esc(step)}</li>`).join("")}</ol>`;
+    case"spacer":case"custom-html":return"";
+    default:return c?`<p>${esc(typeof c==="string"?c:JSON.stringify(c))}</p>`:"";
+  }
+}
+function slideTextHTML(slide,level=2,heading=""){
+  if(!slide)return"";
+  const parts=[`<h${level}>${esc(heading||slide.title||"Untitled")}</h${level}>`];
+  if(slide.contentBlocks&&slide.contentBlocks.length)parts.push(...slide.contentBlocks.filter(block=>!(block.type==="heading"&&block.content===slide.title)).map(block=>textBlock(block,level)));
+  else{
+    if(slide.subtitle)parts.push(`<p>${esc(slide.subtitle)}</p>`);
+    if(slide.keyMessage)parts.push(`<p class="st-lead">${esc(slide.keyMessage)}</p>`);
+    if(slide.equation)parts.push(`<div class="st-math">${mathSource(slide.equation)}</div>`);
+    if(slide.bullets&&slide.bullets.length)parts.push(`<ul>${slide.bullets.map(item=>`<li>${esc(typeof item==="string"?item:item?.text||"")}</li>`).join("")}</ul>`);
+    if(slide.metrics&&slide.metrics.length)parts.push(textMetrics(slide.metrics));
+    if(slide.visual&&slide.visual.src)parts.push(textFigure(slide.visual.src,slide.visual.alt,slide.visual.caption||slide.figureLabel));
+    else if(slide.figureLabel)parts.push(textFigure("","",slide.figureLabel));
+  }
+  return parts.filter(Boolean).join("");
+}
+
+/* KaTeX loads with defer, after this script; text views built during page load render their math once it is ready. */
+function renderMathWhenReady(container){
+  if(typeof renderMathInElement==="function"){renderMath(container);return}
+  let tries=0;const poll=setInterval(()=>{if(typeof renderMathInElement==="function"||++tries>50){clearInterval(poll);renderMath(container)}},100);
+}
+/* ── Audience view (?follow=<id>): renders from this copy of the deck; the presenter only sends the position. ── */
+const audienceView={peer:null,conn:null,host:null,live:{index:0,build:0},index:0,build:0,following:true,retries:0,timer:null,full:false,textIndex:null};
+function audienceStatus(text,state){const el=document.getElementById("av-status");el.textContent=text;el.dataset.state=state||""}
+function renderAudience(){
+  const view=audienceView,slide=slides[view.index];
+  if(!slide)return;
+  const stage=document.getElementById("av-stage");
+  stage.innerHTML=presenterStageHTML(view.index,view.build);
+  requestAnimationFrame(()=>{const canvas=stage.querySelector(".thumb-canvas"),inner=canvas?.querySelector(".thumb-stage");if(canvas&&inner)inner.style.transform=`scale(${canvas.clientWidth/1200})`});
+  // Text changes only with the slide, so a screen reader reads each slide once, not again at every build step.
+  const text=document.getElementById("av-text");
+  if(view.textIndex!==view.index){view.textIndex=view.index;text.innerHTML=slideTextHTML(slide,2,`${view.index+1}. ${slide.title||"Untitled"}`);renderMathWhenReady(text)}
+  document.getElementById("av-pos").textContent=`Slide ${view.index+1} of ${slides.length}${view.following?"":` · live: ${view.live.index+1}`}`;
+  document.getElementById("av-prev").disabled=view.index<=0;
+  document.getElementById("av-next").disabled=view.index>=slides.length-1;
+  const live=document.getElementById("av-live");live.setAttribute("aria-pressed",String(view.following));live.textContent=view.following?"Live":"Back to live";
+  const open=view.conn&&view.conn.open;
+  if(!view.full)audienceStatus(open?(view.following?"Live":"Browsing"):view.retries?"Reconnecting…":"Connecting…",open?(view.following?"live":"browse"):"");
+}
+function followLive(){const v=audienceView;v.following=true;v.index=v.live.index;v.build=v.live.build;renderAudience()}
+function browseAudience(dir){const v=audienceView;v.following=false;v.index=Math.max(0,Math.min(slides.length-1,v.index+dir));v.build=getRevealOrder(slides[v.index]).length;renderAudience()}
+function connectAudience(){
+  const v=audienceView;
+  clearTimeout(v.timer);
+  if(typeof Peer!=="function"){audienceStatus("Offline: showing the deck without live sync","");return}
+  if(!v.peer||v.peer.destroyed){v.peer=new Peer(undefined,peerOptions(DEFAULT_ICE_SERVERS));v.peer.on("open",()=>openAudienceConn());v.peer.on("error",()=>retryAudience());return}
+  if(v.peer.disconnected){try{v.peer.reconnect()}catch(_e){}}
+  if(v.peer.open)openAudienceConn();
+}
+function openAudienceConn(){
+  const v=audienceView;
+  try{v.conn&&v.conn.close()}catch(_e){}
+  const conn=v.peer.connect(v.host,{reliable:true,metadata:{role:"audience"}});
+  v.conn=conn;
+  conn.on("open",()=>{v.retries=0;renderAudience()});
+  conn.on("data",data=>{
+    if(!data||typeof data!=="object")return;
+    if(data.type==="full"){v.full=true;audienceStatus("Room full: read the deck below","");return}
+    if(data.type!=="follow")return;
+    v.live={index:Math.max(0,Math.min(slides.length-1,Number(data.index)||0)),build:Number(data.build)||0};
+    if(v.following){v.index=v.live.index;v.build=v.live.build}
+    renderAudience();
+  });
+  conn.on("close",()=>{if(v.conn===conn)retryAudience()});
+  conn.on("error",()=>{if(v.conn===conn)retryAudience()});
+}
+function retryAudience(){
+  const v=audienceView;
+  if(v.full)return;
+  renderAudience();
+  clearTimeout(v.timer);
+  v.timer=setTimeout(connectAudience,Math.min(2000*2**v.retries++,20000));
+}
+function initAudienceView(hostId){
+  document.body.classList.add("audience-mode");
+  document.documentElement.lang=deckLanguage();
+  const view=document.getElementById("audience-view");view.hidden=false;
+  document.getElementById("av-title").textContent=document.title;
+  const handout=new URL(location.href);handout.search="?handout";handout.hash="";
+  document.getElementById("av-handout").href=handout.href;
+  audienceView.host=hostId;
+  let size=19;try{size=Number(localStorage.getItem("slider-audience-size"))||19}catch(_e){}
+  const setSize=delta=>{size=Math.max(15,Math.min(32,size+delta));view.style.setProperty("--av-size",`${size}px`);try{localStorage.setItem("slider-audience-size",String(size))}catch(_e){}};
+  setSize(0);
+  document.getElementById("av-smaller").addEventListener("click",()=>setSize(-2));
+  document.getElementById("av-larger").addEventListener("click",()=>setSize(2));
+  document.getElementById("av-prev").addEventListener("click",()=>browseAudience(-1));
+  document.getElementById("av-next").addEventListener("click",()=>browseAudience(1));
+  document.getElementById("av-live").addEventListener("click",followLive);
+  window.addEventListener("resize",renderAudience);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&!(audienceView.conn&&audienceView.conn.open))connectAudience()});
+  window.addEventListener("online",connectAudience);
+  renderAudience();
+  connectAudience();
+}
+
+/* ── Accessible handout (?handout, or ?handout=notes to include the speaker notes as a transcript) ── */
+function initHandout(withNotes){
+  document.body.classList.add("handout-mode");
+  document.documentElement.lang=deckLanguage();
+  const main=document.createElement("main");main.className="handout";main.id="handout";
+  const brief=deckBrief||{};
+  main.innerHTML=`<a class="handout-skip" href="#slide-1">Skip to the first slide</a>
+    <h1>${esc(document.title)}</h1>
+    ${brief.takeaway?`<p class="st-lead"><strong>Takeaway:</strong> ${esc(brief.takeaway)}</p>`:""}
+    <p>${slides.length} slides as text, with descriptions of every figure.${withNotes?" Each slide includes the speaker's notes.":""}</p>
+    <nav aria-label="Contents"><h2>Contents</h2><ol>${slides.map((slide,i)=>`<li><a href="#slide-${i+1}">${esc(slide.title||"Untitled")}</a></li>`).join("")}</ol></nav>
+    ${slides.map((slide,i)=>`<section id="slide-${i+1}" aria-label="Slide ${i+1}">${slideTextHTML(slide,2,`Slide ${i+1}: ${slide.title||"Untitled"}`)}${withNotes&&slide.speakerNote?`<div class="ho-notes"><h3>Speaker notes</h3>${notesHTML(slide.speakerNote)}</div>`:""}</section>`).join("")}`;
+  document.body.prepend(main);
+  renderMathWhenReady(main);
+}
+function audienceSlides(){
+  // A copy for the audience: slide content only; speaker notes, review comments, and planning fields stay behind.
+  const drop=["speakerNote","remoteNote","comments","evidenceNote","purpose","audienceGoal","whyThisVisual","whyNow","fidelityRisk","densityBudget","appendixCandidate","visualBinding","visualBindingStatus","confidenceBreakdown"];
+  return JSON.parse(JSON.stringify(slides)).map(slide=>{
+    drop.forEach(key=>delete slide[key]);
+    if(Array.isArray(slide.revealOrder))slide.revealOrder=slide.revealOrder.map(step=>step&&typeof step==="object"?Object.fromEntries(Object.entries(step).filter(([key])=>key!=="note")):step);
+    return slide;
+  });
+}
+function exportAudienceCopy(){exportHTML({slides:audienceSlides(),filename:"presentation-audience.html"})}
+{
+  const params=new URLSearchParams(location.search);
+  const follow=params.get("follow");
+  if(follow&&/^aud-[a-z0-9]{6,16}$/.test(follow)&&!getTokenFromUrl())initAudienceView(follow);
+  else if(params.has("handout")&&!getTokenFromUrl())initHandout(params.get("handout")==="notes");
+}
 
 /* ── Request changes (E): most people revise a deck by prompting their agent, so the deck's main edit tool
    points at what to change and writes the prompt. Requests are stored as slide comments, so the Guide and the

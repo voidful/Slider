@@ -53,6 +53,12 @@ The roundtrip uses synthetic paper text and images; it verifies integration, not
 - Press Ctrl/⌘ K, search a phrase from a slide body, and run an action.
 - Print to PDF: one 1200×675 page per slide at final builds and no deck chrome; File › Print handout gives A4 pages with notes. Headless check: `chromium --headless --print-to-pdf=out.pdf deck.html` should produce one page per slide.
 
+## Audience Follow-Along and Handout (HTML deck)
+
+- Press `U` on the deck served over http(s): the projected QR names an `aud-…` id, not the speaker token. Open it in a phone-sized tab: it follows slides, builds, and focus zooms; Previous/Next switch to Browsing and Live returns. Record what the follower receives: only `type`, `index`, `build`, `count`. Send `{type:"keyboard",key:"ArrowDown"}` from the follower and confirm the deck does not move.
+- Open several followers (21 were tested from one tab): each gets every slide change; the presenter's advance stays fast.
+- `?handout` at 320 px: one `h1`, no skipped heading levels, every image has alt text, math renders with MathML, no horizontal scrolling. `?handout=notes` adds one notes block per slide. Ctrl/⌘ K › Download audience copy produces a file without `speakerNote`, step notes, or comments.
+
 ## Request Changes and Focus Steps (HTML deck)
 
 - Press `E`, click a bullet, add a request; double-click the title, change a word, and press Enter. The panel lists both, the button tip shows the count, and **Copy prompt** gives one numbered prompt with slide, field, current text, and the on-screen change. Reload: both requests return and the fixed title stays fixed. **Download deck with my fixes** exports HTML without the open panel.
