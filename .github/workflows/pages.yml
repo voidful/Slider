@@ -30,9 +30,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - id: pages
+        uses: actions/configure-pages@v5
+      # Link previews use the URL Pages actually serves (a custom domain if the account has one), not a redirect.
       - name: Build the showcase deck
         run: |
-          python3 examples/build_showcase.py --output site/index.html
+          python3 examples/build_showcase.py --output site/index.html --site-url "${{ steps.pages.outputs.base_url }}/"
           cp assets/readme/social-preview.png site/
       - uses: actions/upload-pages-artifact@v3
         with:
