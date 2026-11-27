@@ -34,8 +34,11 @@ jobs:
         uses: actions/configure-pages@v5
       # Link previews use the URL Pages actually serves (a custom domain if the account has one), not a redirect.
       - name: Build the showcase deck
+        env:
+          PAGES_URL: ${{ steps.pages.outputs.base_url }}
         run: |
-          python3 examples/build_showcase.py --output site/index.html --site-url "${{ steps.pages.outputs.base_url }}/"
+          # A custom domain can report http:// when GitHub does not enforce HTTPS; previews should use https.
+          python3 examples/build_showcase.py --output site/index.html --site-url "${PAGES_URL/#http:/https:}/"
           cp assets/readme/social-preview.png site/
       - uses: actions/upload-pages-artifact@v3
         with:
