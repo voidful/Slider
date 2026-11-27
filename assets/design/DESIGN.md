@@ -47,17 +47,19 @@ Preserve readable evidence and the fixed-stage renderer contract. Aesthetic pres
 - Use a stage-independent title size, such as `2.5rem`, and inspect wrapping. Do not put viewport units inside `clamp()`.
 - Body text must have `max-width` set (56ch default).
 - Shrinkable flex and grid children must set `min-width: 0` or `min-height: 0` so long content can wrap instead of forcing overflow.
-- Metric labels must set `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`.
+- Metric labels wrap (`overflow-wrap: break-word`). Never truncate slide text with an ellipsis or line clamp: the audience cannot read what is cut off.
 - Table cells must set `overflow-wrap: break-word` with `table-layout: auto`.
-- Captions must set `text-overflow: ellipsis`.
+- Captions wrap. Keep the on-slide caption to about two lines and move the full paper caption to the speaker notes.
 - No text may overflow its container. If it does, reduce content, change layout, or split slides.
+- Center content with auto margins or flexible spacers, not `justify-content: center` alone, so content that runs long overflows at the bottom (where fitting measures it) instead of pushing the label above the stage.
+- The HTML deck fits each slide by trying normal, compact, and tight density, then a wider text column on split slides. Fitting measures every box on the slide, not only the stage. A slide that still overflows is marked `data-overflow-fail`; the Guide and the browser audit report it, and it must be shortened or split.
 
 ### Fullscreen behavior (MANDATORY)
 
 Fullscreen uses the **stage-consistent scaling model**. The deck keeps the same fixed 1200×675 coordinate system in all modes. Fullscreen only changes the `transform: scale()` factor. See [fullscreen-contract.md](../../references/fullscreen-contract.md) for the full specification.
 
 - The deck always renders at **1200px × 675px**. Fullscreen computes `scale(min(viewW/1200, viewH/675))`.
-- **No viewport-unit typography** (`vh`/`vw`) inside slide content. All font sizes, padding, and gaps use `rem`, `px`, `em`, or `clamp()`.
+- **No viewport-unit typography** (`vh`/`vw`) inside slide content, including the middle term of `clamp()`. All font sizes, padding, and gaps use `rem`, `px`, or `em`. The root font size is pinned to 16px so a browser's default font setting cannot reflow the stage.
 - **No fullscreen-specific layout overrides.** No `justify-content` changes, no `height:100vh`, no `transform:none`.
 - Fullscreen removes visual chrome: `border:none; border-radius:0; box-shadow:none`.
 - `body.fs-active` provides a black background behind the scaled deck.
@@ -293,6 +295,7 @@ contentBlocks: [
 
 ### Figure sizing
 - Evidence-frame must use `flex:1 1 0; min-height:0; overflow:hidden` — never a fixed pixel `max-height`. The flex layout ensures the figure fills available space without overflowing the slide.
+- The figure column must have a definite height (stretched to the stage), so tall or square figures shrink to fit instead of taking their intrinsic height.
 - Evidence-frame child `div` wrappers (e.g., SVG containers) must use `max-height:100%!important` to override any inline styles.
 - Placeholder minimum height: 240px.
 - Use `object-fit: contain` for paper figures — never crop research visuals.

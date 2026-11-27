@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+### Revise by asking, guided questions, and motion that explains
+
+- `E` in the HTML deck now opens **Request changes**: click what should change, describe it, and copy one prompt that lists each slide, field, and current text for the agent. Double-clicking text fixes it on screen and records the fix in the prompt, so the agent's slide data stays in sync. Requests are stored as slide comments, survive a reload, and appear in the Guide; the panel can download the deck with the on-screen fixes. The full layout editor moved to the command menu and `?edit=full`. Most people revise by prompting, and edits made only in the browser were overwritten the next time the agent rendered from its slide data.
+- New **focus steps** in `revealOrder`: `{"focus": target, "region": [x, y, w, h], "note": "…"}` dims everything but the target and can zoom a figure into one region; `note` is the line to say, shown above the speaker notes on the phone, the presenter view, and the notes drawer. Targets include reveal targets, bound fields, and table rows. A slide that ends on a focus gets a clearing step, so jumps, print, and overviews show the whole slide. React targets skip focus steps; the browser audit's build check counts reveal and focus steps.
+- The skill now asks for the talk length, audience, and takeaway one question at a time when a new talk's request lacks them, instead of building from defaults; "just build it" still skips. Agents apply requests pasted from the deck field by field ([task workflows](references/task-workflows.md#apply-requests-pasted-from-the-deck)), and the motion guide has an [explain with motion](references/motion-graphics.md#explain-with-motion) section.
+- The showcase deck walks through its pipeline figure and its metrics with focus steps and has a slide on revising by asking.
+
+### Phone remote redesign, one-command serving, and a live demo
+
+- The phone remote has a slim app bar with the deck title and connection status, an icon tab bar, and grouped sections. Present adds time and slide progress bars, build dots and an "End of deck" state on Next, a toggle that hides the slide previews to give the notes more room, and press feedback on every button. When the link drops, a banner over the notes says why and retries on tap, and Back/Next dim. Inputs are 16px so iPhones do not zoom on focus.
+- Opening the remote in a second tab on the same phone makes the first tab step aside and say so, instead of the two tabs replacing each other's link.
+- The phone page no longer renders wider than the screen: the deck body's `place-items:center` shrink-wrapped it to its longest unwrapped line in current Chrome.
+- New `scripts/serve_deck.py` serves a deck at this computer's Wi-Fi address and opens it there, so its QR code works on a phone. It shares only the deck and the files it references. The deck's pairing hints point to it.
+- New `examples/build_showcase.py` builds an eight-to-nine-slide talk about Slider itself (only facts about the repository) with link-preview tags; `.github/workflows/pages.yml` publishes it to GitHub Pages as the live demo once Pages uses GitHub Actions.
+- README opens with the value in one line, a live-demo link, a hero image of a slide beside the phone remote, a one-minute try-it section, and a phone section. New [繁體中文 README](README.zh-TW.md). `assets/readme/social-preview.png` is sized for the GitHub social preview.
+- Browser audit: KaTeX's own clipped drawings (such as the `\sqrt` SVG) are no longer reported as clipped content.
+- `audit_design_comfort.py`: the viewport-unit font check no longer runs across CSS rules, which reported a `vh` height in a later rule as viewport typography.
+
+### Phone as speaker remote
+
+- The phone remote opens on a new **Present** tab: the current slide's speaker notes in large, adjustable type; the desktop's talk timer with pace colour, time left against the brief, wall clock, and buzz-and-flash alerts at 5 and 2 minutes left and at time; current and next-beat thumbnails; large Back/Next buttons and swipe on the notes; Black/White screen; Start/Pause and a two-tap Reset. It asks to keep the screen on (Screen Wake Lock over `https`), and in landscape puts the notes beside the controls. Jumps, fullscreen, auto-advance, and the collaborator name moved to **More**.
+- The desktop sends its timer, blackout state, and next beat to paired phones, accepts `clock` and `blackout` commands, starts the timer on a phone's first navigation, and clears a blackout when a phone navigates. Timer and blackout changes from the presenter window or keyboard reach the phones at once.
+- Slides now set their own text colour. Thumbnails inside the phone's dark UI (Present and Mark) and the presenter window inherited light text and showed white text on white slides.
+
+### Layout safety
+
+- HTML deck: slide typography no longer depends on the browser window. Sixteen font sizes used `vw` inside `clamp()`, so a 1024px laptop or projector window wrapped lines and chose densities differently from a 1440px one, and the presenter window differed from the deck. Sizes are now fixed on the 1200×675 stage at the values a large window already used, and the root font size is pinned to 16px.
+- HTML deck: tall and square figures in split, ablation, and qualitative slides stay inside the stage (a 2:5 figure overran it by about 470px); the figure column now has the stage's height and the figure shrinks within it.
+- HTML deck: long text columns overflow at the bottom instead of pushing the label above the stage, and cover, takeaway, and objective slides center their content the same way. Bullets on centered slides line up with their dots.
+- HTML deck: metric labels and figure captions wrap instead of ending in "…", and the compact results strip no longer uses 12–13px text.
+- HTML deck: equations are inserted as text, so `y_{<t}` no longer opens an HTML tag that swallowed the rest of the slide and left the LaTeX unrendered. Wide display math shrinks to its box (down to 55%) instead of being clipped.
+- HTML deck: `gridTemplate` values with quoted area names work (the quotes ended the `style` attribute and dropped the grid); percent tracks such as `35% 65%` no longer overrun the stage by the gap; labels and headings span all grid columns; and `placement` (`left`, `right`, `full`, `center`) is honored. The example in [slide data generation](references/slide-data-generation.md) was fixed.
+- HTML deck: fitting now measures every box on the slide by its line boxes, not only the stage's scroll size, so text clipped inside a column counts as overflow. After normal, compact, and tight density, split slides try a wider text column; slides that still overflow are flagged for the Guide and the audit. The slide refits after web fonts load.
+- Browser audit: also fails clipped or spilling content inside any box, ellipsis or line-clamp truncation, overlapping text, slides the fitter flagged, and slides that lay out differently at 1024×640 than at 1440×900; it warns about slide text under 14px and unrendered LaTeX. Run from the CLI, it sizes its time budget from the embedded slide count.
+- New `scripts/test_layout_stress.py` renders a 27-slide worst-case deck and audits it; the health check runs it. The static audits now flag `vw`/`vh` inside `clamp()` font sizes.
+- React project: slides now fit like the HTML deck (`lib/fitSlide.ts` tries normal, compact, then tight density on a hidden clone, sets `data-density`, and flags `data-overflow` with a console warning). Slides center with collapsing spacers; tables no longer sit in a 408px scroll box that hid rows from the audience; `<figure>` loses the browser's 40px side margins, which pushed figures beside metrics past their column; eyebrows and metric labels are 14px.
+- Single-file React component: slide type sizes are fixed stage pixels (no `vw`, no `rem` that a host page could rescale); `box-sizing: border-box` is scoped to the component, because in hosts without a global reset the stage's padding made it larger than the deck and clipped the bottom of every slide; slides fit with compact, tight, and a wider text column on split slides; figures lose the default margins and shrink to their column; metric labels and captions wrap.
+
 ### Phone remote reliability
 
 - Phones that cannot reach the computer directly (mobile data, venue Wi-Fi with client isolation, VPN) can pair through a TURN relay set in `meta.remote` or on `<html data-remote-ice-servers>` / `data-remote-ice-servers-url`. The template had replaced PeerJS's default ICE config with STUN only, and PeerJS's own TURN hosts no longer resolve, so these phones stayed on "Connecting" until they failed. See [phone remote relay](references/artifact-rendering.md#phone-remote-relay).

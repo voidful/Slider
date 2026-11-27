@@ -50,7 +50,7 @@ type Slide = {
   comparisonRight?: { label: string; items: string[] };
   appendix?: boolean;
   evidenceNote?: string;
-  revealOrder?: string[];
+  revealOrder?: Array<string | { reveal?: string; focus?: string; region?: number[]; note?: string }>; // focus steps run in the HTML deck only
   /** Transition into this slide; overrides the deck default (see Motion graphics below). */
   transition?: string;
   /** Motion preset name, or channel overrides such as { title: "scramble" }, for this slide. */
@@ -436,6 +436,9 @@ body {
 
 .progress-shimmer { background: var(--accent, #2563eb); }
 
+/* The 1200x675 stage math assumes border-box; do not rely on the host app to set it. */
+.app-shell, .app-shell *, .app-shell *::before, .app-shell *::after { box-sizing: border-box; }
+
 .app-shell {
   min-height: 100vh;
   display: grid;
@@ -458,9 +461,42 @@ body {
 
 .slide-label-negative { color: var(--deck-negative, #dc2626); }
 
+/* Layout: flexible spacers center a slide but collapse first, so long content overflows at the bottom
+   (where fitStage measures it) instead of pushing the label above the stage. */
+.slide-stack { display: flex; flex-direction: column; height: 100%; }
+.slide-stack-center { align-items: center; text-align: center; }
+.slide-stack-center .bullet-list { width: fit-content; max-width: 100%; text-align: left; }
+.slide-stack::before, .slide-stack::after, .slide-split-copy::before, .slide-split-copy::after { content: ""; flex: 1 1 0; }
+.slide-split { display: flex; gap: 32px; height: 100%; }
+.slide-split-copy { flex: 0 1 40%; min-width: 0; display: flex; flex-direction: column; }
+.slide-split-visual { flex: 1 1 65%; min-width: 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+.slide-split-visual > * { flex: 0 1 auto; min-height: 0; }
+.figure-frame { margin: 0; display: flex; flex-direction: column; max-height: 100%; }
+.figure-frame img { flex: 0 1 auto; }
+.figure-frame figcaption { flex-shrink: 0; }
+
+/* Fitting (fitStage): compact, then tight density, before a slide is flagged with data-overflow. */
+[data-density] .slide-title { margin-top: 8px; font-size: 39.2px; line-height: 1.12; }
+[data-density] .slide-title-hero { font-size: 42px; }
+[data-density] .slide-body, [data-density] .bullet-item, [data-density] .callout-box, [data-density] .comparison-item { margin-top: 12px; font-size: 18.6px; line-height: 1.48; }
+[data-density] .bullet-list { gap: 10px; margin-top: 12px; }
+[data-density] .metric-value { font-size: 34px; }
+[data-density] .slide-hero-number { font-size: 60px; }
+[data-density] .equation-block { margin: 12px auto; padding: 14px 20px; }
+[data-density] .figure-frame img { max-height: 400px !important; }
+[data-density="tight"] .slide-title { margin-top: 6px; font-size: 35.2px; line-height: 1.08; }
+[data-density="tight"] .slide-title-hero { font-size: 36px; }
+[data-density="tight"] .slide-body, [data-density="tight"] .bullet-item, [data-density="tight"] .callout-box, [data-density="tight"] .comparison-item { margin-top: 10px; font-size: 17px; line-height: 1.42; }
+[data-density="tight"] .bullet-list { gap: 8px; margin-top: 10px; }
+[data-density="tight"] .bullet-dot { margin-top: 7px; }
+[data-density="tight"] .metric-value { font-size: 30px; }
+[data-density="tight"] .result-table-base th, [data-density="tight"] .result-table-base td { padding: 7px 14px !important; }
+[data-density="tight"] .figure-frame img { max-height: 320px !important; }
+[data-fit-wide] .slide-split-copy, [data-fit-wide] .slide-split-visual { flex-basis: 50%; }
+
 .slide-title {
   margin-top: 10px;
-  font-size: clamp(2rem, 3.5vw, 2.8rem);
+  font-size: 44.8px;
   line-height: 1.15;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -474,13 +510,13 @@ body {
 
 .slide-title-hero {
   margin-top: 16px;
-  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-size: 48px;
   font-weight: 800;
 }
 
 .slide-body {
   margin-top: 14px;
-  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  font-size: 20.8px;
   line-height: 1.6;
   color: var(--deck-muted, #6b7280);
   max-width: 56ch;
@@ -494,7 +530,7 @@ body {
 
 .slide-hero-number {
   margin-top: 20px;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: 72px;
   font-weight: 900;
   letter-spacing: -0.05em;
   color: var(--deck-hero-number, var(--deck-accent, #2563eb));
@@ -505,10 +541,9 @@ body {
   border-top: 1px solid var(--deck-card-border, rgba(226,232,240,0.8));
   padding: 8px 12px;
   font-size: 14px;
+  line-height: 1.4;
   color: var(--deck-muted, #6b7280);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 
 .figure-placeholder {
@@ -533,7 +568,7 @@ body {
   grid-template-columns: 8px 1fr;
   gap: 10px;
   align-items: start;
-  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  font-size: 20.8px;
   line-height: 1.5;
   color: var(--deck-muted, #6b7280);
   overflow-wrap: break-word;
@@ -550,7 +585,7 @@ body {
 }
 
 .callout-box {
-  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  font-size: 20.8px;
   line-height: 1.6;
   color: var(--deck-callout-color, var(--deck-text, #111827));
   text-shadow: var(--deck-copy-shadow, none);
@@ -560,15 +595,14 @@ body {
   font-size: 16px;
   color: var(--deck-muted, #6b7280);
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  overflow-wrap: break-word;
   text-shadow: var(--deck-copy-shadow, none);
 }
 
 .metric-value {
   margin-top: 6px;
-  font-size: clamp(1.6rem, 3vw, 2.5rem);
+  font-size: 40px;
   font-weight: 800;
   letter-spacing: -0.04em;
   color: var(--deck-metric-value, var(--deck-accent, #2563eb));
@@ -645,7 +679,7 @@ body {
 }
 
 .comparison-item {
-  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  font-size: 20.8px;
   line-height: 1.6;
   color: var(--deck-text, #111827);
   margin-bottom: 4px;
@@ -656,7 +690,7 @@ body {
   text-align: center;
   margin: 16px auto;
   padding: 20px 28px;
-  font-size: 1.6rem;
+  font-size: 25.6px;
   font-family: "Times New Roman", "Latin Modern Math", Georgia, serif;
   color: var(--deck-text, #111827);
   text-shadow: var(--deck-copy-shadow, none);
@@ -666,7 +700,7 @@ body {
   text-align: center;
   max-width: none;
   margin-top: 8px;
-  font-size: 1.15rem;
+  font-size: 18.4px;
   color: var(--deck-muted, #6b7280);
   text-shadow: var(--deck-copy-shadow, none);
 }
@@ -835,11 +869,13 @@ function getRevealOrder(slide: Slide) {
   slide.tableRows?.forEach((_, index) => available.add(`table.rows.${index}`));
   if (slide.visual?.src || slide.figureLabel) available.add("visual");
   const seen = new Set<string>();
-  return (slide.revealOrder || []).filter((target) => {
-    if (!available.has(target) || seen.has(target)) return false;
-    seen.add(target);
-    return true;
-  });
+  return (slide.revealOrder || [])
+    .map((entry) => (typeof entry === "string" ? entry : entry?.reveal))
+    .filter((target): target is string => {
+      if (typeof target !== "string" || !available.has(target) || seen.has(target)) return false;
+      seen.add(target);
+      return true;
+    });
 }
 
 function buildProps(slide: Slide, target: string, revealed?: number) {
@@ -1874,6 +1910,55 @@ type MotionStageProps = {
 type MotionSnapshot = { kind: "slide"; ghost: HTMLElement; from: number } | { kind: "replay"; ghost: HTMLElement } | { kind: "build"; previous: number } | null;
 
 /* The outgoing slide keeps its own mood: copy the deck's CSS variables onto the clone before they switch. */
+/* Fit the slide to the 1200x675 stage: normal, compact, then tight density (data-density). Every box must hold
+   its content, measured by line boxes; a hidden clone keeps running entrance transforms out of the result. */
+function stageOverflow(root: HTMLElement) {
+  const scale = root.getBoundingClientRect().width / (root.offsetWidth || 1) || 1;
+  const lh = (el: Element) => { const v = getComputedStyle(el).lineHeight; return v === "normal" ? 0 : parseFloat(v); };
+  const lines = (node: Node, h: number) => { const r = document.createRange(); r.selectNodeContents(node); return Array.from(node.nodeType === 3 ? r.getClientRects() : (node as Element).getClientRects()).map((b) => { const t = h ? Math.max(0, (b.height - h * scale) / 2) : 0; return { left: b.left, right: b.right, top: b.top + t, bottom: b.bottom - t }; }); };
+  let worst = 0;
+  for (const el of [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))]) {
+    const display = getComputedStyle(el).display;
+    if ((el.closest("svg") && el.tagName.toLowerCase() !== "svg") || el.closest(".katex") || display === "inline" || display === "contents" || display === "none" || (!el.clientWidth && !el.clientHeight)) continue;
+    const box = el.getBoundingClientRect(), left = box.left + el.clientLeft * scale, top = box.top + el.clientTop * scale, right = left + el.clientWidth * scale, bottom = top + el.clientHeight * scale;
+    worst = Math.max(worst, el.scrollWidth - el.clientWidth);
+    for (const node of Array.from(el.childNodes)) {
+      let rects: { left: number; right: number; top: number; bottom: number }[] = [];
+      if (node.nodeType === 3) { if (node.nodeValue?.trim()) rects = lines(node, lh(el)); }
+      else if (node instanceof HTMLElement || node instanceof SVGElement) {
+        const st = getComputedStyle(node);
+        if (st.display === "none" || st.position === "absolute" || st.position === "fixed") continue;
+        rects = st.display === "inline" ? lines(node, lh(node)) : [node.getBoundingClientRect()];
+      }
+      for (const r of rects) worst = Math.max(worst, (left - r.left) / scale, (top - r.top) / scale, (r.right - right) / scale, (r.bottom - bottom) / scale);
+    }
+  }
+  return worst;
+}
+
+function fitStage(stage: HTMLElement | null) {
+  if (!stage?.parentElement) return;
+  const probe = stage.cloneNode(true) as HTMLElement;
+  probe.style.visibility = "hidden";
+  probe.style.position = "absolute";
+  probe.style.inset = "0";
+  probe.setAttribute("aria-hidden", "true");
+  stage.parentElement.appendChild(probe);
+  let density = "", wide = false, overflow = true;
+  const steps: [string, boolean][] = [["", false], ["compact", false], ["tight", false]];
+  if (probe.querySelector(".slide-split")) steps.push(["tight", true]); // last step: a wider text column
+  for ([density, wide] of steps) {
+    if (density) probe.dataset.density = density; else delete probe.dataset.density;
+    if (wide) probe.dataset.fitWide = "true"; else delete probe.dataset.fitWide;
+    if (stageOverflow(probe) <= 1) { overflow = false; break; }
+  }
+  probe.remove();
+  if (density) stage.dataset.density = density; else delete stage.dataset.density;
+  if (wide) stage.dataset.fitWide = "true"; else delete stage.dataset.fitWide;
+  if (overflow) stage.dataset.overflow = "true"; else delete stage.dataset.overflow;
+  stage.querySelectorAll("img").forEach((img) => { if (!img.dataset.fitBound) { img.dataset.fitBound = "1"; img.addEventListener("load", () => fitStage(stage), { once: true }); } });
+}
+
 function cloneStage(stage: HTMLElement) {
   const ghost = stage.cloneNode(true) as HTMLElement;
   const deckStyle = stage.parentElement?.style;
@@ -1892,6 +1977,7 @@ class MotionStage extends React.Component<MotionStageProps> {
   private over = React.createRef<HTMLDivElement>();
 
   componentDidMount() {
+    fitStage(this.stage.current);
     this.play(null, 1, true, true);
   }
 
@@ -1908,6 +1994,7 @@ class MotionStage extends React.Component<MotionStageProps> {
 
   componentDidUpdate(_prev: MotionStageProps, _state: unknown, snapshot: MotionSnapshot) {
     if (!snapshot) return;
+    if (snapshot.kind !== "build") fitStage(this.stage.current);
     if (snapshot.kind === "build") {
       const stage = this.stage.current;
       if (!stage || this.props.revealed <= snapshot.previous) return;
@@ -2007,8 +2094,8 @@ function MotionPanel({ motion, onChange, onReplay, onClose }: { motion: DeckMoti
 function FigureFrame({ slide, label, visual, mood, revealed }: { slide: Slide; label?: string; visual?: VisualAsset; mood: MoodStyle; revealed?: number }) {
   if (visual?.src) {
     return (
-      <figure {...buildProps(slide, "visual", revealed)} style={{ overflow: "hidden", borderRadius: 12, border: `1px solid ${mood.cardBorder}`, background: mood.cardBg, backdropFilter: "blur(16px)" }}>
-        <img src={visual.src} alt={visual.alt || label || "Paper visual"} style={{ display: "block", width: "100%", height: "auto", maxHeight: 480, objectFit: "contain", background: "transparent" }} />
+      <figure {...buildProps(slide, "visual", revealed)} className="figure-frame" style={{ overflow: "hidden", borderRadius: 12, border: `1px solid ${mood.cardBorder}`, background: mood.cardBg, backdropFilter: "blur(16px)" }}>
+        <img src={visual.src} alt={visual.alt || label || "Paper visual"} style={{ display: "block", width: "100%", height: "auto", maxHeight: 480, minHeight: 0, objectFit: "contain", background: "transparent" }} />
         <figcaption className="figure-caption fs-caption">
           {visual.caption || label || "Paper visual"}{visual.confidence ? ` · ${visual.confidence} confidence` : ""}
         </figcaption>
@@ -2131,7 +2218,7 @@ function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number })
   switch (slide.layout) {
     case "cover":
       return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", height: "100%" }}>
+        <div className="slide-stack slide-stack-center">
           <p className="stagger-1 fs-label slide-label">{venueLabels[venuePreset]}</p>
           <h1 className="stagger-2 fs-hero slide-title slide-title-hero">{slide.title}</h1>
           {slide.subtitle && <p className="stagger-3 fs-body slide-body slide-body-wide slide-body-center" style={{ marginTop: 16 }}>{slide.subtitle}</p>}
@@ -2141,7 +2228,7 @@ function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number })
 
     case "hero-stat":
       return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", height: "100%" }}>
+        <div className="slide-stack slide-stack-center">
           <p className="stagger-1 fs-label slide-label">Result</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
           {slide.metrics?.length && (
@@ -2158,15 +2245,15 @@ function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number })
     case "diagram":
     case "method-overview":
       return (
-        <div style={{ display: "flex", flexDirection: "row", gap: 32, alignItems: "center", height: "100%" }}>
-          <div style={{ flex: "0 1 40%", minWidth: 0 }}>
+        <div className="slide-split">
+          <div className="slide-split-copy">
             <p className="stagger-1 fs-label slide-label">Key point</p>
             <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
             <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
             <BulletList slide={slide} bullets={slide.bullets} mood={m} revealed={revealed} />
             {slide.callout && <CalloutBox text={slide.callout} style={slide.calloutStyle} mood={m} />}
           </div>
-          <div style={{ flex: "1 1 65%", minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="slide-split-visual">
             <FigureFrame slide={slide} label={slide.figureLabel} visual={slide.visual} mood={m} revealed={revealed} />
           </div>
         </div>
@@ -2174,7 +2261,7 @@ function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number })
 
     case "metrics":
       return (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
+        <div className="slide-stack">
           <p className="stagger-1 fs-label slide-label">Main result</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
           <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
@@ -2184,7 +2271,7 @@ function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number })
 
     case "table-focus":
       return (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
+        <div className="slide-stack">
           <p className="stagger-1 fs-label slide-label">Data</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
           <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
@@ -2194,7 +2281,7 @@ function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number })
 
     case "comparison":
       return (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
+        <div className="slide-stack">
           <p className="stagger-1 fs-label slide-label">Comparison</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
           <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
@@ -2204,7 +2291,7 @@ function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number })
 
     case "timeline":
       return (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
+        <div className="slide-stack">
           <p className="stagger-1 fs-label slide-label">Pipeline</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
           <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>
@@ -2215,7 +2302,7 @@ function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number })
 
     case "limitations":
       return (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
+        <div className="slide-stack">
           <p className="stagger-1 fs-label slide-label slide-label-negative">Limitations</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
           <div className="stagger-3 limitation-panel" style={{ marginTop: 14, borderLeft: `4px solid ${m.limitationBorder}`, background: m.limitationBg, backdropFilter: "blur(12px)", borderRadius: "0 12px 12px 0", padding: "20px 24px" }}>
@@ -2228,7 +2315,7 @@ function SlideRenderer({ slide, revealed }: { slide: Slide; revealed?: number })
     case "bullets":
     default:
       return (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
+        <div className="slide-stack">
           <p className="stagger-1 fs-label slide-label">{slide.appendix ? "Appendix" : "Core idea"}</p>
           <h2 className="stagger-2 fs-title slide-title">{slide.title}</h2>
           <p {...buildProps(slide, "keyMessage", revealed)} className="stagger-3 fs-body slide-body">{slide.keyMessage}</p>

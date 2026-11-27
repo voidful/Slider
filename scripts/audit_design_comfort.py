@@ -177,13 +177,11 @@ def check_stability(css: str, js: str) -> list[Finding]:
     # --- Viewport-unit typography in content ---
     # Find vh/vw in font-size declarations (excluding comments)
     vh_leaks = re.findall(
-        r'(font-size\s*:\s*[^;]*\d+\.?\d*v[hw][^;]*)',
+        r'(font-size\s*:\s*[^;}]*\d+\.?\d*v[hw]\b[^;}]*)',  # stop at ; or } so a match cannot span rules
         css, re.IGNORECASE
     )
-    # Filter out clamp() middle values which are acceptable
+    # clamp() is no exception: its vw term still follows the browser window, not the 1200x675 stage.
     for leak in vh_leaks:
-        if "clamp(" in leak.lower():
-            continue
         findings.append(Finding(
             "deck", "P1", "stability", "responsive-slide-thinking",
             f"viewport-unit typography detected: {leak.strip()[:60]}"

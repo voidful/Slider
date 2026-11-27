@@ -37,12 +37,27 @@ Also support when practical:
 | A | Auto-advance (moved from P) |
 | B or `.`, W | Black or white screen; any navigation key clears it |
 | F, L, M, R | Fullscreen, laser, motion panel, phone remote |
+| E | Request changes: click what should change, describe it, then copy one prompt for the agent; double-click text to fix a typo on screen (recorded as a request). The full editor is in the command menu or at `?edit=full` |
 | Ctrl/⌘ K | Command menu: full-text slide search and every deck action, in present and edit mode |
 | ? | Key list · Esc closes the top layer first, then leaves fullscreen |
 
 - **Deep links:** `#/N` opens slide N fully built and `#/N/B` at build step B; `?slide=N` also works. The hash follows navigation without adding history entries, so a reload keeps the place. `?chrome=0` hides the controls for embedding or recording.
 - **Print and PDF:** Ctrl/⌘ P or File › Print renders every slide at its final build on its own 1200×675 page. File › Print handout puts each slide above its notes on A4. Turn on background graphics if the browser asks.
 - **Speaker notes** accept light Markdown: blank-line paragraphs, `-` or `1.` lists, `**bold**`, `*italic*`, and `` `code` ``.
+
+## Phone as speaker remote
+
+Press `R` (or the phone button), scan the QR code, and the phone opens on **Present**, a speaker view built for one hand:
+
+- the current slide's speaker notes in large type (A−/A+, remembered on the phone), following the desktop as it moves;
+- the talk timer, coloured by pace against the brief's talk length, with the wall clock and time left; the phone buzzes (where the browser supports vibration) and the clock flashes at 5 and 2 minutes left and at time;
+- thumbnails of the current beat and the next beat (the next build, not only the next slide);
+- large Back and Next buttons, and a horizontal swipe on the notes; Black and White screen toggles; Start/Pause and a Reset that needs a second tap within three seconds;
+- a request to keep the screen on (Screen Wake Lock, which needs an `https` or `localhost` deck URL; elsewhere the phone asks the speaker to turn off auto-lock).
+
+Time and slide progress bars sit under the clock, dots under Next count the slide's remaining builds, and Next reads "End of deck" at the end. A toggle hides the previews when the notes need the room. If the link drops, a banner over the notes gives the reason and retries on tap; the remote opened in a second tab takes over and the first tab says so.
+
+The desktop owns the timer, so the phone, the presenter window, and the desktop show the same time. A phone's first navigation starts the timer, and navigating clears a blackout, as in the presenter window. Landscape puts the notes on the left and the controls on the right. **Mark** draws on a live preview, **Notes** sends a note to the screen or saves it as the speaker note, and **More** holds jumps, fullscreen, auto-advance, links, and the collaborator name. Every paired phone receives the speaker notes, so share the code only with co-presenters. Pairing needs a URL the phone can reach: `python3 scripts/serve_deck.py deck.html` serves a deck at this computer's Wi-Fi address and shares nothing else; for other networks see [phone remote relay](artifact-rendering.md#phone-remote-relay).
 
 ## Fullscreen behavior (MANDATORY)
 

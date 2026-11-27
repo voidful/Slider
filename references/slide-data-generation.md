@@ -38,7 +38,7 @@ Each slide object must include:
 | Field | Type | Description |
 |:---|:---|:---|
 | `contentBlocks` | array | Ordered array of content block objects |
-| `gridTemplate` | string | Optional CSS Grid template for custom placement |
+| `gridTemplate` | string | Optional CSS `grid-template` for custom placement. Percent tracks are read as shares of the space left after the 24px gap (`35% 65%` behaves as `35fr 65fr`), and quoted area names are allowed. |
 | `atmosphere` | string | Optional atmosphere modifier (warm, cool, dramatic, minimal, editorial) |
 | `customCSS` | object | Optional per-slide CSS overrides |
 
@@ -52,7 +52,7 @@ Each item in `contentBlocks[]`:
 |:---|:---|:---|
 | `type` | string | Block type (see catalog below) |
 | `content` | any | Content payload — text string, object, or array depending on type |
-| `placement` | string | Optional placement hint: "auto", "left", "right", "center", "full", "overlay" |
+| `placement` | string | Optional placement in a `gridTemplate` slide: "left" (first column), "right" (last column), "full" or "center" (all columns). Labels and headings span all columns by default. Other values place the block automatically. |
 | `style` | string | Optional style variant: "default", "accent", "positive", "negative" |
 | `emphasis` | string | Optional emphasis level: "primary", "secondary", "background", "dramatic" |
 | `explanation` | string | Optional explanation text (used by equation blocks) |
@@ -100,7 +100,7 @@ Each item in `contentBlocks[]`:
 | `fidelityRisk` | string | Any risk of misrepresenting the paper |
 | `whyNow` | string | Why this slide appears at this position |
 | `whyThisVisual` | string | Why this particular visual was chosen |
-| `revealOrder` | string[] | Optional semantic targets revealed one presenter beat at a time; use only when order improves comprehension. See [progressive builds](progressive-builds.md). |
+| `revealOrder` | array | Optional presenter steps, in order: a target string reveals it; `{"focus": "visual", "region": [x, y, w, h], "note": "…"}` dims everything but the target (and zooms a figure into a region); any step may carry the `note` to say. Use only when the order improves comprehension. See [progressive builds](progressive-builds.md) and [explain with motion](motion-graphics.md#explain-with-motion). |
 
 ### Motion fields (optional)
 Deck motion belongs in `meta.motion` (preset name or object) or the renderer's `--motion` flag. Per-slide fields override it; choose them from the slide's content with the content map in [motion graphics](motion-graphics.md), and leave most slides on the preset.
@@ -174,9 +174,10 @@ When using `contentBlocks[]`, the LM composes each slide freely from primitives.
   "contentBlocks": [
     { "type": "label", "content": "Method", "style": "accent" },
     { "type": "heading", "content": "Cross-attention bridges modalities without shared encoding" },
-    { "type": "figure", "content": { "src": "fig3.png", "caption": "Figure 3 — Cross-modal attention" }, "emphasis": "primary" }
+    { "type": "text", "content": "Each modality keeps its own encoder; attention aligns them.", "placement": "left" },
+    { "type": "figure", "content": { "src": "fig3.png", "caption": "Figure 3 — Cross-modal attention" }, "emphasis": "primary", "placement": "right" }
   ],
-  "gridTemplate": "auto / 35% 65%"
+  "gridTemplate": "auto auto 1fr / 35fr 65fr"
 }
 
 // Dramatic result with one big number

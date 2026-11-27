@@ -1,4 +1,5 @@
 import { Component, createRef, type ReactNode } from "react";
+import { fitSlide } from "../lib/fitSlide";
 import { finishMotion, playBuildMotion, playSlideMotion, resolveMotion, type DeckMotion } from "../lib/motion";
 import { getBuildOrder } from "../lib/presentationBuilds";
 import type { Slide } from "../types";
@@ -16,6 +17,10 @@ type MotionStageProps = {
   children: ReactNode;
 };
 
+function fitSignature(stage: HTMLElement) {
+  return `${stage.className}|${stage.firstElementChild?.className}|${getComputedStyle(stage).getPropertyValue("--type-scale")}`;
+}
+
 type Snapshot =
   | { kind: "slide"; ghost: HTMLElement; from: number }
   | { kind: "replay"; ghost: HTMLElement }
@@ -31,8 +36,23 @@ export class MotionStage extends Component<MotionStageProps> {
   private stage = createRef<HTMLDivElement>();
   private under = createRef<HTMLDivElement>();
   private over = createRef<HTMLDivElement>();
+  private fitSignature = "";
+
+  /** Density depends on the slide, theme, type scale, and notes padding; images refit once they load. */
+  private refit = () => {
+    const stage = this.stage.current;
+    if (!stage) return;
+    this.fitSignature = fitSignature(stage);
+    fitSlide(stage);
+    stage.querySelectorAll("img").forEach((img) => {
+      if (img.dataset.fitBound) return;
+      img.dataset.fitBound = "1";
+      img.addEventListener("load", this.refit, { once: true });
+    });
+  };
 
   componentDidMount() {
+    this.refit();
     this.play(null, 1, true, true);
   }
 
@@ -48,6 +68,8 @@ export class MotionStage extends Component<MotionStageProps> {
   }
 
   componentDidUpdate(_prev: MotionStageProps, _state: unknown, snapshot: Snapshot) {
+    const stage = this.stage.current;
+    if (snapshot?.kind === "slide" || snapshot?.kind === "replay" || (stage && fitSignature(stage) !== this.fitSignature)) this.refit();
     if (!snapshot) return;
     if (snapshot.kind === "build") {
       const stage = this.stage.current;

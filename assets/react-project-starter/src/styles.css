@@ -443,10 +443,28 @@ button {
 .cover-layout,
 .bullets-layout,
 .limitations-layout,
-.metrics-layout {
+.metrics-layout,
+.table-focus-layout {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+}
+
+/* Flexible spacers center the slide but collapse first, so long content overflows at the bottom
+   (where lib/fitSlide.ts measures it) instead of pushing the eyebrow above the stage. */
+.cover-layout::before,
+.cover-layout::after,
+.bullets-layout::before,
+.bullets-layout::after,
+.limitations-layout::before,
+.limitations-layout::after,
+.metrics-layout::before,
+.metrics-layout::after,
+.table-focus-layout::before,
+.table-focus-layout::after,
+.slide-copy::before,
+.slide-copy::after {
+  content: "";
+  flex: 1 1 0;
 }
 
 .cover-layout {
@@ -458,18 +476,23 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(360px, 0.96fr);
   gap: 44px;
-  align-items: center;
+  align-items: stretch;
 }
 
 .slide-copy {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .visual-column {
   min-width: 0;
   display: flex;
-  align-items: center;
   justify-content: center;
+}
+
+.visual-column > * {
+  margin-block: auto;
 }
 
 .eyebrow,
@@ -481,6 +504,13 @@ button {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+/* Slide text stays at 14px or larger. */
+.eyebrow,
+.metric-label {
+  font-size: 14px;
+  overflow-wrap: break-word;
 }
 
 .cover-title,
@@ -562,6 +592,7 @@ button {
 
 .figure-frame {
   width: 100%;
+  margin: 0; /* <figure> has 40px side margins by default, which push it past its grid column */
   overflow: hidden;
 }
 
@@ -661,12 +692,6 @@ button {
   line-height: 1.35;
 }
 
-.table-focus-layout {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
 .data-table-frame {
   min-width: 0;
   margin: 28px 0 0;
@@ -676,9 +701,9 @@ button {
   overflow: hidden;
 }
 
+/* No scroll box: rows the audience cannot scroll to would be hidden. Fitting tightens the table instead. */
 .data-table-scroll {
-  max-height: 408px;
-  overflow: auto;
+  overflow: visible;
 }
 
 .data-table {
@@ -735,6 +760,105 @@ button {
 
 .data-table-empty {
   margin-top: 28px;
+}
+
+/* Fitting (lib/fitSlide.ts): compact, then tight, before a slide is flagged with data-overflow. */
+.slide-stage[data-density] .cover-title {
+  font-size: calc(50px * var(--type-scale));
+}
+
+.slide-stage[data-density] .slide-title {
+  font-size: calc(40px * var(--type-scale));
+}
+
+.slide-stage[data-density] .subtitle,
+.slide-stage[data-density] .key-message {
+  margin-top: 16px;
+  font-size: calc(19px * var(--type-scale));
+}
+
+.slide-stage[data-density] .bullet-list {
+  gap: 11px;
+  margin-top: 20px;
+  font-size: calc(18.5px * var(--type-scale));
+}
+
+.slide-stage[data-density] .metric-grid,
+.slide-stage[data-density] .metrics-with-visual,
+.slide-stage[data-density] .limitation-panel,
+.slide-stage[data-density] .data-table-frame {
+  margin-top: 22px;
+}
+
+.slide-stage[data-density] .metric-card {
+  min-height: 0;
+  padding: 18px;
+}
+
+.slide-stage[data-density] .limitation-panel {
+  padding: 22px;
+}
+
+.slide-stage[data-density] .figure-frame img {
+  max-height: 300px;
+}
+
+.slide-stage[data-density] .data-table th,
+.slide-stage[data-density] .data-table td {
+  padding: 9px 16px;
+}
+
+.slide-stage[data-density="tight"] .cover-title {
+  font-size: calc(42px * var(--type-scale));
+}
+
+.slide-stage[data-density="tight"] .slide-title {
+  font-size: calc(34px * var(--type-scale));
+}
+
+.slide-stage[data-density="tight"] .subtitle,
+.slide-stage[data-density="tight"] .key-message {
+  margin-top: 12px;
+  font-size: calc(17px * var(--type-scale));
+  line-height: 1.4;
+}
+
+.slide-stage[data-density="tight"] .bullet-list {
+  gap: 8px;
+  margin-top: 14px;
+  font-size: calc(17px * var(--type-scale));
+  line-height: 1.36;
+}
+
+.slide-stage[data-density="tight"] .bullet-dot {
+  margin-top: 8px;
+}
+
+.slide-stage[data-density="tight"] .metric-card {
+  padding: 14px;
+}
+
+.slide-stage[data-density="tight"] .metric-value {
+  font-size: calc(38px * var(--type-scale));
+}
+
+.slide-stage[data-density="tight"] .figure-frame img {
+  max-height: 250px;
+}
+
+.slide-stage[data-density="tight"] .data-table th,
+.slide-stage[data-density="tight"] .data-table td {
+  padding: 6px 14px;
+  font-size: 16px;
+}
+
+.slide-stage[data-density="tight"] .split-layout {
+  gap: 32px;
+}
+
+.slide-stage[data-density="tight"] .metrics-with-visual .metric-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .limitation-panel {
